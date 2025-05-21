@@ -1,59 +1,46 @@
 import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
-import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
+import 'package:get/get.dart';
+import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/modules/attandance/GuardAttendanceScreen.dart';
+import 'package:security_guard/modules/home/view/home_view.dart';
 import 'package:security_guard/modules/issue/report_issue/report_incident_screen.dart';
 import 'package:security_guard/modules/petrol/views/patrol_check_in_view.dart';
 import 'package:security_guard/modules/profile/Profile_screen.dart';
+import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
 
-import 'package:get/get.dart'; // Add this import if not already present
+class BottomNavBarWidget extends StatelessWidget {
+  BottomNavBarWidget({super.key});
 
-class BottomNavController extends GetxController {
-  var selectedIndex = 0.obs;
-}
+  final BottomNavController controller = Get.put(BottomNavController());
 
-final BottomNavController controller = Get.put(BottomNavController());
+  final List<Widget> screens = [
+    HomeView(),
+    GuardAttendanceScreen(),
+    PatrolCheckInScreen(),
+    IncidentReportScreen(),
+    ProfileScreen(),
+  ];
 
-Widget buildBottomNavBar() {
-  return Obx(
-    () => BottomNavigationBar(
-      currentIndex: controller.selectedIndex.value,
-      onTap: (index) {
-        controller.selectedIndex.value = index;
-        switch (index) {
-          case 0:
-            break;
-          case 1:
-            Get.to(() => PatrolCheckInScreen());
-            break;
-          case 2:
-            Get.to(() => IncidentReportScreen());
-            break;
-          case 3:
-            Get.to(() => GuardAttendanceScreen());
-            break;
-          case 4:
-            Get.to(() => ProfileScreen());
-            break;
-        }
-      },
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: Color(0xFF1E3A8A),
-      unselectedItemColor: Colors.grey,
-      items: [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Patrol'),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.error_outline),
-          label: 'Issues',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: 'Attendance',
-        ),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-      ],
-    ),
-  );
+  final List<BottomNavigationBarItem> items = const [
+    BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+    BottomNavigationBarItem(icon: Icon(Icons.access_time), label: 'Attendance'),
+    BottomNavigationBarItem(icon: Icon(Icons.security), label: 'Patrol'),
+    BottomNavigationBarItem(icon: Icon(Icons.report_problem), label: 'Report'),
+    BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() => Scaffold(
+          body: screens[controller.currentIndex.value],
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: controller.currentIndex.value,
+            onTap: controller.changeTab,
+            selectedItemColor: AppColors.primary,
+            unselectedItemColor: Colors.grey,
+            items: items,
+            type: BottomNavigationBarType.fixed,
+          ),
+        ));
+  }
 }

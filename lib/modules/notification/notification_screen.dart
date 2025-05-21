@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 
-
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
 
@@ -52,10 +51,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ],
             ),
           ),
-          
+
           // Today Section
           _buildSectionHeader('Today'),
-          
+
           // Today Notifications
           _buildNotificationItem(
             icon: Icons.error,
@@ -81,10 +80,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             time: '2h ago',
             showDot: false,
           ),
-          
+
           // Yesterday Section
           _buildSectionHeader('Yesterday'),
-          
+
           // Yesterday Notifications
           _buildNotificationItem(
             icon: Icons.camera_alt,
@@ -102,10 +101,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             time: 'Yesterday at 2:30 PM',
             showDot: false,
           ),
-          
+
           // Earlier Section
           _buildSectionHeader('Earlier'),
-          
+
           // Earlier Notifications
           _buildNotificationItem(
             icon: Icons.calendar_today,
@@ -117,41 +116,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: 2,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.view_list),
-            label: 'Patrol',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Issues',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.access_time),
-            label: 'Attendance',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-        onTap: (index) {
-          // Handle navigation
-        },
-      ),
     );
   }
 
   Widget _buildFilterChip(String label) {
     final isSelected = _selectedFilter == label;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -202,9 +172,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.blue[50],
-        border: Border(
-          bottom: BorderSide(color: Colors.grey[200]!),
-        ),
+        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,11 +183,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               color: iconBackground,
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              color: iconColor,
-              size: 20,
-            ),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -253,10 +217,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 const SizedBox(height: 4),
                 Text(
                   time,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
               ],
             ),

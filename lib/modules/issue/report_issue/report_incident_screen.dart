@@ -1,7 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
+import 'package:security_guard/modules/issue/issue_list/issue_view/issue_screen.dart';
 
 class IncidentReportScreen extends StatefulWidget {
   const IncidentReportScreen({Key? key}) : super(key: key);
@@ -12,24 +19,82 @@ class IncidentReportScreen extends StatefulWidget {
 
 class _IncidentReportScreenState extends State<IncidentReportScreen> {
   final TextEditingController _descriptionController = TextEditingController();
-  int _characterCount = 0;
   final int _maxCharacters = 500;
+  int _characterCount = 0;
 
-  final List<String> _selectedPhotos = [
-    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4',
-    'https://images.unsplash.com/photo-1618941716939-553df3c6c278',
-  ];
+  List<XFile> _selectedPhotos = [];
+  LatLng? _currentPosition;
+  final MapController _mapController = MapController();
 
   @override
   void initState() {
     super.initState();
     _descriptionController.addListener(_updateCharacterCount);
+    _getCurrentLocation();
   }
 
   void _updateCharacterCount() {
     setState(() {
       _characterCount = _descriptionController.text.length;
     });
+  }
+
+  Future<void> _getCurrentLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.deniedForever) return;
+    }
+
+    final Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    final newPosition = LatLng(position.latitude, position.longitude);
+
+    setState(() {
+      _currentPosition = newPosition;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_currentPosition != null) {
+        _mapController.move(_currentPosition!, 15.0);
+      }
+    });
+  }
+
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final List<XFile> images = await picker.pickMultiImage();
+    if (images.isNotEmpty) {
+      setState(() {
+        _selectedPhotos.addAll(images);
+      });
+    }
+  }
+
+  void _submitReport() {
+    if (_descriptionController.text.trim().isEmpty || _currentPosition == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill required fields')),
+      );
+      return;
+    }
+
+    // Report submission logic
+    Get.to(const IssuesScreen());
+
+    print('Incident Reported:');
+    print('Location: $_currentPosition');
+    print('Description: ${_descriptionController.text}');
+    print('Images count: ${_selectedPhotos.length}');
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Report submitted successfully!')),
+    );
   }
 
   @override
@@ -49,258 +114,177 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
         title: const Text('Report Incident'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Current Location Section
-              const Text('Current Location', style: AppTextStyles.heading),
-              const SizedBox(height: 8),
-              Container(
-                height: 180,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.greyColor.withOpacity(0.3),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(8),
-                          topRight: Radius.circular(8),
-                        ),
-                        // Using a placeholder image instead of Google Maps static API
-                        child: Container(
-                          color: AppColors.lightGrey,
-                          child: Center(
-                            child: Image(
-                              image: NetworkImage(
-                                "https://storage.googleapis.com/gweb-uniblog-publish-prod/images/blurry_images_ML.width-500.format-webp.webp",
-                              ),
-                              fit: BoxFit.cover,
-                              width:
-                                  double
-                                      .infinity, // Optionally control width/height
-                              height: double.infinity,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: const BoxDecoration(
-                        color: AppColors.whiteColor,
-                        borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(8),
-                          bottomRight: Radius.circular(8),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '123 Security Ave, Downtown',
-                            style: TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          Text(
-                            '40.7128° N, 74.0060° W',
-                            style: TextStyle(
-                              color: AppColors.greyColor,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Current Location', style: AppTextStyles.heading),
+            const SizedBox(height: 8),
+            Container(
+              height: 200,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.greyColor.withOpacity(0.3)),
               ),
-
-              const SizedBox(height: 24),
-
-              // Incident Photos Section
-              const Text('Incident Photos', style: AppTextStyles.heading),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 80,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    // Add Photos Button
-                    GestureDetector(
-                      onTap: () {
-                        // Add photo functionality would go here
-                      },
-                      child: Container(
-                        width: 80,
-                        height: 80,
-                        margin: const EdgeInsets.only(right: 8),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: AppColors.greyColor.withOpacity(0.5),
-                            width: 1,
-                          ),
+              child: _currentPosition == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : FlutterMap(
+                      mapController: _mapController,
+                      options: MapOptions(
+                        initialCenter: _currentPosition!,
+                        initialZoom: 15.0,
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.add, color: AppColors.greyColor),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Add Photos',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.greyColor,
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: _currentPosition!,
+                              width: 40,
+                              height: 40,
+                              child: const Icon(
+                                Icons.location_pin,
+                                color: Colors.red,
+                                size: 40,
                               ),
                             ),
                           ],
                         ),
-                      ),
+                      ],
                     ),
+            ),
+            const SizedBox(height: 24),
 
-                    // Selected Photos
-                    ..._selectedPhotos
-                        .map(
-                          (photoUrl) => Stack(
-                            alignment: Alignment.topRight,
-                            children: [
-                              Container(
-                                width: 80,
-                                height: 80,
-                                margin: const EdgeInsets.only(right: 8),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  image: DecorationImage(
-                                    image: NetworkImage(photoUrl),
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () {
-                                  // Remove photo functionality would go here
-                                  setState(() {
-                                    _selectedPhotos.remove(photoUrl);
-                                  });
-                                },
-                                child: Container(
-                                  decoration: const BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  margin: const EdgeInsets.all(4),
-                                  child: Icon(
-                                    Icons.close,
-                                    size: 16,
-                                    color: AppColors.blackColor,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                        .toList(),
-
-                    // Empty photo placeholder
-                    Container(
+            const Text('Incident Photos', style: AppTextStyles.heading),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 80,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
                       width: 80,
-                      height: 80,
                       margin: const EdgeInsets.only(right: 8),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
-                        color: AppColors.lightGrey,
+                        border: Border.all(color: AppColors.greyColor.withOpacity(0.5)),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.add, color: AppColors.greyColor),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Add Photo',
+                            style: TextStyle(fontSize: 12, color: AppColors.greyColor),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Incident Description Section
-              const Text('Incident Description', style: AppTextStyles.heading),
-              const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.greyColor.withOpacity(0.3),
                   ),
-                ),
-                child: TextField(
-                  controller: _descriptionController,
-                  maxLines: 8,
-                  maxLength: _maxCharacters,
-                  inputFormatters: [
-                    LengthLimitingTextInputFormatter(_maxCharacters),
-                  ],
-                  decoration: const InputDecoration(
-                    hintText: 'Describe the incident in detail...',
-                    hintStyle: AppTextStyles.hint,
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.all(12),
-                    counterText: '',
-                  ),
-                ),
-              ),
-
-              Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    '$_characterCount/$_maxCharacters',
-                    style: TextStyle(color: AppColors.greyColor, fontSize: 12),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              Text(
-                '* Required fields must be filled',
-                style: TextStyle(color: AppColors.error, fontSize: 12),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Submit Button
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Submit functionality would go here
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.whiteColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                  ..._selectedPhotos.map(
+                    (img) => Stack(
+                      alignment: Alignment.topRight,
+                      children: [
+                        Container(
+                          width: 80,
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            image: DecorationImage(
+                              image: FileImage(File(img.path)),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedPhotos.remove(img);
+                            });
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close, size: 16),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  child: const Text(
-                    'Submit Report',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            const Text('Incident Description', style: AppTextStyles.heading),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.greyColor.withOpacity(0.3)),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: TextField(
+                controller: _descriptionController,
+                maxLines: 8,
+                maxLength: _maxCharacters,
+                inputFormatters: [LengthLimitingTextInputFormatter(_maxCharacters)],
+                decoration: const InputDecoration(
+                  hintText: 'Describe the incident in detail...',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(12),
+                  counterText: '',
                 ),
               ),
-            ],
-          ),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '$_characterCount/$_maxCharacters',
+                  style: TextStyle(color: AppColors.greyColor, fontSize: 12),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+            Text(
+              '* Required fields must be filled',
+              style: TextStyle(color: AppColors.error, fontSize: 12),
+            ),
+            const SizedBox(height: 24),
+
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: _submitReport,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.whiteColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Submit Report',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

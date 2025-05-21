@@ -6,10 +6,8 @@ import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/issue/report_issue/report_incident_screen.dart';
 import 'package:security_guard/modules/notification/notification_screen.dart';
 
-
 import 'package:security_guard/modules/petrol/views/patrol_check_in_view.dart';
 import 'package:security_guard/modules/profile/Profile_screen.dart';
-
 
 class HomeView extends GetView<HomeController> {
   const HomeView({Key? key}) : super(key: key);
@@ -24,7 +22,6 @@ class HomeView extends GetView<HomeController> {
       backgroundColor: Color(0xFFF5F7FA),
       appBar: _buildAppBar(),
       body: _buildBody(),
-      bottomNavigationBar: _buildBottomNavBar(),
     );
   }
 
@@ -42,7 +39,9 @@ class HomeView extends GetView<HomeController> {
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 2),
               image: DecorationImage(
-                image: NetworkImage("https://randomuser.me/api/portraits/men/32.jpg"),
+                image: NetworkImage(
+                  "https://randomuser.me/api/portraits/men/32.jpg",
+                ),
                 fit: BoxFit.cover,
               ),
             ),
@@ -51,21 +50,25 @@ class HomeView extends GetView<HomeController> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Obx(() => Text(
-                'Good Morning, ${controller.userName.value}',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              Obx(
+                () => Text(
+                  'Good Morning, ${controller.userName.value}',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              )),
-              Obx(() => Text(
-                controller.formattedDate,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 14,
+              ),
+              Obx(
+                () => Text(
+                  controller.formattedDate,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 14,
+                  ),
                 ),
-              )),
+              ),
             ],
           ),
           Spacer(),
@@ -80,21 +83,23 @@ class HomeView extends GetView<HomeController> {
               Positioned(
                 right: 8,
                 top: 8,
-                child: Obx(() => Container(
-                  padding: EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    '${controller.notificationCount}',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                child: Obx(
+                  () => Container(
+                    padding: EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '${controller.notificationCount}',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                )),
+                ),
               ),
             ],
           ),
@@ -150,10 +155,7 @@ class HomeView extends GetView<HomeController> {
             children: [
               Text(
                 'Attendance Status',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -178,23 +180,39 @@ class HomeView extends GetView<HomeController> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Clock In', style: TextStyle(color: Colors.grey, fontSize: 14)),
+                  Text(
+                    'Clock In',
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
                   SizedBox(height: 4),
-                  Obx(() => Text(
-                    controller.clockInTime.value,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  )),
+                  Obx(
+                    () => Text(
+                      controller.clockInTime.value,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ],
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Hours Today', style: TextStyle(color: Colors.grey, fontSize: 14)),
+                  Text(
+                    'Hours Today',
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
                   SizedBox(height: 4),
-                  Obx(() => Text(
-                    controller.hoursToday.value,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  )),
+                  Obx(
+                    () => Text(
+                      controller.hoursToday.value,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -285,21 +303,40 @@ class HomeView extends GetView<HomeController> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Completed Patrols', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                Text(
+                  'Completed Patrols',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                ),
                 SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Obx(() => Text('${controller.completedPatrols}/${controller.totalPatrols}',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold))),
+                    Obx(
+                      () => Text(
+                        '${controller.completedPatrols}/${controller.totalPatrols}',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                     Container(
                       padding: EdgeInsets.all(4),
-                      decoration: BoxDecoration(color: Colors.green[100], shape: BoxShape.circle),
+                      decoration: BoxDecoration(
+                        color: Colors.green[100],
+                        shape: BoxShape.circle,
+                      ),
                       child: Icon(Icons.check, color: Colors.green, size: 16),
                     ),
                   ],
@@ -315,22 +352,45 @@ class HomeView extends GetView<HomeController> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Active Issues', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                Text(
+                  'Active Issues',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                ),
                 SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Obx(() => Text('${controller.activeIssues}',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold))),
+                    Obx(
+                      () => Text(
+                        '${controller.activeIssues}',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                     Container(
                       padding: EdgeInsets.all(4),
-                      decoration: BoxDecoration(color: Colors.orange[100], shape: BoxShape.circle),
-                      child: Icon(Icons.warning, color: Colors.orange, size: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[100],
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.warning,
+                        color: Colors.orange,
+                        size: 16,
+                      ),
                     ),
                   ],
                 ),
@@ -348,47 +408,63 @@ class HomeView extends GetView<HomeController> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          Obx(() => ListView.separated(
-            physics: NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            itemCount: controller.recentActivities.length,
-            separatorBuilder: (context, index) => Divider(height: 16),
-            itemBuilder: (context, index) {
-              final activity = controller.recentActivities[index];
-              return Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: _getActivityColor(activity['type'] as String).withOpacity(0.1),
-                      shape: BoxShape.circle,
+          Obx(
+            () => ListView.separated(
+              physics: NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: controller.recentActivities.length,
+              separatorBuilder: (context, index) => Divider(height: 16),
+              itemBuilder: (context, index) {
+                final activity = controller.recentActivities[index];
+                return Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: _getActivityColor(
+                          activity['type'] as String,
+                        ).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        activity['icon'] as IconData,
+                        color: _getActivityColor(activity['type'] as String),
+                        size: 18,
+                      ),
                     ),
-                    child: Icon(
-                      activity['icon'] as IconData,
-                      color: _getActivityColor(activity['type'] as String),
-                      size: 18,
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            activity['title'] as String,
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            activity['time'] as String,
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(activity['title'] as String, style: TextStyle(fontWeight: FontWeight.w500)),
-                        SizedBox(height: 4),
-                        Text(activity['time'] as String, style: TextStyle(color: Colors.grey, fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            },
-          )),
+                  ],
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -405,40 +481,5 @@ class HomeView extends GetView<HomeController> {
       default:
         return Colors.grey;
     }
-  }
-
-  Widget _buildBottomNavBar() {
-    return Obx(() => BottomNavigationBar(
-      currentIndex: controller.selectedIndex.value,
-      onTap: (index) {
-        controller.selectedIndex.value = index;
-        switch (index) {
-          case 0:
-            break;
-          case 1:
-            Get.to(() => PatrolCheckInScreen());
-            break;
-          case 2:
-            Get.to(() => IncidentReportScreen());
-            break;
-          case 3:
-            Get.to(() => GuardAttendanceScreen());
-            break;
-          case 4:
-            Get.to(() => ProfileScreen());
-            break;
-        }
-      },
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: Color(0xFF1E3A8A),
-      unselectedItemColor: Colors.grey,
-      items: [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Patrol'),
-        BottomNavigationBarItem(icon: Icon(Icons.error_outline), label: 'Issues'),
-        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Attendance'),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-      ],
-    ));
   }
 }

@@ -9,7 +9,7 @@ import 'package:security_guard/modules/petrol/views/patrol_check_in_view.dart';
 import 'package:security_guard/routes/app_rout.dart' show Routes;
 
 class AppPages {
-  static const INITIAL = Routes.HOME;
+  static const INITIAL = Routes.LOGIN;
 
   static final routes = [
     GetPage(
@@ -26,9 +26,6 @@ class AppPages {
         Get.lazyPut<HomeController>(() => HomeController());
       }),
     ),
-    GetPage(
-      name: Routes.FORGOT_PASSWORD, 
-      page: () => ForgotPasswordView()
-    ),
+    GetPage(name: Routes.FORGOT_PASSWORD, page: () => ForgotPasswordView()),
   ];
 }

@@ -1,32 +1,30 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
+import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/modules/attandance/AttendanceHistoryScreen/AttendanceHistoryScreen.dart';
 
-void main() {
-  runApp(const MyApp());
-}
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class GuardAttendanceScreen extends StatefulWidget {
+  const GuardAttendanceScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Guard Attendance',
-      theme: ThemeData(
-        primaryColor: AppColors.primary,
-        scaffoldBackgroundColor: AppColors.primary,
-      ),
-      home: const GuardAttendanceScreen(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
+  State<GuardAttendanceScreen> createState() => _GuardAttendanceScreenState();
 }
 
-class GuardAttendanceScreen extends StatelessWidget {
-  const GuardAttendanceScreen({super.key});
+class _GuardAttendanceScreenState extends State<GuardAttendanceScreen> {
+  File? _capturedImage;
+
+  Future<void> _capturePhoto() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.camera);
+
+    if (pickedFile != null) {
+      setState(() {
+        _capturedImage = File(pickedFile.path);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,9 +55,9 @@ class GuardAttendanceScreen extends StatelessWidget {
       color: AppColors.primary,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 10),
-          const Center(
+        children: const [
+          SizedBox(height: 10),
+          Center(
             child: Text(
               'Guard Attendance',
               style: TextStyle(
@@ -69,7 +67,7 @@ class GuardAttendanceScreen extends StatelessWidget {
               ),
             ),
           ),
-          const Center(
+          Center(
             child: Text(
               'Monday, May 19, 2025',
               style: TextStyle(color: Colors.white, fontSize: 14),
@@ -85,12 +83,12 @@ class GuardAttendanceScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
       decoration: BoxDecoration(color: Colors.grey[50]),
       child: Row(
-        children: [
-          const Icon(Icons.location_on, color: Colors.green, size: 24),
-          const SizedBox(width: 10),
+        children: const [
+          Icon(Icons.location_on, color: Colors.green, size: 24),
+          SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               Text(
                 'GPS Location Verified',
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
@@ -128,33 +126,22 @@ class GuardAttendanceScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Image.network(
-                'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8aGVhZHNob3R8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey[300],
-                    child: const Center(
-                      child: Icon(Icons.person, size: 60, color: Colors.grey),
+              child: _capturedImage != null
+                  ? Image.file(_capturedImage!, fit: BoxFit.cover)
+                  : Container(
+                      color: Colors.grey[300],
+                      child: const Center(
+                        child: Icon(Icons.person, size: 60, color: Colors.grey),
+                      ),
                     ),
-                  );
-                },
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    color: Colors.grey[300],
-                    child: const Center(child: CircularProgressIndicator()),
-                  );
-                },
-              ),
             ),
           ),
           const SizedBox(height: 15),
           TextButton.icon(
-            onPressed: () {},
+            onPressed: _capturePhoto,
             icon: const Icon(Icons.camera_alt, color: Colors.blue),
             label: const Text(
-              'Retake Photo',
+              'Take Photo',
               style: TextStyle(color: Colors.blue, fontSize: 16),
             ),
           ),
@@ -220,11 +207,11 @@ class GuardAttendanceScreen extends StatelessWidget {
   }
 
   Widget _buildLastAction() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
+        children: [
           Icon(Icons.check_circle, color: Colors.grey, size: 20),
           SizedBox(width: 8),
           Text(
@@ -253,26 +240,23 @@ class GuardAttendanceScreen extends StatelessWidget {
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Stack(
-            children: [
-              Container(color: Colors.transparent),
-              Center(
-                child: Icon(Icons.shield, size: 40, color: AppColors.primary),
-              ),
-              Center(
-                child: Text(
-                  'SECU',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 8,
-                    fontWeight: FontWeight.bold,
-                  ),
+        child: Stack(
+          children: [
+            Container(color: Colors.transparent),
+            Center(
+              child: Icon(Icons.shield, size: 40, color: AppColors.primary),
+            ),
+            const Center(
+              child: Text(
+                'SECU',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

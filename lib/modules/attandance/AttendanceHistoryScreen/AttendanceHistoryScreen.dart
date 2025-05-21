@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/src/extension_navigation.dart';
 import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
@@ -11,34 +12,8 @@ import 'package:security_guard/modules/petrol/views/patrol_check_in_view.dart';
 import 'package:security_guard/modules/profile/Profile_screen.dart';
 import 'package:security_guard/shared/widgets/bottomnavigation/bottomnavigation.dart';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Attendance History',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primaryColor: AppColors.primary,
-        scaffoldBackgroundColor: AppColors.background,
-        fontFamily: 'Roboto',
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.whiteColor,
-        ),
-      ),
-      home: const AttendanceHistoryScreen(),
-    );
-  }
-}
-
 class AttendanceHistoryScreen extends StatefulWidget {
-  const AttendanceHistoryScreen({super.key});
+  AttendanceHistoryScreen({super.key});
 
   @override
   State<AttendanceHistoryScreen> createState() =>
@@ -47,6 +22,7 @@ class AttendanceHistoryScreen extends StatefulWidget {
 
 class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   String currentMonth = 'March 2024';
+
 
   final List<AttendanceRecord> attendanceRecords = [
     AttendanceRecord(
@@ -129,7 +105,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavBar(),
+      // bottomNavigationBar: bottomnavcontroller.buildScreen(),
     );
   }
 
@@ -262,44 +238,40 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     return '${hours}h ${minutes}m';
   }
 
- 
-
-  Widget _buildBottomNavBar() {
-    return Obx(() => BottomNavigationBar(
-      currentIndex: controller.selectedIndex.value,
-      onTap: (index) {
-        controller.selectedIndex.value = index;
-        switch (index) {
-          case 0:
-            break;
-          case 1:
-            Get.to(() => PatrolCheckInScreen());
-            break;
-          case 2:
-            Get.to(() => IncidentReportScreen());
-            break;
-          case 3:
-            Get.to(() => GuardAttendanceScreen());
-            break;
-          case 4:
-            Get.to(() => ProfileScreen());
-            break;
-        }
-      },
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: Color(0xFF1E3A8A),
-      unselectedItemColor: Colors.grey,
-      items: [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Patrol'),
-        BottomNavigationBarItem(icon: Icon(Icons.error_outline), label: 'Issues'),
-        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Attendance'),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-      ],
-    ));
-  }
-  }
-
+  // Widget _buildBottomNavBar() {
+  //   return Obx(() => BottomNavigationBar(
+  //     currentIndex: controller.selectedIndex.value,
+  //     onTap: (index) {
+  //       controller.selectedIndex.value = index;
+  //       switch (index) {
+  //         case 0:
+  //           break;
+  //         case 1:
+  //           Get.to(() => PatrolCheckInScreen());
+  //           break;
+  //         case 2:
+  //           Get.to(() => IncidentReportScreen());
+  //           break;
+  //         case 3:
+  //           Get.to(() => GuardAttendanceScreen());
+  //           break;
+  //         case 4:
+  //           Get.to(() => ProfileScreen());
+  //           break;
+  //       }
+  //     },
+  //     type: BottomNavigationBarType.fixed,
+  //     selectedItemColor: Color(0xFF1E3A8A),
+  //     unselectedItemColor: Colors.grey,
+  //     items: [
+  //       BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+  //       BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Patrol'),
+  //       BottomNavigationBarItem(icon: Icon(Icons.error_outline), label: 'Issues'),
+  //       BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Attendance'),
+  //       BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+  //     ],
+  //   ));
+}
 
 class AttendanceRecord {
   final DateTime date;
@@ -313,7 +285,4 @@ class AttendanceRecord {
     required this.checkOut,
     required this.avatarUrl,
   });
-  
-
-  
-  }
+}

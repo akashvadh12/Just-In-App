@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
+import 'package:security_guard/modules/home/view/home_view.dart';
+import 'package:security_guard/shared/widgets/bottomnavigation/bottomnavigation.dart';
 import 'package:security_guard/shared/widgets/custom_button.dart';
 import '../../auth/controllers/auth_controller.dart';
 
@@ -64,26 +66,47 @@ class LoginPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Login/Signup Tabs
-                      Row(
-                        children: [
-                          Expanded(
-                            child: CustomButton(
-                              text: 'Login',
-                              backgroundColor: AppColors.primary,
-                              textColor: Colors.white,
-                              onPressed: () {},
+                      Obx(
+                        () => Row(
+                          children: [
+                            Expanded(
+                              child: CustomButton(
+                                text: 'Login',
+                                backgroundColor:
+                                    authController.isLoginMode.value
+                                        ? AppColors.primary
+                                        : Colors.grey.shade100,
+                                textColor:
+                                    authController.isLoginMode.value
+                                        ? Colors.white
+                                        : Colors.grey.shade800,
+                                onPressed: () {
+                                  if (!authController.isLoginMode.value) {
+                                    authController.toggleMode();
+                                  }
+                                },
+                              ),
                             ),
-                          ),
-
-                          Expanded(
-                            child: CustomButton(
-                              text: 'Signup',
-                              backgroundColor: Colors.grey.shade100,
-                              textColor: Colors.grey.shade800,
-                              onPressed: () {},
+                            Expanded(
+                              child: CustomButton(
+                                text: 'Signup',
+                                backgroundColor:
+                                    !authController.isLoginMode.value
+                                        ? AppColors.primary
+                                        : Colors.grey.shade100,
+                                textColor:
+                                    !authController.isLoginMode.value
+                                        ? Colors.white
+                                        : Colors.grey.shade800,
+                                onPressed: () {
+                                  if (authController.isLoginMode.value) {
+                                    authController.toggleMode();
+                                  }
+                                },
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       SizedBox(height: 24),
 
@@ -182,13 +205,36 @@ class LoginPage extends StatelessWidget {
                           ),
                         ),
                       ),
-                      SizedBox(height: 24),
+                      SizedBox(height: 8),
 
-                      // Login Button
+                      // Forgot Password Button
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed:
+                              () => authController.navigateToForgotPassword(),
+                          child: Text(
+                            'Forgot Password?',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+
+                      // Login/Signup Button
                       Obx(
                         () => CustomButton(
-                          text: 'Login',
-                          onPressed: () => authController.login(),
+                          text:
+                              authController.isLoginMode.value
+                                  ? 'Login'
+                                  : 'Signup',
+                          onPressed: () {
+                            authController.login();
+                            
+                          },
                           isLoading: authController.isLoading.value,
                         ),
                       ),

@@ -1,50 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:permission_handler/permission_handler.dart';
-
+import 'package:get/get.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:security_guard/modules/petrol/controllers/patrol_controller.dart';
 
-class PatrolCheckInScreen extends StatefulWidget {
-  const PatrolCheckInScreen({super.key});
+class PatrolCheckInScreen extends StatelessWidget {
+  final controller = Get.put(PatrolCheckInController());
 
-  @override
-  State<PatrolCheckInScreen> createState() => _PatrolCheckInScreenState();
-}
-
-class _PatrolCheckInScreenState extends State<PatrolCheckInScreen> {
-  int _currentStep = 1;
-  LatLng? _currentLatLng;
-  final MapController _mapController = MapController();
-  bool _isMapReady = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchLocation();
-  }
-
-  Future<void> _fetchLocation() async {
-    final locationPermission = await Permission.location.request();
-    if (!locationPermission.isGranted) return;
-
-    final position = await Geolocator.getCurrentPosition();
-    final latLng = LatLng(position.latitude, position.longitude);
-
-    setState(() => _currentLatLng = latLng);
-
-    if (_isMapReady) {
-      _mapController.move(latLng, 16);
-    } else {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_isMapReady && _currentLatLng != null) {
-          _mapController.move(_currentLatLng!, 16);
-        }
-      });
-    }
-  }
+  PatrolCheckInScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +17,9 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen> {
         title: const Text('Patrol Check-in'),
         backgroundColor: AppColors.primary,
         centerTitle: true,
-        titleTextStyle: AppTextStyles.heading.copyWith(color: AppColors.whiteColor),
+        titleTextStyle: AppTextStyles.heading.copyWith(
+          color: AppColors.whiteColor,
+        ),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -72,19 +38,19 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen> {
   }
 
   Widget _buildProgressBar() {
-    return Container(
+    return Obx(() => Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       color: AppColors.whiteColor,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildProgressStep(1, 'Location', true),
-          _buildProgressStep(2, 'Verify', true),
-          _buildProgressStep(3, 'Photo', false),
-          _buildProgressStep(4, 'Submit', false),
+          _buildProgressStep(1, 'Location', controller.currentStep.value >= 1),
+          _buildProgressStep(2, 'Verify', controller.currentStep.value >= 2),
+          _buildProgressStep(3, 'Photo', controller.currentStep.value >= 3),
+          _buildProgressStep(4, 'Submit', controller.currentStep.value >= 4),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildProgressStep(int step, String label, bool isCompleted) {
@@ -98,14 +64,18 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen> {
             shape: BoxShape.circle,
           ),
           child: Center(
-            child: isCompleted
-                ? const Icon(Icons.check, color: AppColors.whiteColor)
-                : Text(
-                    step.toString(),
-                    style: AppTextStyles.body.copyWith(
-                      color: isCompleted ? AppColors.whiteColor : AppColors.greyColor,
+            child:
+                isCompleted
+                    ? const Icon(Icons.check, color: AppColors.whiteColor)
+                    : Text(
+                      step.toString(),
+                      style: AppTextStyles.body.copyWith(
+                        color:
+                            isCompleted
+                                ? AppColors.whiteColor
+                                : AppColors.greyColor,
+                      ),
                     ),
-                  ),
           ),
         ),
         const SizedBox(height: 4),
@@ -119,72 +89,66 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen> {
       height: 250,
       child: Stack(
         children: [
-          _currentLatLng == null
-              ? const Center(child: CircularProgressIndicator())
-              : FlutterMap(
-                  mapController: _mapController,
+          Obx(() {
+            final latLng = controller.currentLatLng.value;
+            return latLng == null
+                ? const Center(child: CircularProgressIndicator())
+                : FlutterMap(
+                  mapController: controller.mapController,
                   options: MapOptions(
-                    initialCenter: _currentLatLng!,
-                    initialZoom: 16.0,
-                    onMapReady: () {
-                      setState(() {
-                        _isMapReady = true;
-                      });
-                      if (_currentLatLng != null) {
-                        _mapController.move(_currentLatLng!, 16);
-                      }
-                    },
-                    onTap: (tapPosition, point) {
-                      setState(() => _currentLatLng = point);
-                    },
+                    initialCenter: latLng,
+                    initialZoom: 16,
+                    onMapReady: controller.onMapReady,
+                    onTap:
+                        (tapPosition, point) =>
+                            controller.updateLocationFromTap(point),
                   ),
                   children: [
                     TileLayer(
                       urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                       userAgentPackageName: 'com.example.security_guard',
                     ),
-                    if (_currentLatLng != null)
-                      MarkerLayer(
-                        markers: [
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: latLng,
+                          width: 40,
+                          height: 40,
+                          child: const Icon(
+                            Icons.location_on,
+                            color: Colors.red,
+                            size: 40,
+                          ),
+                        ),
+                        // Add markers for selected location if any
+                        if (controller.selectedLocation.value != null &&
+                            controller.locationCoordinates[controller.selectedLocation.value] != null)
                           Marker(
-                            point: _currentLatLng!,
+                            point: controller.locationCoordinates[controller.selectedLocation.value]!,
                             width: 40,
                             height: 40,
-                            child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+                            child: const Icon(
+                              Icons.place,
+                              color: AppColors.primary,
+                              size: 40,
+                            ),
                           ),
-                        ],
-                      ),
+                      ],
+                    ),
                   ],
-                ),
+                );
+          }),
           Positioned(
-            top: 10,
+            bottom: 10,
             right: 10,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.whiteColor,
-                foregroundColor: AppColors.primary,
-                elevation: 2,
-              ),
-              onPressed: () => showModalBottomSheet(
-                context: context,
-                builder: (_) => _buildLocationList(),
-              ),
-              child: const Text("List View"),
+            child: FloatingActionButton(
+              mini: true,
+              backgroundColor: AppColors.primary,
+              onPressed: () => controller.fetchLocation(),
+              child: const Icon(Icons.my_location, color: Colors.white),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildLocationList() {
-    final locations = ['Main Gate', 'Backyard', 'Warehouse Entry', 'Parking Lot'];
-    return ListView.builder(
-      itemCount: locations.length,
-      itemBuilder: (_, index) => ListTile(
-        leading: const Icon(Icons.place),
-        title: Text(locations[index]),
-        onTap: () => Navigator.pop(context),
       ),
     );
   }
@@ -195,8 +159,22 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildLocationOption(Icons.qr_code_scanner, 'Scan QR Code', 'Scan point marker'),
-          _buildLocationOption(Icons.location_on, 'Manual Select', 'Choose from list'),
+          GestureDetector(
+            onTap: () => controller.openQRScanner(),
+            child: _buildLocationOption(
+              Icons.qr_code_scanner,
+              'Scan QR Code',
+              'Scan point marker',
+            ),
+          ),
+          GestureDetector(
+            onTap: () => controller.showLocationSelectionDialog(),
+            child: _buildLocationOption(
+              Icons.location_on,
+              'Manual Select',
+              'Choose from list',
+            ),
+          ),
         ],
       ),
     );
@@ -216,7 +194,10 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen> {
           Container(
             width: 40,
             height: 40,
-            decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+            decoration: const BoxDecoration(
+              color: AppColors.primary,
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, color: AppColors.whiteColor),
           ),
           const SizedBox(height: 8),
@@ -228,56 +209,129 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen> {
   }
 
   Widget _buildVerificationSection() {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(color: AppColors.lightGrey, borderRadius: BorderRadius.circular(8)),
-      child: const ListTile(
-        leading: Icon(Icons.gps_fixed, color: AppColors.primary),
-        title: Text('Verify Location'),
-        subtitle: Text('Check geo-fence'),
-        trailing: Icon(Icons.chevron_right),
+    return Obx(() => InkWell(
+      onTap: () => controller.verifyLocation(),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        decoration: BoxDecoration(
+          color: controller.isLocationVerified.value 
+              ? AppColors.greenColor.withOpacity(0.1) 
+              : AppColors.lightGrey,
+          borderRadius: BorderRadius.circular(8),
+          border: controller.isLocationVerified.value
+              ? Border.all(color: AppColors.greenColor, width: 1)
+              : null,
+        ),
+        child: ListTile(
+          leading: controller.isVerifying.value
+              ? SizedBox(
+                  width: 24, 
+                  height: 24, 
+                  child: CircularProgressIndicator(strokeWidth: 2)
+                )
+              : Icon(
+                  controller.isLocationVerified.value
+                      ? Icons.check_circle
+                      : Icons.gps_fixed,
+                  color: controller.isLocationVerified.value
+                      ? AppColors.greenColor
+                      : AppColors.primary,
+                ),
+          title: Text('Verify Location'),
+          subtitle: Text(
+            controller.isLocationVerified.value
+                ? 'Location verified'
+                : controller.selectedLocation.value != null
+                    ? 'Check geo-fence for ${controller.selectedLocation.value}'
+                    : 'Check geo-fence',
+          ),
+          trailing: Icon(Icons.chevron_right),
+        ),
       ),
-    );
+    ));
   }
 
   Widget _buildPhotoSection() {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
+    return Obx(() => Container(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppColors.lightGrey, borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(
+        color: AppColors.lightGrey,
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Column(
         children: [
           Container(
             height: 180,
-            decoration: BoxDecoration(color: const Color(0xFF222831), borderRadius: BorderRadius.circular(8)),
-            child: const Center(
-              child: Icon(Icons.camera_alt, color: AppColors.greyColor, size: 48),
+            decoration: BoxDecoration(
+              color: controller.capturedImage.value != null
+                  ? Colors.transparent
+                  : const Color(0xFF222831),
+              borderRadius: BorderRadius.circular(8),
             ),
+            clipBehavior: Clip.antiAlias,
+            child: controller.capturedImage.value != null
+                ? Image.file(
+                    controller.capturedImage.value!,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                  )
+                : const Center(
+                    child: Icon(
+                      Icons.camera_alt,
+                      color: AppColors.greyColor,
+                      size: 48,
+                    ),
+                  ),
           ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(Icons.flash_on, color: AppColors.greyColor),
-              Container(
-                width: 60,
-                height: 60,
-                decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                child: const Icon(Icons.camera_alt, color: AppColors.whiteColor, size: 30),
+              IconButton(
+                icon: Icon(
+                  controller.isFlashOn.value ? Icons.flash_on : Icons.flash_off,
+                  color: controller.isFlashOn.value 
+                      ? AppColors.primary 
+                      : AppColors.greyColor,
+                ),
+                onPressed: () => controller.toggleFlash(),
               ),
-              const Icon(Icons.refresh, color: AppColors.greyColor),
+              GestureDetector(
+                onTap: () => controller.takePicture(),
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.camera_alt,
+                    color: AppColors.whiteColor,
+                    size: 30,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh, color: AppColors.greyColor),
+                onPressed: () => controller.retakePhoto(),
+              ),
             ],
           ),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildNotesSection() {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(color: AppColors.lightGrey, borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(
+        color: AppColors.lightGrey,
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: TextField(
         decoration: InputDecoration(
           hintText: 'Add patrol notes (optional)',
@@ -285,23 +339,30 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen> {
           border: InputBorder.none,
         ),
         maxLines: 3,
+        onChanged: (value) => controller.notes.value = value,
       ),
     );
   }
 
   Widget _buildSubmitButton() {
-    return Container(
+    return Obx(() => Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: controller.isLocationVerified.value && controller.capturedImage.value != null
+            ? () => controller.submitReport()
+            : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
+          disabledBackgroundColor: AppColors.greyColor,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        child: Text('Submit Patrol Report', style: AppTextStyles.subtitle.copyWith(color: AppColors.whiteColor)),
+        child: Text(
+          'Submit Patrol Report',
+          style: AppTextStyles.subtitle.copyWith(color: AppColors.whiteColor),
+        ),
       ),
-    );
+    ));
   }
 }
