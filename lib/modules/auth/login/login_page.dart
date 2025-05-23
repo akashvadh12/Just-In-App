@@ -8,8 +8,7 @@ import 'package:security_guard/shared/widgets/custom_button.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 class LoginPage extends StatelessWidget {
-  const LoginPage({Key? key}) : super(key: key);
-
+  LoginPage({Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     final authController = Get.find<AuthController>();
@@ -118,8 +117,9 @@ class LoginPage extends StatelessWidget {
                         ),
                       ),
                       SizedBox(height: 8),
-                      TextField(
+                      TextFormField(
                         controller: authController.credentialsController,
+
                         decoration: InputDecoration(
                           hintText: 'Enter your credentials',
                           hintStyle: AppTextStyles.hint,
@@ -181,30 +181,46 @@ class LoginPage extends StatelessWidget {
                         ],
                       ),
                       SizedBox(height: 8),
-                      TextField(
-                        controller: authController.passwordController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          hintText: 'Enter password or OTP',
-                          hintStyle: AppTextStyles.hint,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(6),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(6),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(6),
-                            borderSide: BorderSide(color: AppColors.primary),
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
+                      Obx(
+                        () => TextField(
+                          controller: authController.passwordController,
+                          obscureText: authController.isPasswordHidden.value,
+                          decoration: InputDecoration(
+                            hintText: 'Enter password or OTP',
+                            hintStyle: AppTextStyles.hint,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(6),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade300,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(6),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade300,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(6),
+                              borderSide: BorderSide(color: AppColors.primary),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                authController.isPasswordHidden.value
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                              onPressed:
+                                  authController.togglePasswordVisibility,
+                            ),
                           ),
                         ),
                       ),
+
                       SizedBox(height: 8),
 
                       // Forgot Password Button
@@ -233,7 +249,7 @@ class LoginPage extends StatelessWidget {
                                   : 'Signup',
                           onPressed: () {
                             authController.login();
-                            
+                            authController.clearFields();
                           },
                           isLoading: authController.isLoading.value,
                         ),

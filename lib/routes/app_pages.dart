@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:security_guard/modules/auth/ForgotPassword/forgot_password_controller.dart';
 import 'package:security_guard/modules/auth/ForgotPassword/forgot_password_view.dart';
 import 'package:security_guard/modules/auth/controllers/auth_controller.dart';
 import 'package:security_guard/modules/auth/login/login_page.dart';
@@ -20,12 +21,18 @@ class AppPages {
       }),
     ),
     GetPage(
+      name: Routes.FORGOT_PASSWORD,
+      page: () => ForgotPasswordView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<ForgotPasswordController>(() => ForgotPasswordController());
+      }),
+    ),
+    GetPage(
       name: Routes.HOME,
       page: () => HomeView(),
       binding: BindingsBuilder(() {
         Get.lazyPut<HomeController>(() => HomeController());
       }),
     ),
-    GetPage(name: Routes.FORGOT_PASSWORD, page: () => ForgotPasswordView()),
   ];
 }

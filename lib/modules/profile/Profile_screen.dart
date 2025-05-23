@@ -8,136 +8,21 @@ import 'package:security_guard/modules/home/view/home_view.dart';
 import 'package:security_guard/modules/issue/report_issue/report_incident_screen.dart';
 import 'package:security_guard/modules/petrol/views/patrol_check_in_view.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
+import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
+import 'package:security_guard/modules/profile/liveChatScreen.dart';
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:image_picker/image_picker.dart';
-
-// Mock login screen
-class LoginScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: Text('Login Screen')));
-  }
-}
 
 // Mock live chat screen
 class LiveChatScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    Get.put(LocalStorageService());
     return Scaffold(
       appBar: AppBar(title: const Text('Live Chat Support'), elevation: 0),
       body: Center(child: Text('Live Chat Screen Coming Soon')),
     );
-  }
-}
-
-// Legal document screen for Terms & Conditions and Privacy Policy
-class LegalDocumentScreen extends StatelessWidget {
-  final String title;
-  final String content;
-
-  const LegalDocumentScreen({
-    required this.title,
-    required this.content,
-    Key? key,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title, style: const TextStyle(color: Colors.white)),
-        elevation: 0,
-      ),
-      body: Markdown(
-        data: content,
-        styleSheet: MarkdownStyleSheet(
-          h1: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          h2: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          p: const TextStyle(fontSize: 16),
-          listBullet: const TextStyle(fontSize: 16),
-        ),
-        padding: const EdgeInsets.all(16),
-      ),
-    );
-  }
-}
-
-class ProfileController extends GetxController {
-  var selectedIndex = 4.obs;
-  var userName = "John Anderson".obs;
-  var userEmail = "john.anderson@security.com".obs;
-  var userPhone = "+1 (555) 123-4567".obs;
-  var userId = "GU-2024-0123".obs;
-  var profileImage = "https://randomuser.me/api/portraits/men/32.jpg".obs;
-
-  void logout() {
-    // Clear user data or tokens from storage
-    // Example: SharedPreferences or GetStorage
-    Get.find<LocalStorageService>().clearUserData(); // Implement this service
-
-    // Navigate to login screen
-    Get.offAll(() => LoginScreen());
-  }
-
-  void updateProfile({String? name, String? email, String? phone}) {
-    if (name != null) userName.value = name;
-    if (email != null) userEmail.value = email;
-    if (phone != null) userPhone.value = phone;
-
-    // Save to local storage or send update to API
-    // Example: saveUserDataToStorage();
-
-    Get.snackbar(
-      'Success',
-      'Profile updated successfully',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-    );
-  }
-
-  void updatePassword(String currentPassword, String newPassword) {
-    // Implementation for password change - would normally check current password
-    // against stored/API value and then update if valid
-
-    // Simulate API call with Future.delayed
-    Get.dialog(
-      const Center(child: CircularProgressIndicator()),
-      barrierDismissible: false,
-    );
-
-    Future.delayed(const Duration(seconds: 2), () {
-      Get.back(); // Close loading dialog
-
-      // Show success message
-      Get.snackbar(
-        'Success',
-        'Password updated successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-    });
-  }
-
-  Future<void> updateProfilePicture() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-
-    if (image != null) {
-      // Update the profile image
-      profileImage.value = image.path;
-
-      // Show a snackbar to confirm the update
-      Get.snackbar(
-        'Success',
-        'Profile picture updated successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-    }
   }
 }
 
@@ -243,34 +128,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // Show logout confirmation dialog
-  void _showLogoutConfirmationDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirm Logout'),
-          content: const Text('Are you sure you want to logout?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                controller.logout();
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Logout'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+void _showLogoutConfirmationDialog() {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Confirm Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context), // Cancel closes dialog
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              controller.logout();    // 1. Call logout on your controller
+              Navigator.pop(context); // 2. Close the dialog
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Logout'),
+          ),
+        ],
+      );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
+    Get.put(LocalStorageService());
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile', style: TextStyle(color: Colors.white)),

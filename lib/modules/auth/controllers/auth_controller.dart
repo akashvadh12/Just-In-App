@@ -1,113 +1,178 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
-import 'package:security_guard/modules/auth/ForgotPassword/forgot_password_view.dart';
+import 'package:security_guard/routes/app_rout.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:security_guard/shared/widgets/bottomnavigation/bottomnavigation.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // <-- Import added
 
 class AuthController extends GetxController {
-  final TextEditingController credentialsController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  
-  final RxBool isLoading = false.obs;
-  final RxBool isSendingOTP = false.obs;
-  final RxBool isLoginMode = true.obs; // Track login/signup mode
+  final credentialsController = TextEditingController(); // This can be userID or phone number
+  final passwordController = TextEditingController();
 
-  final RxBool isLoggedIn = false.obs; // New: Track if user is logged in
+  final isPasswordHidden = true.obs;
+  final isLoading = false.obs;
+  final isSendingOTP = false.obs;
+  final isLoginMode = true.obs;
+  final isLoggedIn = false.obs;
+  final loginWithPhone = false.obs; // <-- NEW toggle for login method
 
-  /// Simulated check login status (could be replaced with real local storage check)
-  Future<void> checkLoginStatus() async {
-    await Future.delayed(Duration(seconds: 1));
-    // For demo, assuming user is logged out by default
-    isLoggedIn.value = false;
-
-    // TODO: Replace above with real check:
-    // Example: isLoggedIn.value = await yourStorage.hasValidToken();
+  void togglePasswordVisibility() {
+    isPasswordHidden.toggle();
   }
 
-  /// Call this after successful login/signup
-  void setLoggedIn(bool status) {
-    isLoggedIn.value = status;
+  void toggleLoginMethod() {
+    loginWithPhone.toggle();
+    clearFields();
   }
 
   void toggleMode() {
     isLoginMode.toggle();
+    clearFields();
+  }
+
+  void clearFields() {
     credentialsController.clear();
     passwordController.clear();
   }
-  
-  void login() {
-    if (credentialsController.text.isEmpty || passwordController.text.isEmpty) {
-      Get.snackbar(
-        'Error', 
-        'Please enter your credentials and password/OTP',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.error,
-        colorText: Colors.white,
-      );
-      return;
-    }
-    
-    isLoading.value = true;
-    
-    // Simulate API call for login
-    Future.delayed(Duration(seconds: 2), () {
-      isLoading.value = false;
-      // On success:
-      setLoggedIn(true);
 
-      Get.snackbar(
-        'Success', 
-        isLoginMode.value ? 'Login successful!' : 'Signup successful!',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.secondary,
-        colorText: Colors.white,
-      );
-
-      // Navigate to main app screen after login (optional)
-      // Get.offAll(() => BottomNavBarWidget()); // Import this if used here
-    });
-  }
-  
-  void sendOTP() {
-    if (credentialsController.text.isEmpty) {
-      Get.snackbar(
-        'Error', 
-        'Please enter your phone number or employee ID first',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.error,
-        colorText: Colors.white,
-      );
-      return;
-    }
-    
-    isSendingOTP.value = true;
-    
-    // Simulate API call
-    Future.delayed(Duration(seconds: 2), () {
-      isSendingOTP.value = false;
-      Get.snackbar(
-        'Success', 
-        'OTP sent successfully!',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.greenColor,
-        colorText: Colors.white,
-      );
-    });
-  }
-  
-  void navigateToForgotPassword() {
-    Get.to(() => ForgotPasswordView());
-  }
-
-  /// Log the user out
-  void logout() {
+  Future<void> checkLoginStatus() async {
+    await Future.delayed(const Duration(seconds: 1));
     isLoggedIn.value = false;
-    credentialsController.clear();
-    passwordController.clear();
-    // You can also clear saved tokens/local storage here
-    // Then navigate to login screen
-    // Get.offAll(() => GuardAttendanceScreen());
   }
-  
+
+  void setLoggedIn(bool status) {
+    isLoggedIn.value = status;
+  }
+
+  Future<void> login() async {
+    final input = credentialsController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (input.isEmpty || password.isEmpty) {
+      _showErrorSnackbar('Please enter your ${loginWithPhone.value ? 'phone number' : 'user ID'} and password.');
+      return;
+    }
+
+    isLoading.value = true;
+    final url = Uri.parse(
+      'https://qrapp.solarvision-cairo.com/api/User/UserAuthentication',
+    );
+
+    try {
+      final body = loginWithPhone.value
+          ? {
+              "phoneNumber": input,
+              "password": password,
+            }
+          : {
+              "userName": input,
+              "password": password,
+            };
+
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(body),
+      );
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 &&
+          data['status'] == true &&
+          data['userInf']?.isNotEmpty == true) {
+        final user = data['userInf'][0];
+        final name = user['name'] ?? 'User';
+
+        var deviceToken = user['deviceToken'];
+        await _saveDeviceTokenToPrefs(deviceToken);
+
+        setLoggedIn(true);
+        _showSuccessSnackbar('Welcome, $name!');
+
+        Get.offAll(() => BottomNavBarWidget());
+      } else {
+        _showErrorSnackbar('Invalid ${loginWithPhone.value ? 'phone number' : 'user ID'} or password');
+      }
+    } catch (e) {
+      _showErrorSnackbar('An error occurred: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> _saveDeviceTokenToPrefs(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('deviceToken', token);
+  }
+
+  Future<String?> getDeviceTokenFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('deviceToken');
+  }
+
+  void sendOTP() async {
+    if (credentialsController.text.trim().isEmpty) {
+      _showErrorSnackbar('Please enter your phone number first');
+      return;
+    }
+
+    isSendingOTP.value = true;
+    await Future.delayed(const Duration(seconds: 2));
+    isSendingOTP.value = false;
+
+    _showSnackbar(
+      title: 'Success',
+      message: 'OTP sent successfully!',
+      backgroundColor: AppColors.greenColor,
+    );
+  }
+
+  void navigateToForgotPassword() {
+    Get.toNamed(Routes.FORGOT_PASSWORD);
+  }
+
+  void logout() async {
+    isLoggedIn.value = false;
+    clearFields();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('deviceToken');
+
+    // Optionally: Get.offAll(() => LoginScreen());
+  }
+
+  void _showErrorSnackbar(String message) {
+    _showSnackbar(
+      title: 'Error',
+      message: message,
+      backgroundColor: AppColors.error,
+    );
+  }
+
+  void _showSuccessSnackbar(String message) {
+    _showSnackbar(
+      title: 'Success',
+      message: message,
+      backgroundColor: AppColors.secondary,
+    );
+  }
+
+  void _showSnackbar({
+    required String title,
+    required String message,
+    required Color backgroundColor,
+  }) {
+    Get.snackbar(
+      title,
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: backgroundColor,
+      colorText: Colors.white,
+    );
+  }
+
   @override
   void onClose() {
     credentialsController.dispose();

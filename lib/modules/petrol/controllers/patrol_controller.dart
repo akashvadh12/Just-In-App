@@ -15,25 +15,30 @@ class PatrolCheckInController extends GetxController {
   final mapController = MapController();
   final isMapReady = false.obs;
   final notes = ''.obs;
-  
+
   // Camera functionality
   final ImagePicker _picker = ImagePicker();
   final Rxn<File> capturedImage = Rxn<File>();
   final isFlashOn = false.obs;
-  
+
   // QR code result
   final qrResult = Rxn<String>();
-  
+
   // Selected location
   final selectedLocationIndex = Rxn<int>();
   final selectedLocation = Rxn<String>();
-  
+
   // Location verification
   final isLocationVerified = false.obs;
   final isVerifying = false.obs;
-  
-  final locationOptions = ['Main Gate', 'Backyard', 'Warehouse Entry', 'Parking Lot'];
-  
+
+  final locationOptions = [
+    'Main Gate',
+    'Backyard',
+    'Warehouse Entry',
+    'Parking Lot',
+  ];
+
   // Predefined geo-fence coordinates for each location (example values)
   final Map<String, LatLng> locationCoordinates = {
     'Main Gate': LatLng(37.4219999, -122.0840575),
@@ -87,7 +92,7 @@ class PatrolCheckInController extends GetxController {
     // Reset verification when location changes
     isLocationVerified.value = false;
   }
-  
+
   // QR Code Scanner
   void openQRScanner() async {
     final cameraPermission = await Permission.camera.request();
@@ -100,55 +105,56 @@ class PatrolCheckInController extends GetxController {
       );
       return;
     }
-    
-    Get.to(() => QRScannerView(
-      onQRViewCreated: (QRViewController controller) {
-        controller.scannedDataStream.listen((scanData) {
-          if (scanData.code != null) {
-            qrResult.value = scanData.code;
-            
-            // Check if scanned QR matches any location
-            final locationEntry = locationCoordinates.entries
-                .firstWhere(
-                  (entry) => entry.key == scanData.code,
-                  orElse: () => const MapEntry<String, LatLng>("", LatLng(0, 0)),
+
+    Get.to(
+      () => QRScannerView(
+        onQRViewCreated: (QRViewController controller) {
+          controller.scannedDataStream.listen((scanData) {
+            if (scanData.code != null) {
+              qrResult.value = scanData.code;
+
+              // Check if scanned QR matches any location
+              final locationEntry = locationCoordinates.entries.firstWhere(
+                (entry) => entry.key == scanData.code,
+                orElse: () => const MapEntry<String, LatLng>("", LatLng(0, 0)),
+              );
+
+              if (locationEntry.key.isNotEmpty) {
+                selectedLocation.value = locationEntry.key;
+                currentLatLng.value = locationEntry.value;
+
+                if (isMapReady.value) {
+                  mapController.move(locationEntry.value, 16);
+                }
+
+                // Find and set index
+                final index = locationOptions.indexOf(locationEntry.key);
+                if (index != -1) {
+                  selectedLocationIndex.value = index;
+                }
+
+                Get.back(); // Close scanner
+                Get.snackbar(
+                  'Success',
+                  'Location found: ${locationEntry.key}',
+                  backgroundColor: AppColors.secondary,
+                  colorText: Colors.white,
                 );
-            
-            if (locationEntry.key.isNotEmpty) {
-              selectedLocation.value = locationEntry.key;
-              currentLatLng.value = locationEntry.value;
-              
-              if (isMapReady.value) {
-                mapController.move(locationEntry.value, 16);
+              } else {
+                Get.snackbar(
+                  'Invalid QR Code',
+                  'This QR code is not associated with any patrol checkpoint',
+                  backgroundColor: AppColors.error,
+                  colorText: Colors.white,
+                );
               }
-              
-              // Find and set index
-              final index = locationOptions.indexOf(locationEntry.key);
-              if (index != -1) {
-                selectedLocationIndex.value = index;
-              }
-              
-              Get.back(); // Close scanner
-              Get.snackbar(
-                'Success',
-                'Location found: ${locationEntry.key}',
-                backgroundColor: AppColors.secondary,
-                colorText: Colors.white,
-              );
-            } else {
-              Get.snackbar(
-                'Invalid QR Code',
-                'This QR code is not associated with any patrol checkpoint',
-                backgroundColor: AppColors.error,
-                colorText: Colors.white,
-              );
             }
-          }
-        });
-      },
-    ));
+          });
+        },
+      ),
+    );
   }
-  
+
   // Manual location selection
   void showLocationSelectionDialog() {
     Get.dialog(
@@ -162,10 +168,7 @@ class PatrolCheckInController extends GetxController {
             children: [
               Text(
                 'Select Checkpoint',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 16),
               ...List.generate(
@@ -178,7 +181,8 @@ class PatrolCheckInController extends GetxController {
                     onChanged: (value) {
                       selectedLocationIndex.value = value;
                       selectedLocation.value = locationOptions[index];
-                      final latLng = locationCoordinates[locationOptions[index]];
+                      final latLng =
+                          locationCoordinates[locationOptions[index]];
                       if (latLng != null) {
                         currentLatLng.value = latLng;
                         if (isMapReady.value) {
@@ -205,7 +209,7 @@ class PatrolCheckInController extends GetxController {
       ),
     );
   }
-  
+
   // Verify location
   Future<void> verifyLocation() async {
     if (currentLatLng.value == null) {
@@ -217,12 +221,12 @@ class PatrolCheckInController extends GetxController {
       );
       return;
     }
-    
+
     isVerifying.value = true;
-    
+
     // Simulate verification process
     await Future.delayed(Duration(seconds: 2));
-    
+
     // If we have a selected location, check if current position is within range (50 meters)
     if (selectedLocation.value != null) {
       final checkpointLatLng = locationCoordinates[selectedLocation.value];
@@ -233,7 +237,7 @@ class PatrolCheckInController extends GetxController {
           checkpointLatLng.latitude,
           checkpointLatLng.longitude,
         );
-        
+
         if (distance <= 50) {
           isLocationVerified.value = true;
           Get.snackbar(
@@ -264,10 +268,10 @@ class PatrolCheckInController extends GetxController {
       );
       currentStep.value = 2; // Move to next step
     }
-    
+
     isVerifying.value = false;
   }
-  
+
   // Camera functions
   Future<void> takePicture() async {
     final cameraPermission = await Permission.camera.request();
@@ -280,14 +284,14 @@ class PatrolCheckInController extends GetxController {
       );
       return;
     }
-    
+
     try {
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
         preferredCameraDevice: CameraDevice.rear,
         imageQuality: 80,
       );
-      
+
       if (photo != null) {
         capturedImage.value = File(photo.path);
         currentStep.value = 3; // Move to next step
@@ -301,7 +305,7 @@ class PatrolCheckInController extends GetxController {
       );
     }
   }
-  
+
   void toggleFlash() {
     isFlashOn.toggle();
     Get.snackbar(
@@ -311,11 +315,11 @@ class PatrolCheckInController extends GetxController {
       colorText: Colors.white,
     );
   }
-  
+
   void retakePhoto() {
     capturedImage.value = null;
   }
-  
+
   // Submit patrol report
   Future<void> submitReport() async {
     if (!isLocationVerified.value) {
@@ -327,7 +331,7 @@ class PatrolCheckInController extends GetxController {
       );
       return;
     }
-    
+
     if (capturedImage.value == null) {
       Get.snackbar(
         'Error',
@@ -337,7 +341,7 @@ class PatrolCheckInController extends GetxController {
       );
       return;
     }
-    
+
     // Simulate submitting
     Get.dialog(
       Dialog(
@@ -355,11 +359,11 @@ class PatrolCheckInController extends GetxController {
       ),
       barrierDismissible: false,
     );
-    
+
     await Future.delayed(Duration(seconds: 3));
-    
+
     Get.back(); // Close dialog
-    
+
     Get.snackbar(
       'Success',
       'Patrol report submitted successfully',
@@ -367,14 +371,14 @@ class PatrolCheckInController extends GetxController {
       colorText: Colors.white,
       duration: Duration(seconds: 5),
     );
-    
+
     // Reset and go back
     Future.delayed(Duration(seconds: 2), () {
       resetForm();
       Get.back(); // Return to previous screen
     });
   }
-  
+
   void resetForm() {
     capturedImage.value = null;
     selectedLocation.value = null;
@@ -388,9 +392,9 @@ class PatrolCheckInController extends GetxController {
 // QR Scanner View
 class QRScannerView extends StatelessWidget {
   final Function(QRViewController) onQRViewCreated;
-  
+
   const QRScannerView({required this.onQRViewCreated});
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

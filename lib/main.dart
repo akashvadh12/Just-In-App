@@ -6,7 +6,6 @@ import 'package:security_guard/modules/attandance/GuardAttendanceScreen.dart';
 import 'package:security_guard/modules/auth/ForgotPassword/forgot_password_controller.dart';
 import 'package:security_guard/modules/auth/controllers/auth_controller.dart';
 import 'package:security_guard/modules/auth/login/login_page.dart';
-
 import 'package:security_guard/modules/issue/IssueResolution/issue_details_Screens/Issue_details_Screen.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_view/issue_screen.dart';
@@ -14,12 +13,40 @@ import 'package:security_guard/modules/issue/report_issue/report_incident_screen
 import 'package:security_guard/modules/notification/notification_screen.dart';
 import 'package:security_guard/modules/petrol/views/patrol_check_in_view.dart';
 import 'package:security_guard/modules/profile/Profile_screen.dart';
+import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 import 'package:security_guard/routes/app_pages.dart';
 import 'package:security_guard/routes/app_rout.dart';
 import 'package:security_guard/shared/widgets/bottomnavigation/bottomnavigation.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Get.putAsync(() => LocalStorageService().init());
+
+  // Initialize services before running the app
+  await initServices();
+  Get.put(AuthController());
+
   runApp(MyApp());
+}
+
+// Initialize all essential services
+Future<void> initServices() async {
+  print('Starting services initialization...');
+
+  try {
+    // Initialize LocalStorageService first
+    await Get.putAsync(() => LocalStorageService().init(), permanent: true);
+
+    // You can initialize other services here as well
+    // Example:
+    // await Get.putAsync(() => SomeOtherService().init(), permanent: true);
+
+    print('All services initialized successfully');
+  } catch (e) {
+    print('Error initializing services: $e');
+    // Handle initialization errors gracefully
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -39,7 +66,8 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: RootScreen(),
-
+      getPages: AppPages.routes,
+      // Uncomment these if you want to use routes
       // initialRoute: AppPages.INITIAL,
       // getPages: AppPages.routes,
       // initialBinding: BindingsBuilder(() {
@@ -48,7 +76,9 @@ class MyApp extends StatelessWidget {
       // }),
     );
   }
-}class RootScreen extends StatelessWidget {
+}
+
+class RootScreen extends StatelessWidget {
   RootScreen({Key? key}) : super(key: key);
 
   final AuthController authController = Get.put(AuthController());
@@ -59,7 +89,7 @@ class MyApp extends StatelessWidget {
 
     return Obx(() {
       return authController.isLoggedIn.value
-          ? BottomNavBarWidget()   // User logged in, show main app
+          ? BottomNavBarWidget() // User logged in, show main app
           : LoginPage(); // Not logged in, show login screen
     });
   }
