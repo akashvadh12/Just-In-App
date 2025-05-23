@@ -1,54 +1,90 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:security_guard/modules/auth/models/user_model.dart';
+import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 
 class HomeController extends GetxController {
   // User data
-  final userName = 'John'.obs;
+  final userName = 'User'.obs;
   final userPhotoUrl = ''.obs;
+  final userId = ''.obs;
   final notificationCount = 1.obs;
   final currentDate = DateTime.now().obs;
-  
+
+  @override
+  void onInit() {
+    super.onInit();
+    loadUserData();
+  }
+
+  void loadUserData() {
+    try {
+      final storage = LocalStorageService.instance;
+      final user = storage.getUserModel();
+
+      if (user != null) {
+        userName.value = user.name;
+        userPhotoUrl.value = user.photoPath;
+        userId.value = user.userId;
+      }
+    } catch (e) {
+      print('Error loading user data in HomeController: $e');
+    }
+  }
+
   // Attendance data
   final isClockIn = true.obs;
   final clockInTime = '07:45 AM'.obs;
   final hoursToday = '6h 15m'.obs;
-  
+
   // Patrol data
   final completedPatrols = 4.obs;
   final totalPatrols = 6.obs;
-  
+
   // Issues data
   final activeIssues = 2.obs;
-  
+
   // Recent activities
-  final recentActivities = [
-    {
-      'type': 'patrol',
-      'title': 'Completed patrol round 6',
-      'time': '15m ago',
-      'icon': Icons.directions_walk,
-    },
-    {
-      'type': 'attendance',
-      'title': 'Marked attendance',
-      'time': '2h ago',
-      'icon': Icons.fingerprint,
-    },
-    {
-      'type': 'issue',
-      'title': 'Resolved issue #45',
-      'time': '4h ago',
-      'icon': Icons.warning,
-    },
-  ].obs;
-  
+  final recentActivities =
+      [
+        {
+          'type': 'patrol',
+          'title': 'Completed patrol round 6',
+          'time': '15m ago',
+          'icon': Icons.directions_walk,
+        },
+        {
+          'type': 'attendance',
+          'title': 'Marked attendance',
+          'time': '2h ago',
+          'icon': Icons.fingerprint,
+        },
+        {
+          'type': 'issue',
+          'title': 'Resolved issue #45',
+          'time': '4h ago',
+          'icon': Icons.warning,
+        },
+      ].obs;
+
   // Navigation index
   final selectedIndex = 0.obs;
-  
+
   // Formatting logic for the date
   String get formattedDate {
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     final day = currentDate.value.day;
     final month = months[currentDate.value.month - 1];

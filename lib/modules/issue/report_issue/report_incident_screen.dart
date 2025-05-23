@@ -9,6 +9,15 @@ import 'package:latlong2/latlong.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_view/issue_screen.dart';
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as path;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
+import 'dart:convert';
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:path/path.dart' as path;
 
 class IncidentReportScreen extends StatefulWidget {
   const IncidentReportScreen({Key? key}) : super(key: key);
@@ -25,6 +34,11 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
   List<XFile> _selectedPhotos = [];
   LatLng? _currentPosition;
   final MapController _mapController = MapController();
+
+  Future<String?> getAuthTokenFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('authToken');
+  }
 
   @override
   void initState() {
@@ -76,25 +90,108 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
     }
   }
 
-  void _submitReport() {
-    if (_descriptionController.text.trim().isEmpty || _currentPosition == null) {
+  Future<void> _submitReport() async {
+    if (_descriptionController.text.trim().isEmpty ||
+        _currentPosition == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill required fields')),
       );
       return;
     }
 
-    // Report submission logic
-    Get.to(const IssuesScreen());
+    // Retrieve the auth token first
+    final token = await getAuthTokenFromPrefs();
+    print(token);
+    if (token == null || token.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You must be logged in to submit report')),
+      );
+      // Optionally navigate to login screen
+      return;
+    }
 
-    print('Incident Reported:');
-    print('Location: $_currentPosition');
-    print('Description: ${_descriptionController.text}');
-    print('Images count: ${_selectedPhotos.length}');
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Report submitted successfully!')),
+    final uri = Uri.parse(
+      "https://qrapp.solarvision-cairo.com/api/Admin/UpsertIncidentReport",
     );
+
+    final headers = {
+      'Authorization': 'Bearer $token',
+      // Add Content-Type only for non-multipart requests
+    };
+
+    if (_selectedPhotos.isEmpty) {
+      // No photos, send JSON
+      final body = {
+        "LocationName": 'Alpha 1',
+        "SiteId": '1',
+        "UserId": '20240805',
+        "Latitude": _currentPosition!.latitude.toString(),
+        "Longitude": _currentPosition!.longitude.toString(),
+        "Status": 'Active',
+        "CompanyId": '1',
+        "Description": _descriptionController.text.trim(),
+      };
+
+      final response = await http.post(
+        uri,
+        headers: {...headers, 'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Report submitted successfully!')),
+        );
+        Get.off(const IssuesScreen());
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Submission failed: ${response.reasonPhrase}'),
+          ),
+        );
+      }
+    } else {
+      // Photos selected, send multipart request
+      final request = http.MultipartRequest("POST", uri);
+
+      request.headers.addAll(headers);
+
+      request.fields['LocationName'] = 'Alpha 1';
+      request.fields['SiteId'] = '1';
+      request.fields['UserId'] = '20240805';
+      request.fields['Latitude'] = _currentPosition!.latitude.toString();
+      request.fields['Longitude'] = _currentPosition!.longitude.toString();
+      request.fields['Status'] = 'Active';
+      request.fields['CompanyId'] = '1';
+      request.fields['Description'] = _descriptionController.text.trim();
+
+      final photo = _selectedPhotos.first;
+      final mimeType = lookupMimeType(photo.path) ?? 'application/octet-stream';
+      final mediaType = MediaType.parse(mimeType);
+      final file = await http.MultipartFile.fromPath(
+        'Photo',
+        photo.path,
+        filename: path.basename(photo.path),
+        contentType: mediaType,
+      );
+      request.files.add(file);
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Report submitted successfully!')),
+        );
+        Get.off(const IssuesScreen());
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Submission failed: ${response.reasonPhrase}'),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -130,34 +227,36 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: AppColors.greyColor.withOpacity(0.3)),
               ),
-              child: _currentPosition == null
-                  ? const Center(child: CircularProgressIndicator())
-                  : FlutterMap(
-                      mapController: _mapController,
-                      options: MapOptions(
-                        initialCenter: _currentPosition!,
-                        initialZoom: 15.0,
-                      ),
-                      children: [
-                        TileLayer(
-                          urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+              child:
+                  _currentPosition == null
+                      ? const Center(child: CircularProgressIndicator())
+                      : FlutterMap(
+                        mapController: _mapController,
+                        options: MapOptions(
+                          initialCenter: _currentPosition!,
+                          initialZoom: 15.0,
                         ),
-                        MarkerLayer(
-                          markers: [
-                            Marker(
-                              point: _currentPosition!,
-                              width: 40,
-                              height: 40,
-                              child: const Icon(
-                                Icons.location_pin,
-                                color: Colors.red,
-                                size: 40,
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                          ),
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: _currentPosition!,
+                                width: 40,
+                                height: 40,
+                                child: const Icon(
+                                  Icons.location_pin,
+                                  color: Colors.red,
+                                  size: 40,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                            ],
+                          ),
+                        ],
+                      ),
             ),
             const SizedBox(height: 24),
 
@@ -175,7 +274,9 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
                       margin: const EdgeInsets.only(right: 8),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.greyColor.withOpacity(0.5)),
+                        border: Border.all(
+                          color: AppColors.greyColor.withOpacity(0.5),
+                        ),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -184,7 +285,10 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
                           const SizedBox(height: 2),
                           Text(
                             'Add Photo',
-                            style: TextStyle(fontSize: 12, color: AppColors.greyColor),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.greyColor,
+                            ),
                           ),
                         ],
                       ),
@@ -239,7 +343,9 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
                 controller: _descriptionController,
                 maxLines: 8,
                 maxLength: _maxCharacters,
-                inputFormatters: [LengthLimitingTextInputFormatter(_maxCharacters)],
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(_maxCharacters),
+                ],
                 decoration: const InputDecoration(
                   hintText: 'Describe the incident in detail...',
                   border: InputBorder.none,

@@ -1,14 +1,16 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:security_guard/core/theme/app_colors.dart';
-import 'package:security_guard/routes/app_rout.dart';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:security_guard/core/theme/app_colors.dart';
+import 'package:security_guard/modules/auth/models/user_model.dart';
+import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
+import 'package:security_guard/routes/app_rout.dart';
 import 'package:security_guard/shared/widgets/bottomnavigation/bottomnavigation.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // <-- Import added
 
 class AuthController extends GetxController {
-  final credentialsController = TextEditingController(); // This can be userID or phone number
+  final credentialsController =
+      TextEditingController(); // Can be phone number or user ID
   final passwordController = TextEditingController();
 
   final isPasswordHidden = true.obs;
@@ -16,11 +18,9 @@ class AuthController extends GetxController {
   final isSendingOTP = false.obs;
   final isLoginMode = true.obs;
   final isLoggedIn = false.obs;
-  final loginWithPhone = false.obs; // <-- NEW toggle for login method
+  final loginWithPhone = false.obs;
 
-  void togglePasswordVisibility() {
-    isPasswordHidden.toggle();
-  }
+  void togglePasswordVisibility() => isPasswordHidden.toggle();
 
   void toggleLoginMethod() {
     loginWithPhone.toggle();
@@ -38,8 +38,13 @@ class AuthController extends GetxController {
   }
 
   Future<void> checkLoginStatus() async {
-    await Future.delayed(const Duration(seconds: 1));
-    isLoggedIn.value = false;
+    try {
+      final storage = LocalStorageService.instance;
+      isLoggedIn.value = storage.isLoggedIn();
+    } catch (e) {
+      print('Error checking login status: $e');
+      isLoggedIn.value = false;
+    }
   }
 
   void setLoggedIn(bool status) {
@@ -51,29 +56,26 @@ class AuthController extends GetxController {
     final password = passwordController.text.trim();
 
     if (input.isEmpty || password.isEmpty) {
-      _showErrorSnackbar('Please enter your ${loginWithPhone.value ? 'phone number' : 'user ID'} and password.');
+      _showErrorSnackbar(
+        'Please enter your ${loginWithPhone.value ? 'phone number' : 'user ID'} and password.',
+      );
       return;
     }
 
     isLoading.value = true;
     final url = Uri.parse(
-      'https://qrapp.solarvision-cairo.com/api/User/UserAuthentication',
+      'https://official.solarvision-cairo.com/api/Auth/UserAuthentication',
     );
 
     try {
-      final body = loginWithPhone.value
-          ? {
-              "phoneNumber": input,
-              "password": password,
-            }
-          : {
-              "userName": input,
-              "password": password,
-            };
+      final body =
+          loginWithPhone.value
+              ? {"phoneNumber": input, "password": password}
+              : {"userName": input, "password": password};
 
       final response = await http.post(
         url,
-        headers: {"Content-Type": "application/json"},
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
 
@@ -81,44 +83,65 @@ class AuthController extends GetxController {
 
       if (response.statusCode == 200 &&
           data['status'] == true &&
-          data['userInf']?.isNotEmpty == true) {
-        final user = data['userInf'][0];
-        final name = user['name'] ?? 'User';
+          (data['userInf']?.isNotEmpty ?? false)) {
+        final userData = data['userInf'][0];
+        final name = userData['name'] ?? 'User';
+        final deviceToken = userData['deviceToken'] ?? '';
 
-        var deviceToken = user['deviceToken'];
-        await _saveDeviceTokenToPrefs(deviceToken);
+        // Create user model from API response
+        final user = UserModel.fromJson(userData);
+
+        // Get storage service
+        final storage = LocalStorageService.instance;
+
+        // Save user data
+        await storage.saveUserModel(user);
+
+        // Save login status
+        await storage.saveLoginStatus(true);
+
+        // Save auth token if available
+        final accessToken = data['accessToken'] as String?;
+        if (accessToken != null) {
+          await storage.saveToken(accessToken);
+        }
+
+        // Save device token
+        if (deviceToken != null && deviceToken.isNotEmpty) {
+          await storage.saveString('deviceToken', deviceToken);
+        }
 
         setLoggedIn(true);
         _showSuccessSnackbar('Welcome, $name!');
 
         Get.offAll(() => BottomNavBarWidget());
       } else {
-        _showErrorSnackbar('Invalid ${loginWithPhone.value ? 'phone number' : 'user ID'} or password');
+        _showErrorSnackbar(
+          'Invalid ${loginWithPhone.value ? 'phone number' : 'user ID'} or password.',
+        );
       }
     } catch (e) {
-      _showErrorSnackbar('An error occurred: $e');
+      _showErrorSnackbar('Login failed. Please try again later.\nError: $e');
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> _saveDeviceTokenToPrefs(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('deviceToken', token);
+  // Get auth token from storage
+  Future<String?> getAuthToken() async {
+    final storage = LocalStorageService.instance;
+    return storage.getToken();
   }
 
-  Future<String?> getDeviceTokenFromPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('deviceToken');
-  }
-
-  void sendOTP() async {
-    if (credentialsController.text.trim().isEmpty) {
-      _showErrorSnackbar('Please enter your phone number first');
+  Future<void> sendOTP() async {
+    final phone = credentialsController.text.trim();
+    if (phone.isEmpty) {
+      _showErrorSnackbar('Please enter your phone number first.');
       return;
     }
 
     isSendingOTP.value = true;
+
     await Future.delayed(const Duration(seconds: 2));
     isSendingOTP.value = false;
 
@@ -133,14 +156,23 @@ class AuthController extends GetxController {
     Get.toNamed(Routes.FORGOT_PASSWORD);
   }
 
-  void logout() async {
-    isLoggedIn.value = false;
-    clearFields();
+  Future<void> logout() async {
+    try {
+      // Clear user data from storage
+      final storage = LocalStorageService.instance;
+      await storage.clearUserData();
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('deviceToken');
+      // Update UI state
+      isLoggedIn.value = false;
+      clearFields();
 
-    // Optionally: Get.offAll(() => LoginScreen());
+      // Navigate to login screen
+      Get.offAllNamed(Routes.LOGIN);
+    } catch (e) {
+      print('Error during logout: $e');
+      // Force navigation to login screen even if there's an error
+      Get.offAllNamed(Routes.LOGIN);
+    }
   }
 
   void _showErrorSnackbar(String message) {
@@ -170,6 +202,8 @@ class AuthController extends GetxController {
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: backgroundColor,
       colorText: Colors.white,
+      duration: const Duration(seconds: 3),
+      margin: const EdgeInsets.all(10),
     );
   }
 

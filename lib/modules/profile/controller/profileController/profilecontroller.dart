@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:security_guard/modules/auth/controllers/auth_controller.dart';
 import 'package:security_guard/modules/auth/login/login_page.dart';
+import 'package:security_guard/modules/auth/models/user_model.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 
 class ProfileController extends GetxController {
@@ -24,7 +25,17 @@ class ProfileController extends GetxController {
     try {
       final storage = LocalStorageService.instance;
 
-      // Load saved user data
+      // Try to load from complete user model first
+      final user = storage.getUserModel();
+      if (user != null) {
+        userName.value = user.name;
+        userEmail.value = user.email ?? '';
+        userId.value = user.userId;
+        profileImage.value = user.photoPath;
+        return;
+      }
+
+      // Fallback to individual fields for backward compatibility
       final savedName = storage.getUserName();
       final savedEmail = storage.getUserEmail();
       final savedPhone = storage.getUserPhone();

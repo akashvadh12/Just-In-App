@@ -1,9 +1,10 @@
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:security_guard/modules/auth/models/user_model.dart';
 
 class LocalStorageService extends GetxService {
   static LocalStorageService get instance => Get.find<LocalStorageService>();
-  
+
   late SharedPreferences _prefs;
 
   // Initialize the service
@@ -22,7 +23,7 @@ class LocalStorageService extends GetxService {
   // User data methods
   Future<void> saveUserData({
     String? name,
-    String? email, 
+    String? email,
     String? phone,
     String? userId,
     String? profileImage,
@@ -31,7 +32,8 @@ class LocalStorageService extends GetxService {
     if (email != null) await _prefs.setString('user_email', email);
     if (phone != null) await _prefs.setString('user_phone', phone);
     if (userId != null) await _prefs.setString('user_id', userId);
-    if (profileImage != null) await _prefs.setString('profile_image', profileImage);
+    if (profileImage != null)
+      await _prefs.setString('profile_image', profileImage);
   }
 
   // Get user data
@@ -54,6 +56,31 @@ class LocalStorageService extends GetxService {
 
   bool isLoggedIn() => _prefs.getBool('is_logged_in') ?? false;
 
+  // Save complete user model
+  Future<void> saveUserModel(UserModel user) async {
+    try {
+      await _prefs.setString('user_data', user.toJsonString());
+
+      // Also save individual fields for backward compatibility
+      await saveUserData(
+        name: user.name,
+        email: user.email,
+        userId: user.userId,
+        profileImage: user.photoPath,
+      );
+
+      print('User model saved successfully');
+    } catch (e) {
+      print('Error saving user model: $e');
+    }
+  }
+
+  // Get complete user model
+  UserModel? getUserModel() {
+    final userDataString = _prefs.getString('user_data');
+    return UserModel.fromJsonString(userDataString);
+  }
+
   // Clear all user data (for logout)
   Future<void> clearUserData() async {
     try {
@@ -64,7 +91,9 @@ class LocalStorageService extends GetxService {
       await _prefs.remove('profile_image');
       await _prefs.remove('auth_token');
       await _prefs.remove('is_logged_in');
-      
+      await _prefs.remove('user_data');
+      await _prefs.remove('deviceToken');
+
       // Remove any other user-specific data
       print('User data cleared successfully');
     } catch (e) {
