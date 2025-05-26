@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
-import 'package:security_guard/modules/attandance/GuardAttendanceScreen.dart';
+import 'package:security_guard/modules/attandance/AttendanceScreen/GuardAttendanceScreen.dart';
+
 import 'package:security_guard/modules/home/view/home_view.dart';
 import 'package:security_guard/modules/issue/report_issue/report_incident_screen.dart';
 import 'package:security_guard/modules/petrol/views/patrol_check_in_view.dart';

@@ -1,7 +1,8 @@
 // File: lib/modules/home/views/home_view.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:security_guard/modules/attandance/GuardAttendanceScreen.dart';
+import 'package:security_guard/modules/attandance/AttendanceScreen/GuardAttendanceScreen.dart';
+
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/issue/report_issue/report_incident_screen.dart';
 import 'package:security_guard/modules/notification/notification_screen.dart';

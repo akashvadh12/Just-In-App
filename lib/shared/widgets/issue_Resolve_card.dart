@@ -1,29 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
-import 'package:security_guard/modules/issue/IssueResolution/issue_details_Screens/Issue_details_Screen.dart';
+import 'package:security_guard/modules/issue/IssueResolution/issuDetails.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
+ // Add this import
 
-class IssueCardDetails extends StatelessWidget {
-  final Issue issue1;
+class IssueCard extends StatelessWidget {
+  final Issue issue;
+  final Function(Issue)? onIssueUpdated; // Optional callback for issue updates
 
-  const IssueCardDetails({super.key, required this.issue1});
+  const IssueCard({
+    super.key,
+    required this.issue,
+    this.onIssueUpdated,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          // Navigate to issue detail screen
+          final updatedIssue = await Navigator.push<Issue>(
             context,
             MaterialPageRoute(
-              builder: (context) => IssueDetailScreen(issue: issue1),
+              builder: (context) => IssueDetailScreen(issue: issue),
             ),
           );
+          
+          // If issue was updated and callback is provided, call it
+          if (updatedIssue != null && onIssueUpdated != null) {
+            onIssueUpdated!(updatedIssue);
+          }
         },
         child: Padding(
           padding: const EdgeInsets.all(12.0),
@@ -37,17 +51,14 @@ class IssueCardDetails extends StatelessWidget {
                   width: 80,
                   height: 80,
                   child: Image.network(
-                    issue1.imageUrl,
+                    issue.imageUrl,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
                         width: 80,
                         height: 80,
                         color: AppColors.lightGrey,
-                        child: const Icon(
-                          Icons.image_not_supported,
-                          color: AppColors.greyColor,
-                        ),
+                        child: const Icon(Icons.image_not_supported, color: AppColors.greyColor),
                       );
                     },
                     loadingBuilder: (context, child, loadingProgress) {
@@ -74,19 +85,19 @@ class IssueCardDetails extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            issue1.title,
+                            issue.title,
                             style: AppTextStyles.heading.copyWith(fontSize: 16),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        _buildStatusBadge(issue1.status),
+                        _buildStatusBadge(issue.status),
                       ],
                     ),
                     const SizedBox(height: 4),
                     // Description
                     Text(
-                      issue1.description,
+                      issue.description,
                       style: AppTextStyles.body,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -97,6 +108,7 @@ class IssueCardDetails extends StatelessWidget {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
+                        // Location
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -108,13 +120,14 @@ class IssueCardDetails extends StatelessWidget {
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
-                                issue1.location,
+                                issue.location,
                                 style: AppTextStyles.hint,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
+                        // Time
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -125,7 +138,7 @@ class IssueCardDetails extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              issue1.time,
+                              issue.time,
                               style: AppTextStyles.hint,
                               overflow: TextOverflow.ellipsis,
                             ),

@@ -6,7 +6,6 @@ import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
-import 'package:security_guard/modules/attandance/GuardAttendanceScreen.dart';
 import 'package:security_guard/modules/issue/report_issue/report_incident_screen.dart';
 import 'package:security_guard/modules/petrol/views/patrol_check_in_view.dart';
 import 'package:security_guard/modules/profile/Profile_screen.dart';

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
-import 'package:security_guard/shared/widgets/issue_card.dart';
+import 'package:security_guard/shared/widgets/issue_Resolve_card.dart';
 
 class IssuesScreen extends StatefulWidget {
   const IssuesScreen({super.key});
@@ -19,7 +19,7 @@ class _IssuesScreenState extends State<IssuesScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this, initialIndex: 0);
     _loadMockData();
   }
 
@@ -37,13 +37,13 @@ class _IssuesScreenState extends State<IssuesScreen>
       ),
       Issue(
         id: '2',
-        title: 'Unauthorized Vehicle',
-        description: 'Unknown car parked for over 2 hours.',
-        location: 'Basement Parking',
-        time: 'Today, 09:15 AM',
-        status: IssueStatus.pending,
+        title: 'Broken Security Camera',
+        description: 'Security camera not working properly. Needs replacement.',
+        location: 'Building A - East Wing, Floor 3',
+        time: 'Jan 23, 2024 - 14:30',
+        status: IssueStatus.new_issue,
         imageUrl:
-            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSTOXICu8ncKz5Tt6JFfD1u_vC8kofoSBK5Pw&s',
+            'https://5.imimg.com/data5/SELLER/Default/2022/8/YZ/VH/FX/46273132/dome-cctv-camera.jpg',
       ),
       Issue(
         id: '3',
@@ -58,6 +58,15 @@ class _IssuesScreenState extends State<IssuesScreen>
     ];
   }
 
+  void _handleIssueUpdate(Issue updatedIssue) {
+    setState(() {
+      final index = _issues.indexWhere((issue) => issue.id == updatedIssue.id);
+      if (index != -1) {
+        _issues[index] = updatedIssue;
+      }
+    });
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -68,6 +77,7 @@ class _IssuesScreenState extends State<IssuesScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        iconTheme: const IconThemeData(color: Colors.white),
         title: const Text('Issues', style: TextStyle(color: Colors.white)),
         actions: [
           IconButton(
@@ -84,14 +94,12 @@ class _IssuesScreenState extends State<IssuesScreen>
               controller: _tabController,
               children: [
                 _buildIssuesList(IssueStatus.new_issue),
-                _buildIssuesList(IssueStatus.pending),
                 _buildIssuesList(IssueStatus.resolved),
               ],
             ),
           ),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
@@ -100,12 +108,9 @@ class _IssuesScreenState extends State<IssuesScreen>
       color: AppColors.whiteColor,
       child: TabBar(
         controller: _tabController,
-        labelStyle:
-            AppTextStyles
-                .body, // Replace 'body' with an existing TextStyle from AppTextStyles
+        labelStyle: AppTextStyles.body,
         tabs: [
           Tab(text: 'New (${_getIssueCount(IssueStatus.new_issue)})'),
-          Tab(text: 'Pending (${_getIssueCount(IssueStatus.pending)})'),
           Tab(text: 'Resolved (${_getIssueCount(IssueStatus.resolved)})'),
         ],
       ),
@@ -116,34 +121,42 @@ class _IssuesScreenState extends State<IssuesScreen>
     final filteredIssues =
         _issues.where((issue) => issue.status == status).toList();
 
+    if (filteredIssues.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              status == IssueStatus.new_issue
+                  ? Icons.check_circle_outline
+                  : Icons.history,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              status == IssueStatus.new_issue
+                  ? 'No new issues'
+                  : 'No resolved issues',
+              style: AppTextStyles.body.copyWith(
+                color: Colors.grey[600],
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: filteredIssues.length,
       itemBuilder: (context, index) {
-        return IssueCard(issue: filteredIssues[index]);
+        return IssueCard(
+          issue: filteredIssues[index],
+          onIssueUpdated: _handleIssueUpdate,
+        );
       },
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      currentIndex: 2, // Issues tab
-      selectedItemColor: AppColors.primary,
-      unselectedItemColor: Colors.grey,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.view_list), label: 'Patrol'),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.report_problem),
-          label: 'Issues',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.access_time),
-          label: "Attendance",
-        ),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-      ],
     );
   }
 

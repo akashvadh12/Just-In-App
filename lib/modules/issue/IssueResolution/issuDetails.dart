@@ -293,7 +293,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.primary),
+                borderSide: const BorderSide(color:AppColors.primary),
               ),
               filled: true,
               fillColor: Colors.grey[50],
@@ -318,13 +318,13 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                 // Handle add photos
                 _showSnackBar('Add photos functionality to be implemented');
               },
-              icon: Icon(Icons.camera_alt, color: AppColors.primary),
-              label: Text(
+              icon: const Icon(Icons.camera_alt, color: AppColors.primary),
+              label: const Text(
                 'Add Updated Photos',
                 style: TextStyle(color: AppColors.primary),
               ),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.primary),
+                side: const BorderSide(color:AppColors.primary),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -342,8 +342,8 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                 // Handle location capture
                 _showSnackBar('Location capture functionality to be implemented');
               },
-              icon: Icon(Icons.location_on, color: AppColors.primary),
-              label: Text(
+              icon: const Icon(Icons.location_on, color: AppColors.primary),
+              label: const Text(
                 'Capture Current Location',
                 style: TextStyle(color: AppColors.primary),
               ),
