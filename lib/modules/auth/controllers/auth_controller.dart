@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/modules/auth/models/user_model.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 import 'package:security_guard/routes/app_rout.dart';
 import 'package:security_guard/shared/widgets/bottomnavigation/bottomnavigation.dart';
+import 'package:security_guard/data/services/api_post_service.dart';
 
 class AuthController extends GetxController {
   final credentialsController =
@@ -51,6 +51,8 @@ class AuthController extends GetxController {
     isLoggedIn.value = status;
   }
 
+  final _apiService = ApiPostServices();
+
   Future<void> login() async {
     final input = credentialsController.text.trim();
     final password = passwordController.text.trim();
@@ -63,57 +65,33 @@ class AuthController extends GetxController {
     }
 
     isLoading.value = true;
-    final url = Uri.parse(
-      'https://official.solarvision-cairo.com/api/Auth/UserAuthentication',
-    );
-
     try {
-      final body =
-          loginWithPhone.value
-              ? {"phoneNumber": input, "password": password}
-              : {"userName": input, "password": password};
-
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
+      final responseData = await _apiService.login(
+        input: input,
+        password: password,
+        loginWithPhone: loginWithPhone.value,
       );
 
-      final Map<String, dynamic> data = jsonDecode(response.body);
-
-      if (response.statusCode == 200 &&
-          data['status'] == true &&
-          (data['userInf']?.isNotEmpty ?? false)) {
-        final userData = data['userInf'][0];
+      if (responseData['status'] == true &&
+          (responseData['userInf']?.isNotEmpty ?? false)) {
+        final userData = responseData['userInf'][0] as Map<String, dynamic>;
         final name = userData['name'] ?? 'User';
         final deviceToken = userData['deviceToken'] ?? '';
 
-        // Create user model from API response
         final user = UserModel.fromJson(userData);
-
-        // Get storage service
         final storage = LocalStorageService.instance;
 
-        // Save user data
         await storage.saveUserModel(user);
-
-        // Save login status
         await storage.saveLoginStatus(true);
 
-        // Save auth token if available
-        final accessToken = data['accessToken'] as String?;
-        if (accessToken != null) {
-          await storage.saveToken(accessToken);
-        }
-
-        // Save device token
-        if (deviceToken != null && deviceToken.isNotEmpty) {
+        final accessToken = responseData['accessToken'] as String?;
+        if (accessToken != null) await storage.saveToken(accessToken);
+        if (deviceToken.isNotEmpty) {
           await storage.saveString('deviceToken', deviceToken);
         }
 
         setLoggedIn(true);
         _showSuccessSnackbar('Welcome, $name!');
-
         Get.offAll(() => BottomNavBarWidget());
       } else {
         _showErrorSnackbar(
