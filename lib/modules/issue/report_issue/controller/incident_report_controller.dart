@@ -9,8 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:security_guard/data/services/api_post_service.dart';
-import 'package:security_guard/shared/widgets/snackbar_helper.dart';
-
+import 'package:security_guard/shared/widgets/Custom_Snackbar/Custom_Snackbar.dart';
 class IncidentReportController extends GetxController {
   final descriptionController = TextEditingController();
   final characterCount = 0.obs;
@@ -55,14 +54,15 @@ class IncidentReportController extends GetxController {
       final imgs = await ImagePicker().pickMultiImage();
       if (imgs != null && imgs.isNotEmpty) selectedPhotos.addAll(imgs);
     } on PlatformException catch (e) {
-      SnackbarHelper.error('Failed to pick images: $e');
+      CustomSnackbar.showError('Failed to pick images: $e',
+      'Please try again later.');
     }
   }
 
   Future<void> submitReport() async {
     if (descriptionController.text.trim().isEmpty ||
         currentPosition.value == null) {
-      SnackbarHelper.error('Please fill all required fields.');
+     CustomSnackbar.showError('Please fill all required fields.',"Description and location are required.");
       return;
     }
     isLoading.value = true;
@@ -79,13 +79,15 @@ class IncidentReportController extends GetxController {
         photoPaths: selectedPhotos.map((f) => f.path).toList(),
       );
       if (resp['status'] == true) {
-        SnackbarHelper.success('Report submitted successfully!');
+        CustomSnackbar.showSuccess('Report submitted successfully!',
+            'Your incident report has been submitted and will be reviewed shortly.');
         Get.offAllNamed('/issues');
       } else {
-        SnackbarHelper.error('Submission failed: ${resp['message'] ?? 'unknown'}');
+      CustomSnackbar.showError('Submission failed',
+          'Please try again later or contact support.');
       }
     } catch (e) {
-      SnackbarHelper.error('Error submitting report: $e');
+      CustomSnackbar.showError('Error submitting report: $e','Please try again later.');
     } finally {
       isLoading.value = false;
     }

@@ -1,3 +1,5 @@
+enum IssueStatus { new_issue, pending, resolved }
+
 class Issue {
   final String id;
   final String title;
@@ -16,10 +18,31 @@ class Issue {
     required this.status,
     required this.imageUrl,
   });
-}
 
-enum IssueStatus {
-  new_issue,
-  pending,
-  resolved
+  /// Factory constructor to create Issue from JSON
+  factory Issue.fromJson(Map<String, dynamic> json) {
+    return Issue(
+      id: json['id'] ?? '',
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      location: json['location'] ?? '',
+      time: json['time'] ?? '',
+      status: _parseStatus(json['status']),
+      imageUrl: json['imageUrl'] ?? '',
+    );
+  }
+
+  /// Helper method to parse IssueStatus from a string
+  static IssueStatus _parseStatus(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+        return IssueStatus.pending;
+      case 'resolved':
+        return IssueStatus.resolved;
+      case 'new':
+      case 'new_issue':
+      default:
+        return IssueStatus.new_issue;
+    }
+  }
 }
