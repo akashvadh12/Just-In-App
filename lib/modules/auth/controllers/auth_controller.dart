@@ -77,8 +77,10 @@ class AuthController extends GetxController {
           (responseData['userInf']?.isNotEmpty ?? false)) {
         final userData = responseData['userInf'][0] as Map<String, dynamic>;
         final name = userData['name'] ?? 'User';
-
         final accessToken = userData['deviceToken'] ?? '';
+        final userId =
+            userData['userID']?.toString() ??
+            ''; // 👈 Get userId here (make sure 'userID' is the correct key)
 
         final user = UserModel.fromJson(userData);
 
@@ -86,13 +88,15 @@ class AuthController extends GetxController {
         await prefs.setString('user_data', jsonEncode(user.toJson()));
         await prefs.setBool('isLoggedIn', true);
         await prefs.setString('auth_token', accessToken);
+        await prefs.setString('user_id', userId); // 👈 Save userId here
+        print('Raw userData: $userData');
 
         print("Auth Token saved: 😁😁👍 $accessToken");
+        print("User ID saved: 😁😁👍 $userId");
 
         setLoggedIn(true);
         _showSuccessSnackbar('Welcome, $name!');
 
-      
         Get.offAll(() => BottomNavBarWidget());
       } else {
         _showErrorSnackbar(

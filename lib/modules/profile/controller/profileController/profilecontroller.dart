@@ -48,10 +48,10 @@ class ProfileController extends GetxController {
   Future<String?> getUserId() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // First try to get from user_id key
       String? storedUserId = prefs.getString('user_id');
-      
+
       // If not found, try to get from user_data
       if (storedUserId == null || storedUserId.isEmpty) {
         final userData = await getUserData();
@@ -61,7 +61,7 @@ class ProfileController extends GetxController {
           await prefs.setString('user_id', storedUserId);
         }
       }
-      
+
       print('Retrieved user ID from SharedPreferences: $storedUserId');
       return storedUserId?.isNotEmpty == true ? storedUserId : null;
     } catch (e) {
@@ -102,12 +102,13 @@ class ProfileController extends GetxController {
         );
 
         await prefs.setString('user_data', jsonEncode(updatedUser.toJson()));
-        
+
         // Update individual fields
         if (name != null) await prefs.setString('user_name', name);
         if (email != null) await prefs.setString('user_email', email);
         if (phone != null) await prefs.setString('user_phone', phone);
-        if (profileImage != null) await prefs.setString('profile_image', profileImage);
+        if (profileImage != null)
+          await prefs.setString('profile_image', profileImage);
         if (userId != null) await prefs.setString('user_id', userId);
       } else if (userId != null) {
         // If no current user data but we have a userId, store it
@@ -122,10 +123,7 @@ class ProfileController extends GetxController {
   // ==================== API METHODS ====================
 
   Map<String, String> _getHeaders({String? token}) {
-    final headers = {
-      'Content-Type': 'application/json',
-      'Accept': '*/*',
-    };
+    final headers = {'Content-Type': 'application/json', 'Accept': '*/*'};
 
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
@@ -138,10 +136,11 @@ class ProfileController extends GetxController {
     try {
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
-      
+
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (response.body.isNotEmpty) {
-          final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+          final responseData =
+              jsonDecode(response.body) as Map<String, dynamic>;
           // Add status true if not present for successful responses
           if (!responseData.containsKey('status')) {
             responseData['status'] = true;
@@ -151,25 +150,26 @@ class ProfileController extends GetxController {
         return {'status': true, 'message': 'Success'};
       } else {
         print('API Error: ${response.statusCode} - ${response.body}');
-        
+
         // Try to parse error response
         Map<String, dynamic> errorResponse = {
           'status': false,
           'message': 'Server error: ${response.statusCode}',
           'error_code': response.statusCode,
         };
-        
+
         try {
           if (response.body.isNotEmpty) {
             final errorData = jsonDecode(response.body) as Map<String, dynamic>;
-            errorResponse['message'] = errorData['message'] ?? 
-                                     errorData['error'] ?? 
-                                     'Server error: ${response.statusCode}';
+            errorResponse['message'] =
+                errorData['message'] ??
+                errorData['error'] ??
+                'Server error: ${response.statusCode}';
           }
         } catch (e) {
           print('Could not parse error response: $e');
         }
-        
+
         return errorResponse;
       }
     } catch (e) {
@@ -222,12 +222,14 @@ class ProfileController extends GetxController {
 
       print('Updating profile for userId: $userId');
       print('Request body: ${jsonEncode(body)}');
-      
+
       final response = await http
           .put(url, headers: _getHeaders(token: token), body: jsonEncode(body))
           .timeout(_timeout);
 
-      print('Update profile response: ${response.statusCode} - ${response.body}');
+      print(
+        'Update profile response: ${response.statusCode} - ${response.body}',
+      );
       return await _handleResponse(response);
     } catch (e) {
       print('Error updating profile: $e');
@@ -256,12 +258,14 @@ class ProfileController extends GetxController {
 
       print('Updating password for userId: $userId');
       print('Request body: ${jsonEncode(body)}');
-      
+
       final response = await http
           .put(url, headers: _getHeaders(token: token), body: jsonEncode(body))
           .timeout(_timeout);
 
-      print('Update password response: ${response.statusCode} - ${response.body}');
+      print(
+        'Update password response: ${response.statusCode} - ${response.body}',
+      );
       return await _handleResponse(response);
     } catch (e) {
       print('Error updating password: $e');
@@ -315,7 +319,7 @@ class ProfileController extends GetxController {
         userEmail.value = userData.email ?? '';
         userPhone.value = userData.phone ?? '';
         profileImage.value = userData.photoPath ?? '';
-        
+
         print('Loaded user data from storage. UserId: ${userId.value}');
         return;
       }
@@ -339,10 +343,11 @@ class ProfileController extends GetxController {
   Future<void> fetchUserProfile() async {
     try {
       isLoading.value = true;
-      
+
       // Get current user ID - prefer the observable value if set
-      String? currentUserId = userId.value.isNotEmpty ? userId.value : await getUserId();
-      
+      String? currentUserId =
+          userId.value.isNotEmpty ? userId.value : await getUserId();
+
       if (currentUserId == null || currentUserId.isEmpty) {
         _showErrorSnackbar('User ID not found. Please log in again.');
         return;
@@ -350,7 +355,7 @@ class ProfileController extends GetxController {
 
       print('Fetching profile for user ID: $currentUserId');
       final response = await getProfileAPI(currentUserId);
-      
+
       if (response != null && response['status'] == true) {
         final profileData = response['data'] ?? response;
 
@@ -358,8 +363,10 @@ class ProfileController extends GetxController {
         final name = profileData['name'] ?? '';
         final email = profileData['email'] ?? profileData['email_No'] ?? '';
         final phone = profileData['phone'] ?? profileData['mobile_No'] ?? '';
-        final image = profileData['photoPath'] ?? profileData['profile_image'] ?? '';
-        final fetchedUserId = profileData['userId'] ?? profileData['id'] ?? currentUserId;
+        final image =
+            profileData['photoPath'] ?? profileData['profile_image'] ?? '';
+        final fetchedUserId =
+            profileData['userId'] ?? profileData['id'] ?? currentUserId;
 
         // Update observable values
         userId.value = fetchedUserId;
@@ -377,7 +384,9 @@ class ProfileController extends GetxController {
           profileImage: image,
         );
 
-        print('Profile fetched successfully for user: $name (ID: $fetchedUserId)');
+        print(
+          'Profile fetched successfully for user: $name (ID: $fetchedUserId)',
+        );
       } else {
         final errorMessage = response?['message'] ?? 'Failed to fetch profile';
         print('Failed to fetch profile: $errorMessage');
@@ -403,10 +412,11 @@ class ProfileController extends GetxController {
 
     try {
       isLoading.value = true;
-      
+
       // Get current user ID
-      String? currentUserId = userId.value.isNotEmpty ? userId.value : await getUserId();
-      
+      String? currentUserId =
+          userId.value.isNotEmpty ? userId.value : await getUserId();
+
       if (currentUserId == null || currentUserId.isEmpty) {
         _showErrorSnackbar('User ID not found. Please log in again.');
         return;
@@ -420,7 +430,8 @@ class ProfileController extends GetxController {
         phone: phone.trim(),
       );
 
-      if (response != null && (response['status'] == true || response.containsKey('message'))) {
+      if (response != null &&
+          (response['status'] == true || response.containsKey('message'))) {
         // Update observable values
         userName.value = name.trim();
         userEmail.value = email.trim();
@@ -434,7 +445,8 @@ class ProfileController extends GetxController {
           phone: userPhone.value,
         );
 
-        final successMessage = response['message'] ?? 'Profile updated successfully';
+        final successMessage =
+            response['message'] ?? 'Profile updated successfully';
         _showSuccessSnackbar(successMessage);
         print('Profile updated successfully for user: ${userName.value}');
       } else {
@@ -466,10 +478,11 @@ class ProfileController extends GetxController {
 
     try {
       isLoading.value = true;
-      
+
       // Get current user ID
-      String? currentUserId = userId.value.isNotEmpty ? userId.value : await getUserId();
-      
+      String? currentUserId =
+          userId.value.isNotEmpty ? userId.value : await getUserId();
+
       if (currentUserId == null || currentUserId.isEmpty) {
         _showErrorSnackbar('User ID not found. Please log in again.');
         return;
@@ -482,12 +495,15 @@ class ProfileController extends GetxController {
         newPassword: newPassword,
       );
 
-      if (response != null && (response['status'] == true || response.containsKey('message'))) {
-        final successMessage = response['message'] ?? 'Password updated successfully';
+      if (response != null &&
+          (response['status'] == true || response.containsKey('message'))) {
+        final successMessage =
+            response['message'] ?? 'Password updated successfully';
         _showSuccessSnackbar(successMessage);
         print('Password updated successfully for user ID: $currentUserId');
       } else {
-        final errorMessage = response?['message'] ?? 'Failed to update password';
+        final errorMessage =
+            response?['message'] ?? 'Failed to update password';
         print('Failed to update password: $errorMessage');
         _showErrorSnackbar(errorMessage);
       }
@@ -514,8 +530,9 @@ class ProfileController extends GetxController {
         final file = File(pickedFile.path);
 
         // Get current user ID
-        String? currentUserId = userId.value.isNotEmpty ? userId.value : await getUserId();
-        
+        String? currentUserId =
+            userId.value.isNotEmpty ? userId.value : await getUserId();
+
         if (currentUserId == null || currentUserId.isEmpty) {
           _showErrorSnackbar('User ID not found. Please log in again.');
           return;
@@ -539,10 +556,7 @@ class ProfileController extends GetxController {
         } else {
           // Fallback: save locally if server upload fails
           profileImage.value = file.path;
-          await updateUserData(
-            userId: currentUserId,
-            profileImage: file.path,
-          );
+          await updateUserData(userId: currentUserId, profileImage: file.path);
           _showErrorSnackbar('Failed to upload to server, saved locally');
           print('Image saved locally due to server error');
         }
@@ -567,6 +581,14 @@ class ProfileController extends GetxController {
     return hasUserId;
   }
 
+  // Logout method: clears user data and navigates to login screen
+  Future<void> logout() async {
+    await clearUserData();
+    // Optionally clear auth token or other session data here
+    // Navigate to login screen (replace with your actual LoginScreen)
+    Get.offAllNamed('/login');
+  }
+
   // Helper method to clear user data (for logout)
   Future<void> clearUserData() async {
     try {
@@ -577,14 +599,14 @@ class ProfileController extends GetxController {
       await prefs.remove('user_email');
       await prefs.remove('user_phone');
       await prefs.remove('profile_image');
-      
+
       // Clear observable values
       userId.value = '';
       userName.value = '';
       userEmail.value = '';
       userPhone.value = '';
       profileImage.value = '';
-      
+
       print('User data cleared successfully');
     } catch (e) {
       print('Error clearing user data: $e');
