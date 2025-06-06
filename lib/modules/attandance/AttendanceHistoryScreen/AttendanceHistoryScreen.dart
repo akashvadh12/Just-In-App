@@ -1,214 +1,104 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
-import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
-import 'package:security_guard/modules/issue/report_issue/report_incident_screen.dart';
-import 'package:security_guard/modules/petrol/views/patrol_check_in_view.dart';
-import 'package:security_guard/modules/profile/Profile_screen.dart';
-import 'package:security_guard/shared/widgets/bottomnavigation/bottomnavigation.dart';
+import 'package:security_guard/modules/attandance/AttendanceHistoryScreen/attendance_history_controller.dart';
 
-class AttendanceHistoryScreen extends StatefulWidget {
+
+class AttendanceHistoryScreen extends StatelessWidget {
+  final AttendanceHistoryController controller = Get.put(AttendanceHistoryController());
+
   AttendanceHistoryScreen({super.key});
-
-  @override
-  State<AttendanceHistoryScreen> createState() =>
-      _AttendanceHistoryScreenState();
-}
-
-class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
-  String currentMonth = 'March 2024';
-
-
-  final List<AttendanceRecord> attendanceRecords = [
-    AttendanceRecord(
-      date: DateTime(2024, 3, 18),
-      checkIn: '09:00 AM',
-      checkOut: '06:30 PM',
-      avatarUrl: 'https://randomuser.me/api/portraits/women/34.jpg',
-    ),
-    AttendanceRecord(
-      date: DateTime(2024, 3, 15),
-      checkIn: '08:45 AM',
-      checkOut: '05:15 PM',
-      avatarUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
-    ),
-    AttendanceRecord(
-      date: DateTime(2024, 3, 14),
-      checkIn: '09:15 AM',
-      checkOut: '06:45 PM',
-      avatarUrl: 'https://randomuser.me/api/portraits/women/44.jpg',
-    ),
-    AttendanceRecord(
-      date: DateTime(2024, 3, 13),
-      checkIn: '08:30 AM',
-      checkOut: '05:30 PM',
-      avatarUrl: 'https://randomuser.me/api/portraits/men/55.jpg',
-    ),
-    AttendanceRecord(
-      date: DateTime(2024, 3, 12),
-      checkIn: '09:30 AM',
-      checkOut: '06:00 PM',
-      avatarUrl: 'https://randomuser.me/api/portraits/men/63.jpg',
-    ),
-    AttendanceRecord(
-      date: DateTime(2024, 3, 11),
-      checkIn: '09:00 AM',
-      checkOut: '06:30 PM',
-      avatarUrl: 'https://randomuser.me/api/portraits/women/71.jpg',
-    ),
-  ];
-
-  void _previousMonth() {
-    setState(() {
-      // For demo, simply changing the label
-      currentMonth = 'February 2024';
-    });
-  }
-
-  void _nextMonth() {
-    setState(() {
-      // For demo, simply changing the label
-      currentMonth = 'April 2024';
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Attendance History',
+          'Attendance',
           style: TextStyle(color: Colors.white),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list, color: Colors.white),
-            onPressed: () {},
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: () => controller.refreshData(),
           ),
         ],
       ),
       body: Column(
         children: [
-          _buildMonthSelector(),
+          _buildTabBar(),
           Expanded(
-            child: ListView.builder(
-              itemCount: attendanceRecords.length,
-              itemBuilder: (context, index) {
-                return _buildAttendanceCard(attendanceRecords[index]);
-              },
+            child: Obx(() {
+              if (controller.isLoading.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              switch (controller.selectedTab.value) {
+                case 0:
+                  return _buildHistoryView();
+                case 1:
+                  return _buildTodayView();
+                case 2:
+                  return _buildReportView();
+                default:
+                  return _buildHistoryView();
+              }
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabBar() {
+    return Container(
+      color: AppColors.whiteColor,
+      child: Obx(() => Row(
+        children: [
+          Expanded(
+            child: _buildTabButton(0, 'History', Icons.history),
+          ),
+          Expanded(
+            child: _buildTabButton(1, 'Today', Icons.today),
+          ),
+          Expanded(
+            child: _buildTabButton(2, 'Report', Icons.analytics),
+          ),
+        ],
+      )),
+    );
+  }
+
+  Widget _buildTabButton(int index, String title, IconData icon) {
+    final isSelected = controller.selectedTab.value == index;
+    return GestureDetector(
+      onTap: () => controller.changeTab(index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: isSelected ? AppColors.primary : Colors.transparent,
+              width: 2,
             ),
           ),
-        ],
-      ),
-      // bottomNavigationBar: bottomnavcontroller.buildScreen(),
-    );
-  }
-
-  Widget _buildMonthSelector() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      color: AppColors.whiteColor,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left),
-            onPressed: _previousMonth,
-          ),
-          Text(currentMonth, style: AppTextStyles.heading),
-          IconButton(
-            icon: const Icon(Icons.chevron_right),
-            onPressed: _nextMonth,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAttendanceCard(AttendanceRecord record) {
-    // Calculate duration
-    final duration = _calculateDuration(record.checkIn, record.checkOut);
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.whiteColor,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundImage: NetworkImage(record.avatarUrl),
-                  radius: 16,
-                ),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _formatDate(record.date),
-                      style: AppTextStyles.subtitle,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${record.checkIn} - ${record.checkOut}',
-                      style: AppTextStyles.body,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(duration, style: AppTextStyles.body),
-                  ],
-                ),
-                const Spacer(),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.greenColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'IN',
-                        style: TextStyle(
-                          color: AppColors.greenColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.greyColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'OUT',
-                        style: TextStyle(
-                          color: AppColors.greyColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+            Icon(
+              icon,
+              color: isSelected ? AppColors.primary: AppColors.greyColor,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: TextStyle(
+                color: isSelected ? AppColors.primary : AppColors.greyColor,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
             ),
           ],
         ),
@@ -216,72 +106,474 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     );
   }
 
-  String _formatDate(DateTime date) {
-    final DateFormat formatter = DateFormat('E, MMM d');
-    return formatter.format(date);
+  Widget _buildHistoryView() {
+    return Column(
+      children: [
+        _buildMonthSelector(),
+        Expanded(
+          child: Obx(() {
+            if (controller.attendanceRecords.isEmpty) {
+              return const Center(
+                child: Text('No attendance records found'),
+              );
+            }
+
+            return RefreshIndicator(
+              onRefresh: () => controller.fetchAttendanceHistory(),
+              child: ListView.builder(
+                itemCount: controller.attendanceRecords.length,
+                itemBuilder: (context, index) {
+                  return _buildAttendanceCard(controller.attendanceRecords[index]);
+                },
+              ),
+            );
+          }),
+        ),
+      ],
+    );
   }
 
-  String _calculateDuration(String checkIn, String checkOut) {
-    // Parse the times for calculation
-    final DateFormat format = DateFormat('hh:mm a');
-    final DateTime inTime = format.parse(checkIn);
-    final DateTime outTime = format.parse(checkOut);
+  Widget _buildTodayView() {
+    return Obx(() {
+      final todayData = controller.todayAttendance.value;
+      
+      if (todayData == null) {
+        return const Center(
+          child: Text('No attendance data for today'),
+        );
+      }
 
-    // Calculate the difference
-    final Duration difference = outTime.difference(inTime);
-
-    // Format as hours and minutes
-    final int hours = difference.inHours;
-    final int minutes = difference.inMinutes % 60;
-
-    return '${hours}h ${minutes}m';
+      return RefreshIndicator(
+        onRefresh: () => controller.fetchTodayAttendance(),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTodayTimeCard(todayData),
+              const SizedBox(height: 16),
+              if (todayData.records.isNotEmpty) ...[
+                Text(
+                  'Attendance Records',
+                  style: AppTextStyles.heading,
+                ),
+                const SizedBox(height: 8),
+                ...todayData.records.map((record) => _buildRecordDetailCard(record)),
+              ],
+            ],
+          ),
+        ),
+      );
+    });
   }
 
-  // Widget _buildBottomNavBar() {
-  //   return Obx(() => BottomNavigationBar(
-  //     currentIndex: controller.selectedIndex.value,
-  //     onTap: (index) {
-  //       controller.selectedIndex.value = index;
-  //       switch (index) {
-  //         case 0:
-  //           break;
-  //         case 1:
-  //           Get.to(() => PatrolCheckInScreen());
-  //           break;
-  //         case 2:
-  //           Get.to(() => IncidentReportScreen());
-  //           break;
-  //         case 3:
-  //           Get.to(() => GuardAttendanceScreen());
-  //           break;
-  //         case 4:
-  //           Get.to(() => ProfileScreen());
-  //           break;
-  //       }
-  //     },
-  //     type: BottomNavigationBarType.fixed,
-  //     selectedItemColor: Color(0xFF1E3A8A),
-  //     unselectedItemColor: Colors.grey,
-  //     items: [
-  //       BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-  //       BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Patrol'),
-  //       BottomNavigationBarItem(icon: Icon(Icons.error_outline), label: 'Issues'),
-  //       BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Attendance'),
-  //       BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-  //     ],
-  //   ));
-}
+  Widget _buildReportView() {
+    return Column(
+      children: [
+        _buildDateRangeSelector(),
+        Expanded(
+          child: Obx(() {
+            if (controller.reportRecords.isEmpty) {
+              return const Center(
+                child: Text('No attendance records found for selected date range'),
+              );
+            }
 
-class AttendanceRecord {
-  final DateTime date;
-  final String checkIn;
-  final String checkOut;
-  final String avatarUrl;
+            return RefreshIndicator(
+              onRefresh: () => controller.fetchAttendanceReport(),
+              child: ListView.builder(
+                itemCount: controller.reportRecords.length,
+                itemBuilder: (context, index) {
+                  return _buildAttendanceCard(controller.reportRecords[index]);
+                },
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
 
-  AttendanceRecord({
-    required this.date,
-    required this.checkIn,
-    required this.checkOut,
-    required this.avatarUrl,
-  });
+  Widget _buildMonthSelector() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      color: AppColors.whiteColor,
+      child: Obx(() => Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: () => controller.changeMonth(false),
+          ),
+          Text(
+            DateFormat('MMMM yyyy').format(controller.currentMonth.value),
+            style: AppTextStyles.heading,
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: () => controller.changeMonth(true),
+          ),
+        ],
+      )),
+    );
+  }
+
+  Widget _buildDateRangeSelector() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      color: AppColors.whiteColor,
+      child: Obx(() => Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _selectFromDate(),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.greyColor),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('From', style: AppTextStyles.body),
+                    Text(
+                      DateFormat('dd/MM/yyyy').format(controller.fromDate.value),
+                      style: AppTextStyles.body,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _selectToDate(),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.greyColor),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('To', style: AppTextStyles.body),
+                    Text(
+                      DateFormat('dd/MM/yyyy').format(controller.toDate.value),
+                      style: AppTextStyles.body,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      )),
+    );
+  }
+
+  Widget _buildAttendanceCard(AttendanceRecord record) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.whiteColor,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  _formatDate(record.date),
+                  style: AppTextStyles.subtitle,
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(record.status).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    record.status,
+                    style: TextStyle(
+                      color: _getStatusColor(record.status),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (record.inTime != null || record.outTime != null) ...[
+              Row(
+                children: [
+                  Icon(Icons.schedule, size: 16, color: AppColors.greyColor),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${record.inTime ?? '--:--'} - ${record.outTime ?? '--:--'}',
+                    style: AppTextStyles.body,
+                  ),
+                  if (record.duration != null) ...[
+                    const Spacer(),
+                    Text(
+                      record.duration!,
+                      style: AppTextStyles.body.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+            if (record.inPhoto != null || record.outPhoto != null) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  if (record.inPhoto != null) ...[
+                    GestureDetector(
+                      onTap: () => _showPhotoDialog(record.inPhoto!, 'Check In Photo'),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          image: DecorationImage(
+                            image: NetworkImage(record.inPhoto!),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  if (record.outPhoto != null) ...[
+                    GestureDetector(
+                      onTap: () => _showPhotoDialog(record.outPhoto!, 'Check Out Photo'),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          image: DecorationImage(
+                            image: NetworkImage(record.outPhoto!),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTodayTimeCard(TodayAttendance todayData) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.whiteColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Today\'s Attendance',
+            style: AppTextStyles.heading,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Check In', style: AppTextStyles.body),
+                    Text(
+                      todayData.checkInTime ?? '--:--',
+                      style: AppTextStyles.subtitle,
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Check Out', style: AppTextStyles.body),
+                    Text(
+                      todayData.checkOutTime ?? '--:--',
+                      style: AppTextStyles.subtitle,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecordDetailCard(AttendanceRecordDetail record) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.whiteColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.greyColor.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              image: DecorationImage(
+                image: NetworkImage(record.selfieUrl),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  record.type.toUpperCase(),
+                  style: AppTextStyles.subtitle.copyWith(
+                    color: record.type == 'in' ? AppColors.greenColor : AppColors.error,
+                  ),
+                ),
+                Text(
+                  DateFormat('dd/MM/yyyy hh:mm a').format(DateTime.parse(record.timestamp)),
+                  style: AppTextStyles.body,
+                ),
+                Text(
+                  'Lat: ${record.latitude}, Lng: ${record.longitude}',
+                  style: AppTextStyles.body,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'present':
+        return AppColors.greenColor;
+      case 'absent':
+        return AppColors.error;
+      case 'late':
+        return Colors.orange;
+      default:
+        return AppColors.greyColor;
+    }
+  }
+
+  String _formatDate(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      return DateFormat('E, MMM d').format(date);
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  void _selectFromDate() async {
+    final selectedDate = await showDatePicker(
+      context: Get.context!,
+      initialDate: controller.fromDate.value,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+    );
+    
+    if (selectedDate != null) {
+      controller.setDateRange(selectedDate, controller.toDate.value);
+    }
+  }
+
+  void _selectToDate() async {
+    final selectedDate = await showDatePicker(
+      context: Get.context!,
+      initialDate: controller.toDate.value,
+      firstDate: controller.fromDate.value,
+      lastDate: DateTime.now(),
+    );
+    
+    if (selectedDate != null) {
+      controller.setDateRange(controller.fromDate.value, selectedDate);
+    }
+  }
+
+  void _showPhotoDialog(String photoUrl, String title) {
+    Get.dialog(
+      Dialog(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              child: Text(title, style: AppTextStyles.heading),
+            ),
+            Container(
+              constraints: BoxConstraints(
+                maxHeight: Get.height * 0.6,
+                maxWidth: Get.width * 0.8,
+              ),
+              child: Image.network(
+                photoUrl,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 200,
+                    child: const Center(
+                      child: Text('Failed to load image'),
+                    ),
+                  );
+                },
+              ),
+            ),
+            TextButton(
+              onPressed: () => Get.back(),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

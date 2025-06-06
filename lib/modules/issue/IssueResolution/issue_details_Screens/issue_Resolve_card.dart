@@ -3,11 +3,40 @@ import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
 import 'package:security_guard/modules/issue/IssueResolution/issue_details_Screens/issuDetails.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
-// Add this import
+import 'package:shared_preferences/shared_preferences.dart';
+
+// SharedPreferences utility
+class SharedPrefHelper {
+  static Future<String?> getStoredUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? storedUserId = prefs.getString('user_id');
+    String? storedissueId = prefs.getString('issue_id');
+
+    // Fallback to user_data key
+    if (storedUserId == null || storedUserId.isEmpty) {
+      storedUserId = prefs.getString('user_data_user_id');
+      if (storedUserId != null && storedUserId.isNotEmpty) {
+        await prefs.setString('user_id', storedUserId); // Cache it
+      }
+    }
+
+    return storedUserId;
+  }
+
+  static Future<void> saveIssueId(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('issue_id', id);
+  }
+
+  static Future<String?> getIssueId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('issue_id');
+  }
+}
 
 class IssueCard extends StatelessWidget {
   final Issue issue;
-  final Function(Issue)? onIssueUpdated; // Optional callback for issue updates
+  final Function(Issue)? onIssueUpdated;
 
   const IssueCard({super.key, required this.issue, this.onIssueUpdated});
 
@@ -20,19 +49,22 @@ class IssueCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
         onTap: () async {
-          // Navigate to issue detail screen
+          final userId = await SharedPrefHelper.getStoredUserId();
+          await SharedPrefHelper.saveIssueId(issue.id); // Save issue ID
+
+          print('User ID retrieved: $userId');
+          print('Issue ID saved: ${issue.id}');
+
           final updatedIssue = await Navigator.push<Issue>(
             context,
             MaterialPageRoute(
-              builder:
-                  (context) => IssueDetailScreen(
-                    issue: issue,
-                    userId: '20240805', // Make sure to pass the actual user ID
-                  ),
+              builder: (context) => IssueDetailScreen(
+                issue: issue,
+                userId: userId ?? '',
+              ),
             ),
           );
 
-          // If issue was updated and callback is provided, call it
           if (updatedIssue != null && onIssueUpdated != null) {
             onIssueUpdated!(updatedIssue);
           }
@@ -42,7 +74,6 @@ class IssueCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Image
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: SizedBox(
@@ -75,13 +106,11 @@ class IssueCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              // Content
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Title and status
                     Row(
                       children: [
                         Expanded(
@@ -96,7 +125,6 @@ class IssueCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    // Description
                     Text(
                       issue.description,
                       style: AppTextStyles.body,
@@ -104,12 +132,10 @@ class IssueCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 12),
-                    // Location and time
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        // Location
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -128,7 +154,6 @@ class IssueCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        // Time
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

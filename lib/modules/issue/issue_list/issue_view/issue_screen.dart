@@ -5,7 +5,7 @@ import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
 import 'package:security_guard/modules/issue/issue_list/controller/issue_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
-import 'package:security_guard/shared/widgets/issue_Resolve_card.dart';
+import 'package:security_guard/modules/issue/IssueResolution/issue_details_Screens/issue_Resolve_card.dart';
 
 class IssuesScreen extends StatelessWidget {
   const IssuesScreen({super.key});

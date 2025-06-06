@@ -257,66 +257,89 @@ class IncidentReportController extends GetxController {
     _handleResponse(response);
   }
 
-  void _handleResponse(http.Response response) {
+  void _handleResponse(http.Response response) async {
     if (response.statusCode == 200 || response.statusCode == 201) {
-      CustomSnackbar.showSuccess(
-        '🎉 Success',
-        'Report submitted successfully!',
-      );
-      _resetForm();
+      try {
+        final responseData = jsonDecode(response.body);
+        final issueId =
+            responseData['id']; // Adjust key if it's nested or named differently
 
-      // Show success dialog
-      Get.dialog(
-        AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
+        // Save issueId to SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('last_issue_id', issueId.toString());
+
+        debugPrint("✅ Report submitted! Issue ID saved: $issueId");
+
+        CustomSnackbar.showSuccess(
+          '✅ Success',
+          'Report submitted successfully!',
+        );
+        _resetForm();
+
+        // Show success dialog
+        Get.dialog(
+          AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check, color: Colors.white, size: 32),
                 ),
-                child: const Icon(Icons.check, color: Colors.white, size: 32),
+                const SizedBox(height: 16),
+                const Text(
+                  '✅ Report Submitted!',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Your incident report has been successfully submitted and is being reviewed.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Get.back();
+                  Get.offAll(() => const IssuesScreen());
+                },
+                child: const Text('View Reports'),
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'Report Submitted!',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Your incident report has been successfully submitted and is being reviewed.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
+              ElevatedButton(
+                onPressed: () => Get.back(),
+                child: const Text('OK'),
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Get.back();
-                Get.offAll(() => const IssuesScreen());
-              },
-              child: const Text('View Reports'),
-            ),
-            ElevatedButton(
-              onPressed: () => Get.back(),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-        barrierDismissible: false,
-      );
+          barrierDismissible: false,
+        );
+      } catch (e) {
+        debugPrint("⚠️ Error parsing response or saving issue ID: $e");
+      }
     } else {
       try {
         final errorData = jsonDecode(response.body);
         final errorMessage = errorData['message'] ?? 'Failed to submit report';
+
+        debugPrint(
+          "❌ Submission failed (Status: ${response.statusCode}) - $errorMessage",
+        );
+
         CustomSnackbar.showError('❌ Submission Failed', errorMessage);
       } catch (e) {
+        debugPrint(
+          "🚨 Server error while submitting report (Status: ${response.statusCode})",
+        );
+
         CustomSnackbar.showError(
           '❌ Submission Failed',
           'Server error: ${response.statusCode}',

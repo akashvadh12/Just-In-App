@@ -16,19 +16,21 @@ class IssueDetailController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool isLoadingLocation = false.obs;
   final RxString errorMessage = ''.obs;
+// Location distance check will be performed in resolveIssue method.
 
   late String userId;
 
+  /// Call this in your UI to initialize the controller
   void initializeIssue(Issue issue, String userId) {
-    this.userId = userId;
     currentIssue.value = issue;
+    this.userId = userId;
   }
 
   Future<void> pickImages(ImageSource source) async {
     try {
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(source: source);
-      
+
       if (pickedFile != null) {
         selectedImages.add(File(pickedFile.path));
       }
@@ -47,7 +49,7 @@ class IssueDetailController extends GetxController {
     try {
       isLoadingLocation.value = true;
       errorMessage.value = '';
-      
+
       final status = await Permission.location.request();
       if (!status.isGranted) {
         throw Exception('Location permission denied');
@@ -56,7 +58,7 @@ class IssueDetailController extends GetxController {
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-      
+
       currentPosition.value = position;
     } catch (e) {
       errorMessage.value = 'Failed to get location: ${e.toString()}';
@@ -75,17 +77,16 @@ class IssueDetailController extends GetxController {
       isLoading.value = true;
       errorMessage.value = '';
 
-      // Convert images to base64
-      final List<String> base64Images = [];
-      for (final image in selectedImages) {
-        final bytes = await image.readAsBytes();
-        final base64Image = base64Encode(bytes);
-        base64Images.add(base64Image);
-      }
-
       final token = await getAuthToken();
       if (token == null) {
         throw Exception('Authentication token not found');
+      }
+
+      // Convert selected images to base64 strings
+      final List<String> base64Images = [];
+      for (final image in selectedImages) {
+        final bytes = await image.readAsBytes();
+        base64Images.add(base64Encode(bytes));
       }
 
       final response = await ApiService().resolveIssue(
@@ -95,15 +96,14 @@ class IssueDetailController extends GetxController {
         latitude: currentPosition.value!.latitude,
         longitude: currentPosition.value!.longitude,
         resolutionNote: resolutionNote,
-        images: base64Images,
+        imageFiles: selectedImages,
       );
 
       if (response) {
-        // Update the issue status locally
         currentIssue.value = currentIssue.value!.copyWith(
           status: IssueStatus.resolved,
           resolutionNote: resolutionNote,
-          resolverName: 'Current User', // Replace with actual user name if available
+          resolverName: 'Current User', // You can replace with actual name
           resolvedAt: DateTime.now(),
         );
         return true;
@@ -122,7 +122,7 @@ class IssueDetailController extends GetxController {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
-      print("Retrieved Auth Token: 😁😁👍 ${token ?? 'No token found'}");
+      print("Retrieved Auth Token: ${token ?? 'Not found'}");
       return token;
     } catch (e) {
       print("Error retrieving auth token: $e");
