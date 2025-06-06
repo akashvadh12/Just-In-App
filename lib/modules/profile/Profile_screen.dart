@@ -142,7 +142,7 @@ void _showLogoutConfirmationDialog() {
           ),
           TextButton(
             onPressed: () {
-              controller.logout();    // 1. Call logout on your controller
+              // controller.logout();    // 1. Call logout on your controller
               Navigator.pop(context); // 2. Close the dialog
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -669,8 +669,8 @@ void _showLogoutConfirmationDialog() {
                                 }
 
                                 controller.updatePassword(
-                                  _currentPasswordController.text,
-                                  _newPasswordController.text,
+                                  oldPassword: _currentPasswordController.text,
+                                  newPassword: _newPasswordController.text,
                                 );
 
                                 // Clear fields and hide section

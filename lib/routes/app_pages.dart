@@ -8,6 +8,9 @@ import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/petrol/controllers/patrol_controller.dart';
 import 'package:security_guard/modules/petrol/views/patrol_check_in_view.dart';
 import 'package:security_guard/routes/app_rout.dart' show Routes;
+import 'package:security_guard/shared/widgets/bottomnavigation/bottomnavigation.dart';
+import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
+
 
 class AppPages {
   static const INITIAL = Routes.LOGIN;
@@ -32,6 +35,20 @@ class AppPages {
       page: () => HomeView(),
       binding: BindingsBuilder(() {
         Get.lazyPut<HomeController>(() => HomeController());
+      }),
+    ),
+    GetPage(
+      name: Routes.PATROL_CHECK_IN,
+      page: () => PatrolCheckInScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<PatrolCheckInController>(() => PatrolCheckInController());
+      }),
+    ),
+    GetPage(
+      name: Routes.BOTTOM_NAV,
+      page: () => BottomNavBarWidget(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<BottomNavController>(() => BottomNavController());
       }),
     ),
   ];

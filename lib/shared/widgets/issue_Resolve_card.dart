@@ -1,28 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
-import 'package:security_guard/modules/issue/IssueResolution/issuDetails.dart';
+import 'package:security_guard/modules/issue/IssueResolution/issue_details_Screens/issuDetails.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
- // Add this import
+// Add this import
 
 class IssueCard extends StatelessWidget {
   final Issue issue;
   final Function(Issue)? onIssueUpdated; // Optional callback for issue updates
 
-  const IssueCard({
-    super.key,
-    required this.issue,
-    this.onIssueUpdated,
-  });
+  const IssueCard({super.key, required this.issue, this.onIssueUpdated});
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
         onTap: () async {
@@ -30,10 +24,14 @@ class IssueCard extends StatelessWidget {
           final updatedIssue = await Navigator.push<Issue>(
             context,
             MaterialPageRoute(
-              builder: (context) => IssueDetailScreen(issue: issue),
+              builder:
+                  (context) => IssueDetailScreen(
+                    issue: issue,
+                    userId: '20240805', // Make sure to pass the actual user ID
+                  ),
             ),
           );
-          
+
           // If issue was updated and callback is provided, call it
           if (updatedIssue != null && onIssueUpdated != null) {
             onIssueUpdated!(updatedIssue);
@@ -58,7 +56,10 @@ class IssueCard extends StatelessWidget {
                         width: 80,
                         height: 80,
                         color: AppColors.lightGrey,
-                        child: const Icon(Icons.image_not_supported, color: AppColors.greyColor),
+                        child: const Icon(
+                          Icons.image_not_supported,
+                          color: AppColors.greyColor,
+                        ),
                       );
                     },
                     loadingBuilder: (context, child, loadingProgress) {

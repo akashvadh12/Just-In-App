@@ -1,96 +1,334 @@
-import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
-import 'package:security_guard/data/services/api_post_service.dart';
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:path/path.dart' as path;
+import 'package:security_guard/modules/issue/issue_list/issue_view/issue_screen.dart';
+import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 import 'package:security_guard/shared/widgets/Custom_Snackbar/Custom_Snackbar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 class IncidentReportController extends GetxController {
   final descriptionController = TextEditingController();
   final characterCount = 0.obs;
   final maxCharacters = 500;
   final selectedPhotos = <XFile>[].obs;
+  final imageBytesList = <Uint8List>[].obs;
   final currentPosition = Rxn<LatLng>();
   final mapController = MapController();
   final isLoading = false.obs;
-
-  final _api = ApiPostServices();
 
   @override
   void onInit() {
     super.onInit();
     descriptionController.addListener(_updateCount);
-    _determinePosition();
+    _fetchCurrentLocation();
   }
 
   void _updateCount() {
     characterCount.value = descriptionController.text.length;
   }
 
-  Future<void> _determinePosition() async {
-    if (!await Geolocator.isLocationServiceEnabled()) return;
-    var perm = await Geolocator.checkPermission();
-    if (perm == LocationPermission.denied) {
-      perm = await Geolocator.requestPermission();
-      if (perm == LocationPermission.deniedForever) return;
-    }
-    final pos = await Geolocator.getCurrentPosition();
-    currentPosition.value = LatLng(pos.latitude, pos.longitude);
-    if (currentPosition.value != null) {
-      // ensure map move after build
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        mapController.move(currentPosition.value!, 15.0);
-      });
-    }
-  }
-
-  Future<void> pickImages() async {
+  Future<void> _fetchCurrentLocation() async {
     try {
-      final imgs = await ImagePicker().pickMultiImage();
-      if (imgs != null && imgs.isNotEmpty) selectedPhotos.addAll(imgs);
-    } on PlatformException catch (e) {
-      CustomSnackbar.showError('Failed to pick images: $e',
-      'Please try again later.');
+      final isLocationEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!isLocationEnabled) {
+        CustomSnackbar.showError(
+          "Location Error",
+          "Location services are disabled",
+        );
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.denied) {
+        CustomSnackbar.showError(
+          "Location Error",
+          "Location permission denied",
+        );
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      currentPosition.value = LatLng(position.latitude, position.longitude);
+    } catch (e) {
+      CustomSnackbar.showError("Location Error", "Could not get location: $e");
     }
   }
 
-  Future<void> submitReport() async {
-    if (descriptionController.text.trim().isEmpty ||
-        currentPosition.value == null) {
-     CustomSnackbar.showError('Please fill all required fields.',"Description and location are required.");
+  // Updated method name to match UI call
+  Future<void> pickImage() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        selectedPhotos.add(image);
+        if (kIsWeb) {
+          Uint8List bytes = await image.readAsBytes();
+          imageBytesList.add(bytes);
+        }
+      }
+    } on PlatformException catch (e) {
+      CustomSnackbar.showError(
+        "Image Picker Error",
+        "Failed to pick image: $e",
+      );
+    } catch (e) {
+      CustomSnackbar.showError("Error", "Unexpected error: $e");
+    }
+  }
+
+  // Method to pick multiple images
+  Future<void> pickMultipleImages() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final List<XFile> images = await picker.pickMultiImage(imageQuality: 80);
+
+      if (images.isNotEmpty) {
+        selectedPhotos.addAll(images);
+        if (kIsWeb) {
+          for (var image in images) {
+            Uint8List bytes = await image.readAsBytes();
+            imageBytesList.add(bytes);
+          }
+        }
+      }
+    } on PlatformException catch (e) {
+      CustomSnackbar.showError(
+        "Image Picker Error",
+        "Failed to pick images: $e",
+      );
+    } catch (e) {
+      CustomSnackbar.showError("Error", "Unexpected error: $e");
+    }
+  }
+
+  // Method to remove a photo
+  void removePhoto(XFile photo) {
+    selectedPhotos.remove(photo);
+  }
+
+  Future<String?> getAuthToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('auth_token');
+    } catch (e) {
+      print("Token fetch error: $e");
+      return null;
+    }
+  }
+
+  // Updated method name to match UI call
+  Future<void> submitIncidentReport() async {
+    final description = descriptionController.text.trim();
+    final position = currentPosition.value;
+
+    // Validation
+    if (description.isEmpty) {
+      CustomSnackbar.showError(
+        'Validation Error',
+        'Please provide a description of the incident.',
+      );
       return;
     }
-    isLoading.value = true;
-    try {
-      final resp = await _api.upsertIncidentReport(
-        locationName: 'Alpha 1',
-        siteId: '1',
-        userId: '20240805',
-        latitude: currentPosition.value!.latitude.toString(),
-        longitude: currentPosition.value!.longitude.toString(),
-        status: 'Active',
-        companyId: '1',
-        description: descriptionController.text.trim(),
-        photoPaths: selectedPhotos.map((f) => f.path).toList(),
+
+    if (position == null) {
+      CustomSnackbar.showError(
+        'Validation Error',
+        'Location is required. Please enable location services.',
       );
-      if (resp['status'] == true) {
-        CustomSnackbar.showSuccess('Report submitted successfully!',
-            'Your incident report has been submitted and will be reviewed shortly.');
-        Get.offAllNamed('/issues');
+      return;
+    }
+
+    final token = await getAuthToken();
+    final user = await LocalStorageService.instance.getUserModel();
+
+    if (token == null || user == null) {
+      CustomSnackbar.showError('Unauthorized', 'Please login to continue.');
+      return;
+    }
+
+    isLoading.value = true;
+
+    final uri = Uri.parse(
+      "https://official.solarvision-cairo.com/api/IssuesRecord/create",
+    );
+    final headers = {'Authorization': 'Bearer $token'};
+
+    try {
+      if (selectedPhotos.isEmpty) {
+        await _submitWithoutImages(
+          uri,
+          headers,
+          user.userId,
+          position,
+          description,
+        );
       } else {
-      CustomSnackbar.showError('Submission failed',
-          'Please try again later or contact support.');
+        await _submitWithImages(
+          uri,
+          headers,
+          user.userId,
+          position,
+          description,
+        );
       }
     } catch (e) {
-      CustomSnackbar.showError('Error submitting report: $e','Please try again later.');
+      CustomSnackbar.showError("Error", "Something went wrong: $e");
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<void> _submitWithoutImages(
+    Uri uri,
+    Map<String, String> headers,
+    String userId,
+    LatLng position,
+    String description,
+  ) async {
+    final body = jsonEncode({
+      "userId": userId,
+      "latitude": position.latitude,
+      "longitude": position.longitude,
+      "description": description,
+      "images": [],
+    });
+
+    final response = await http.post(
+      uri,
+      headers: {...headers, 'Content-Type': 'application/json'},
+      body: body,
+    );
+
+    _handleResponse(response);
+  }
+
+  Future<void> _submitWithImages(
+    Uri uri,
+    Map<String, String> headers,
+    String userId,
+    LatLng position,
+    String description,
+  ) async {
+    final request =
+        http.MultipartRequest("POST", uri)
+          ..headers.addAll(headers)
+          ..fields['userId'] = userId
+          ..fields['latitude'] = position.latitude.toString()
+          ..fields['longitude'] = position.longitude.toString()
+          ..fields['description'] = description;
+
+    for (var photo in selectedPhotos) {
+      final mimeType = lookupMimeType(photo.path) ?? 'application/octet-stream';
+      final mediaType = MediaType.parse(mimeType);
+      final file = await http.MultipartFile.fromPath(
+        'images',
+        photo.path,
+        filename: path.basename(photo.path),
+        contentType: mediaType,
+      );
+      request.files.add(file);
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    _handleResponse(response);
+  }
+
+  void _handleResponse(http.Response response) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      CustomSnackbar.showSuccess(
+        '🎉 Success',
+        'Report submitted successfully!',
+      );
+      _resetForm();
+
+      // Show success dialog
+      Get.dialog(
+        AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: const BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check, color: Colors.white, size: 32),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Report Submitted!',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Your incident report has been successfully submitted and is being reviewed.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Get.back();
+                Get.offAll(() => const IssuesScreen());
+              },
+              child: const Text('View Reports'),
+            ),
+            ElevatedButton(
+              onPressed: () => Get.back(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+        barrierDismissible: false,
+      );
+    } else {
+      try {
+        final errorData = jsonDecode(response.body);
+        final errorMessage = errorData['message'] ?? 'Failed to submit report';
+        CustomSnackbar.showError('❌ Submission Failed', errorMessage);
+      } catch (e) {
+        CustomSnackbar.showError(
+          '❌ Submission Failed',
+          'Server error: ${response.statusCode}',
+        );
+      }
+    }
+  }
+
+  void _resetForm() {
+    descriptionController.clear();
+    selectedPhotos.clear();
+    characterCount.value = 0;
   }
 
   @override

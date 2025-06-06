@@ -1,3 +1,6 @@
+// Enhanced Issue Model
+import 'package:flutter/material.dart';
+
 enum IssueStatus { new_issue, pending, resolved }
 
 class Issue {
@@ -8,6 +11,14 @@ class Issue {
   final String time;
   final IssueStatus status;
   final String imageUrl;
+  final List<String> images;
+  final String? creatorName;
+  final String? resolverName;
+  final double? latitude;
+  final double? longitude;
+  final String? resolutionNote;
+  final DateTime? createdAt;
+  final DateTime? resolvedAt;
 
   Issue({
     required this.id,
@@ -17,32 +28,217 @@ class Issue {
     required this.time,
     required this.status,
     required this.imageUrl,
+    this.images = const [],
+    this.creatorName,
+    this.resolverName,
+    this.latitude,
+    this.longitude,
+    this.resolutionNote,
+    this.createdAt,
+    this.resolvedAt,
   });
 
-  /// Factory constructor to create Issue from JSON
-  factory Issue.fromJson(Map<String, dynamic> json) {
+  factory Issue.fromApiJson(Map<String, dynamic> json) {
+    // Handle different image field formats
+    List<String> images = [];
+    
+    if (json['images'] != null) {
+      if (json['images'] is List) {
+        images = (json['images'] as List<dynamic>)
+            .map((e) => e.toString())
+            .where((url) => url.isNotEmpty)
+            .toList();
+      } else if (json['images'] is String && json['images'].isNotEmpty) {
+        images = [json['images']];
+      }
+    }
+    
+    // Fallback to other image fields
+    if (images.isEmpty) {
+      if (json['imageUrl'] != null && json['imageUrl'].toString().isNotEmpty) {
+        images = [json['imageUrl'].toString()];
+      } else if (json['image'] != null && json['image'].toString().isNotEmpty) {
+        images = [json['image'].toString()];
+      }
+    }
+    
     return Issue(
-      id: json['id'] ?? '',
-      title: json['title'] ?? '',
-      description: json['description'] ?? '',
-      location: json['location'] ?? '',
-      time: json['time'] ?? '',
-      status: _parseStatus(json['status']),
-      imageUrl: json['imageUrl'] ?? '',
+      id: json['issueId']?.toString() ?? json['id']?.toString() ?? '',
+      title: _generateTitle(json['description']?.toString() ?? json['title']?.toString() ?? ''),
+      description: json['description']?.toString() ?? '',
+      location: _generateLocation(json['latitude'], json['longitude']),
+      time: _formatDateTime(json['createdAt']?.toString()),
+      status: _parseApiStatus(json['status']?.toString()),
+      imageUrl: images.isNotEmpty ? images.first : '',
+      images: images,
+      creatorName: json['creatorName']?.toString(),
+      resolverName: json['resolverName']?.toString(),
+      latitude: _parseDouble(json['latitude']),
+      longitude: _parseDouble(json['longitude']),
+      resolutionNote: json['resolutionNote']?.toString(),
+      createdAt: _parseDateTime(json['createdAt']),
+      resolvedAt: _parseDateTime(json['resolvedAt']),
     );
   }
 
-  /// Helper method to parse IssueStatus from a string
-  static IssueStatus _parseStatus(String? status) {
-    switch (status?.toLowerCase()) {
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value);
+    }
+    return null;
+  }
+
+  static DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+    return null;
+  }
+
+  static String _generateTitle(String description) {
+    if (description.isEmpty) return 'Issue Report';
+    
+    final words = description.trim().split(RegExp(r'\s+'));
+    if (words.length <= 4) return description;
+    
+    return '${words.take(4).join(' ')}...';
+  }
+
+  static String _generateLocation(dynamic latitude, dynamic longitude) {
+    final lat = _parseDouble(latitude);
+    final lng = _parseDouble(longitude);
+    
+    if (lat == null || lng == null || lat == 0 || lng == 0) {
+      return 'Location not specified';
+    }
+    return 'Lat: ${lat.toStringAsFixed(4)}, Lng: ${lng.toStringAsFixed(4)}';
+  }
+
+  static String _formatDateTime(String? dateTimeString) {
+    if (dateTimeString == null || dateTimeString.isEmpty) return 'Unknown time';
+    
+    try {
+      final dateTime = DateTime.parse(dateTimeString);
+      final now = DateTime.now();
+      final difference = now.difference(dateTime);
+
+      if (difference.inMinutes < 60) {
+        return '${difference.inMinutes} minutes ago';
+      } else if (difference.inHours < 24) {
+        return '${difference.inHours} hours ago';
+      } else if (difference.inDays == 1) {
+        return 'Yesterday, ${_formatTime(dateTime)}';
+      } else if (difference.inDays < 7) {
+        return '${difference.inDays} days ago';
+      } else {
+        return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+      }
+    } catch (e) {
+      return dateTimeString;
+    }
+  }
+
+  static String _formatTime(DateTime dateTime) {
+    final hour = dateTime.hour > 12 
+        ? dateTime.hour - 12 
+        : dateTime.hour == 0 ? 12 : dateTime.hour;
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final period = dateTime.hour >= 12 ? 'PM' : 'AM';
+    return '$hour:$minute $period';
+  }
+
+  static IssueStatus _parseApiStatus(String? status) {
+    if (status == null) return IssueStatus.new_issue;
+    
+    switch (status.toLowerCase().trim()) {
       case 'pending':
+      case 'in_progress':
+      case 'inprogress':
         return IssueStatus.pending;
       case 'resolved':
+      case 'completed':
+      case 'closed':
         return IssueStatus.resolved;
       case 'new':
-      case 'new_issue':
+      case 'open':
+      case 'reported':
       default:
         return IssueStatus.new_issue;
     }
   }
+
+  Issue copyWith({
+    String? id,
+    String? title,
+    String? description,
+    String? location,
+    String? time,
+    IssueStatus? status,
+    String? imageUrl,
+    List<String>? images,
+    String? creatorName,
+    String? resolverName,
+    double? latitude,
+    double? longitude,
+    String? resolutionNote,
+    DateTime? createdAt,
+    DateTime? resolvedAt,
+  }) {
+    return Issue(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      location: location ?? this.location,
+      time: time ?? this.time,
+      status: status ?? this.status,
+      imageUrl: imageUrl ?? this.imageUrl,
+      images: images ?? this.images,
+      creatorName: creatorName ?? this.creatorName,
+      resolverName: resolverName ?? this.resolverName,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      resolutionNote: resolutionNote ?? this.resolutionNote,
+      createdAt: createdAt ?? this.createdAt,
+      resolvedAt: resolvedAt ?? this.resolvedAt,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'issueId': id,
+      'title': title,
+      'description': description,
+      'location': location,
+      'time': time,
+      'status': status.toString().split('.').last,
+      'imageUrl': imageUrl,
+      'images': images,
+      'creatorName': creatorName,
+      'resolverName': resolverName,
+      'latitude': latitude,
+      'longitude': longitude,
+      'resolutionNote': resolutionNote,
+      'createdAt': createdAt?.toIso8601String(),
+      'resolvedAt': resolvedAt?.toIso8601String(),
+    };
+  }
+
+  @override
+  String toString() {
+    return 'Issue(id: $id, title: $title, status: $status)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Issue && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }

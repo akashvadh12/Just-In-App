@@ -1,166 +1,181 @@
+// Issues Screen (unchanged)
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
+import 'package:security_guard/modules/issue/issue_list/controller/issue_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
 import 'package:security_guard/shared/widgets/issue_Resolve_card.dart';
 
-class IssuesScreen extends StatefulWidget {
+class IssuesScreen extends StatelessWidget {
   const IssuesScreen({super.key});
 
   @override
-  State<IssuesScreen> createState() => _IssuesScreenState();
-}
-
-class _IssuesScreenState extends State<IssuesScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  late List<Issue> _issues;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this, initialIndex: 0);
-    _loadMockData();
-  }
-
-  void _loadMockData() {
-    _issues = [
-      Issue(
-        id: '1',
-        title: 'Broken Gate Lock',
-        description: 'Main gate lock broken. Urgent fix needed.',
-        location: 'East Gate',
-        time: 'Today, 10:23 AM',
-        status: IssueStatus.new_issue,
-        imageUrl:
-            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTZ7t5FgjtqkfaIklnozuric72i2RnzU6e9ww&s',
-      ),
-      Issue(
-        id: '2',
-        title: 'Broken Security Camera',
-        description: 'Security camera not working properly. Needs replacement.',
-        location: 'Building A - East Wing, Floor 3',
-        time: 'Jan 23, 2024 - 14:30',
-        status: IssueStatus.new_issue,
-        imageUrl:
-            'https://5.imimg.com/data5/SELLER/Default/2022/8/YZ/VH/FX/46273132/dome-cctv-camera.jpg',
-      ),
-      Issue(
-        id: '3',
-        title: 'Trash Cleared',
-        description: 'Trash cleared. Clean area confirmed.',
-        location: 'Main Entrance',
-        time: 'Yesterday, 4:30 PM',
-        status: IssueStatus.resolved,
-        imageUrl:
-            'https://www.checkatrade.com/blog/wp-content/uploads/2024/02/waste-clearance-near-me.jpg',
-      ),
-    ];
-  }
-
-  void _handleIssueUpdate(Issue updatedIssue) {
-    setState(() {
-      final index = _issues.indexWhere((issue) => issue.id == updatedIssue.id);
-      if (index != -1) {
-        _issues[index] = updatedIssue;
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text('Issues', style: TextStyle(color: Colors.white)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _buildTabBar(),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildIssuesList(IssueStatus.new_issue),
-                _buildIssuesList(IssueStatus.resolved),
-              ],
+    final IssuesController controller = Get.put(IssuesController());
+
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          iconTheme: const IconThemeData(color: Colors.white),
+          title: const Text('Issues', style: TextStyle(color: Colors.white)),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.search, color: Colors.white),
+              onPressed: () {
+                // Implement search functionality
+              },
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTabBar() {
-    return Container(
-      color: AppColors.whiteColor,
-      child: TabBar(
-        controller: _tabController,
-        labelStyle: AppTextStyles.body,
-        tabs: [
-          Tab(text: 'New (${_getIssueCount(IssueStatus.new_issue)})'),
-          Tab(text: 'Resolved (${_getIssueCount(IssueStatus.resolved)})'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIssuesList(IssueStatus status) {
-    final filteredIssues =
-        _issues.where((issue) => issue.status == status).toList();
-
-    if (filteredIssues.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              status == IssueStatus.new_issue
-                  ? Icons.check_circle_outline
-                  : Icons.history,
-              size: 64,
-              color: Colors.grey[400],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              status == IssueStatus.new_issue
-                  ? 'No new issues'
-                  : 'No resolved issues',
-              style: AppTextStyles.body.copyWith(
-                color: Colors.grey[600],
-                fontSize: 16,
-              ),
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              onPressed: () => controller.refreshIssues(),
             ),
           ],
         ),
-      );
-    }
+        body: Column(
+          children: [
+            _buildTabBar(controller),
+            Expanded(
+              child: Obx(() {
+                if (controller.isLoading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: filteredIssues.length,
-      itemBuilder: (context, index) {
-        return IssueCard(
-          issue: filteredIssues[index],
-          onIssueUpdated: _handleIssueUpdate,
-        );
-      },
+                if (controller.errorMessage.value.isNotEmpty) {
+                  return _buildErrorWidget(controller);
+                }
+
+                return TabBarView(
+                  children: [
+                    _buildIssuesList(controller, IssueStatus.new_issue),
+                    _buildIssuesList(controller, IssueStatus.resolved),
+                  ],
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  int _getIssueCount(IssueStatus status) {
-    return _issues.where((issue) => issue.status == status).length;
+  Widget _buildTabBar(IssuesController controller) {
+    return Container(
+      color: AppColors.whiteColor,
+      child: Obx(
+        () => TabBar(
+          labelStyle: AppTextStyles.body,
+          tabs: [
+            Tab(text: 'New (${controller.newIssuesCount})'),
+            Tab(text: 'Resolved (${controller.resolvedIssuesCount})'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorWidget(IssuesController controller) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+          const SizedBox(height: 16),
+          Obx(
+            () => Text(
+              controller.errorMessage.value,
+              style: AppTextStyles.body.copyWith(
+                color: Colors.red[600],
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => controller.refreshIssues(),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIssuesList(IssuesController controller, IssueStatus status) {
+    return Obx(() {
+      final filteredIssues = controller.getIssuesByStatus(status);
+
+      if (filteredIssues.isEmpty) {
+        return RefreshIndicator(
+          onRefresh: () => controller.refreshIssues(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SizedBox(
+              height: Get.height * 0.6,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      status == IssueStatus.new_issue
+                          ? Icons.check_circle_outline
+                          : Icons.history,
+                      size: 64,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      status == IssueStatus.new_issue
+                          ? 'No new issues'
+                          : 'No resolved issues',
+                      style: AppTextStyles.body.copyWith(
+                        color: Colors.grey[600],
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Pull down to refresh',
+                      style: AppTextStyles.body.copyWith(
+                        color: Colors.grey[400],
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+
+      return RefreshIndicator(
+        onRefresh: () => controller.refreshIssues(),
+        child: ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: filteredIssues.length,
+          itemBuilder: (context, index) {
+            return IssueCard(
+              issue: filteredIssues[index],
+              onIssueUpdated:
+                  (updatedIssue) => controller.updateIssue(updatedIssue),
+            );
+          },
+        ),
+      );
+    });
+  }
+}
+
+// Updated main.dart (no service initialization needed)
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GetMaterialApp(title: 'Security Guard', home: IssuesScreen());
   }
 }
