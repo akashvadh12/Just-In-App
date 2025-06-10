@@ -104,7 +104,7 @@ class AttendanceHistoryController extends GetxController {
         attendanceRecords.value =
             data.map((json) => AttendanceRecord.fromJson(json)).toList();
 
-        _showSuccess("Success", "Attendance history loaded successfully");
+        // _showSuccess("Success", "Attendance history loaded successfully");
       } else {
         _showError("Error", "Failed to load attendance history");
       }
@@ -145,7 +145,7 @@ class AttendanceHistoryController extends GetxController {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         todayAttendance.value = TodayAttendance.fromJson(data);
-        _showSuccess("Success", "Today's attendance loaded successfully");
+        // _showSuccess("Success", "Today's attendance loaded successfully");
       } else {
         _showError("Error", "Failed to load today's attendance");
       }

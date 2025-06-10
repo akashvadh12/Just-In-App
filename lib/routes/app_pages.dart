@@ -7,15 +7,16 @@ import 'package:security_guard/modules/home/view/home_view.dart';
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/petrol/controllers/patrol_controller.dart';
 import 'package:security_guard/modules/petrol/views/patrol_check_in_view.dart';
+import 'package:security_guard/modules/splash/splash_screen.dart';
 import 'package:security_guard/routes/app_rout.dart' show Routes;
 import 'package:security_guard/shared/widgets/bottomnavigation/bottomnavigation.dart';
 import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
 
-
 class AppPages {
-  static const INITIAL = Routes.LOGIN;
+  static const INITIAL = Routes.SPLASH;
 
   static final routes = [
+    GetPage(name: Routes.SPLASH, page: () => SplashScreen()),
     GetPage(
       name: Routes.LOGIN,
       page: () => LoginPage(),

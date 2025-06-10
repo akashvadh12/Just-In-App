@@ -19,6 +19,7 @@ class GuardAttendanceScreen extends StatelessWidget {
         onRefresh: controller.getCurrentLocation,
         child: SingleChildScrollView(
           physics: AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(8),
           child: Column(
             children: [
               _buildGreetingSection(),

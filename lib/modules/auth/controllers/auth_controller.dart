@@ -1,12 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/modules/auth/models/user_model.dart';
-import 'dart:convert';
+import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 import 'package:security_guard/routes/app_rout.dart';
-import 'package:security_guard/shared/widgets/bottomnavigation/bottomnavigation.dart';
-import 'package:security_guard/data/services/api_post_service.dart';
 
 class AuthController extends GetxController {
   final credentialsController = TextEditingController();
@@ -18,8 +17,6 @@ class AuthController extends GetxController {
   final isLoginMode = true.obs;
   final isLoggedIn = false.obs;
   final loginWithPhone = false.obs;
-
-  final _apiService = ApiPostServices();
 
   void togglePasswordVisibility() => isPasswordHidden.toggle();
 
@@ -40,17 +37,15 @@ class AuthController extends GetxController {
 
   Future<void> checkLoginStatus() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      isLoggedIn.value = prefs.getBool('isLoggedIn') ?? false;
+      final storage = LocalStorageService.instance;
+      isLoggedIn.value = storage.isLoggedIn();
     } catch (e) {
       print('Error checking login status: $e');
       isLoggedIn.value = false;
     }
   }
 
-  void setLoggedIn(bool status) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', status);
+  void setLoggedIn(bool status) {
     isLoggedIn.value = status;
   }
 
@@ -66,38 +61,58 @@ class AuthController extends GetxController {
     }
 
     isLoading.value = true;
+    final url = Uri.parse(
+      'https://official.solarvision-cairo.com/api/Auth/UserAuthentication',
+    );
+
     try {
-      final responseData = await _apiService.login(
-        input: input,
-        password: password,
-        loginWithPhone: loginWithPhone.value,
+      final body =
+          loginWithPhone.value
+              ? {"phoneNumber": input, "password": password}
+              : {"userName": input, "password": password};
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
       );
 
-      if (responseData['status'] == true &&
-          (responseData['userInf']?.isNotEmpty ?? false)) {
-        final userData = responseData['userInf'][0] as Map<String, dynamic>;
-        final name = userData['name'] ?? 'User';
-        final accessToken = userData['deviceToken'] ?? '';
-        final userId =
-            userData['userID']?.toString() ??
-            ''; // 👈 Get userId here (make sure 'userID' is the correct key)
+      final Map<String, dynamic> data = jsonDecode(response.body);
 
+      if (response.statusCode == 200 &&
+          data['status'] == true &&
+          (data['userInf']?.isNotEmpty ?? false)) {
+        final userData = data['userInf'][0];
+        final name = userData['name'] ?? 'User';
+        final deviceToken = userData['deviceToken'] ?? '';
+
+        // Create user model from API response
         final user = UserModel.fromJson(userData);
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user_data', jsonEncode(user.toJson()));
-        await prefs.setBool('isLoggedIn', true);
-        await prefs.setString('auth_token', accessToken);
-        await prefs.setString('user_id', userId); // 👈 Save userId here
-        print('Raw userData: $userData');
+        // Get storage service
+        final storage = LocalStorageService.instance;
 
-        print("Auth Token saved: 😁😁👍 $accessToken");
-        print("User ID saved: 😁😁👍 $userId");
+        // Save user data
+        await storage.saveUserModel(user);
+
+        // Save login status
+        await storage.saveLoginStatus(true);
+
+        // Save auth token if available
+        final accessToken = data['accessToken'] as String?;
+        if (accessToken != null) {
+          await storage.saveToken(accessToken);
+        }
+
+        // Save device token
+        if (deviceToken != null && deviceToken.isNotEmpty) {
+          await storage.saveString('deviceToken', deviceToken);
+        }
 
         setLoggedIn(true);
         _showSuccessSnackbar('Welcome, $name!');
 
-        Get.offAll(() => BottomNavBarWidget());
+        Get.offAllNamed(Routes.BOTTOM_NAV);
       } else {
         _showErrorSnackbar(
           'Invalid ${loginWithPhone.value ? 'phone number' : 'user ID'} or password.',
@@ -105,22 +120,14 @@ class AuthController extends GetxController {
       }
     } catch (e) {
       _showErrorSnackbar('Login failed. Please try again later.\nError: $e');
-      print('Login error: $e');
     } finally {
       isLoading.value = false;
     }
   }
 
   Future<String?> getAuthToken() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-      print("Retrieved Auth Token: 😁😁👍 ${token ?? 'No token found'}");
-      return token;
-    } catch (e) {
-      print("Error retrieving auth token: $e");
-      return null;
-    }
+    final storage = LocalStorageService.instance;
+    return storage.getToken();
   }
 
   Future<void> sendOTP() async {
@@ -147,16 +154,19 @@ class AuthController extends GetxController {
 
   Future<void> logout() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
+      // Clear user data from storage
+      final storage = LocalStorageService.instance;
+      await storage.clearUserData();
 
+      // Update UI state
       isLoggedIn.value = false;
       clearFields();
 
+      // Navigate to login screen
       Get.offAllNamed(Routes.LOGIN);
-      print('Logout successful');
     } catch (e) {
       print('Error during logout: $e');
+      // Force navigation to login screen even if there's an error
       Get.offAllNamed(Routes.LOGIN);
     }
   }

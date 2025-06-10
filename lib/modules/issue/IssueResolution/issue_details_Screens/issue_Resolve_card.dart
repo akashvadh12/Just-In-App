@@ -60,7 +60,7 @@ class IssueCard extends StatelessWidget {
             MaterialPageRoute(
               builder: (context) => IssueDetailScreen(
                 issue: issue,
-                userId: userId ?? '',
+                userId: issue.id ?? '',
               ),
             ),
           );

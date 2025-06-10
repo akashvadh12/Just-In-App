@@ -65,48 +65,48 @@ class LoginPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Login/Signup Tabs
-                      Obx(
-                        () => Row(
-                          children: [
-                            Expanded(
-                              child: CustomButton(
-                                text: 'Login',
-                                backgroundColor:
-                                    authController.isLoginMode.value
-                                        ? AppColors.primary
-                                        : Colors.grey.shade100,
-                                textColor:
-                                    authController.isLoginMode.value
-                                        ? Colors.white
-                                        : Colors.grey.shade800,
-                                onPressed: () {
-                                  if (!authController.isLoginMode.value) {
-                                    authController.toggleMode();
-                                  }
-                                },
-                              ),
-                            ),
-                            Expanded(
-                              child: CustomButton(
-                                text: 'Signup',
-                                backgroundColor:
-                                    !authController.isLoginMode.value
-                                        ? AppColors.primary
-                                        : Colors.grey.shade100,
-                                textColor:
-                                    !authController.isLoginMode.value
-                                        ? Colors.white
-                                        : Colors.grey.shade800,
-                                onPressed: () {
-                                  if (authController.isLoginMode.value) {
-                                    authController.toggleMode();
-                                  }
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      // Obx(
+                      //   () => Row(
+                      //     children: [
+                      //       Expanded(
+                      //         child: CustomButton(
+                      //           text: 'Login',
+                      //           backgroundColor:
+                      //               authController.isLoginMode.value
+                      //                   ? AppColors.primary
+                      //                   : Colors.grey.shade100,
+                      //           textColor:
+                      //               authController.isLoginMode.value
+                      //                   ? Colors.white
+                      //                   : Colors.grey.shade800,
+                      //           onPressed: () {
+                      //             if (!authController.isLoginMode.value) {
+                      //               authController.toggleMode();
+                      //             }
+                      //           },
+                      //         ),
+                      //       ),
+                      //       Expanded(
+                      //         child: CustomButton(
+                      //           text: 'Signup',
+                      //           backgroundColor:
+                      //               !authController.isLoginMode.value
+                      //                   ? AppColors.primary
+                      //                   : Colors.grey.shade100,
+                      //           textColor:
+                      //               !authController.isLoginMode.value
+                      //                   ? Colors.white
+                      //                   : Colors.grey.shade800,
+                      //           onPressed: () {
+                      //             if (authController.isLoginMode.value) {
+                      //               authController.toggleMode();
+                      //             }
+                      //           },
+                      //         ),
+                      //       ),
+                      //     ],
+                      //   ),
+                      // ),
                       SizedBox(height: 24),
 
                       // Phone Number / Employee ID Field

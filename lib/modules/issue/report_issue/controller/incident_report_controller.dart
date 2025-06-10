@@ -131,7 +131,7 @@ class IncidentReportController extends GetxController {
   Future<String?> getAuthToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.getString('auth_token');
+      return prefs.getString('device_token');
     } catch (e) {
       print("Token fetch error: $e");
       return null;
@@ -163,6 +163,7 @@ class IncidentReportController extends GetxController {
     final token = await getAuthToken();
     final user = await LocalStorageService.instance.getUserModel();
 
+      print("user token : $token, user : $user");
     if (token == null || user == null) {
       CustomSnackbar.showError('Unauthorized', 'Please login to continue.');
       return;

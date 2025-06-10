@@ -35,6 +35,8 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
   void initState() {
     super.initState();
     _currentIssue = widget.issue;
+    // Set an initial value for the resolution notes.
+    _resolutionController.text = widget.issue.resolutionNote ?? '';
     controller = Get.put(IssueDetailController());
     controller.initializeIssue(widget.issue, widget.userId);
   }
@@ -256,7 +258,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
             height: 100,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              itemCount: 3, // Mock data for 3 photos
+              itemCount: _currentIssue.images.length,
               itemBuilder: (context, index) {
                 return Container(
                   width: 100,
@@ -269,7 +271,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
-                      _currentIssue.imageUrl,
+                      _currentIssue.images[index],
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
@@ -503,10 +505,9 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                 width: double.infinity,
                 height: 50,
                 child: OutlinedButton.icon(
-                  onPressed:
-                      controller.isLoading.value
-                          ? null
-                          : () => _showImagePickerDialog(),
+                  onPressed: controller.isLoading.value
+                      ? null
+                      : () => _showImagePickerDialog(),
                   icon: const Icon(Icons.camera_alt, color: AppColors.primary),
                   label: const Text(
                     'Add Updated Photos',
@@ -521,32 +522,29 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-
               // Capture Current Location Button
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: OutlinedButton.icon(
-                  onPressed:
-                      controller.isLoading.value
-                          ? null
-                          : () => controller.getCurrentLocation(),
-                  icon:
-                      controller.isLoadingLocation.value
-                          ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.primary,
-                              ),
+                  onPressed: controller.isLoading.value
+                      ? null
+                      : () => controller.getCurrentLocation(),
+                  icon: controller.isLoadingLocation.value
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.primary,
                             ),
-                          )
-                          : const Icon(
-                            Icons.location_on,
-                            color: AppColors.primary,
                           ),
+                        )
+                      : const Icon(
+                          Icons.location_on,
+                          color: AppColors.primary,
+                        ),
                   label: Text(
                     controller.isLoadingLocation.value
                         ? 'Getting Location...'
@@ -562,52 +560,48 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-
               // Mark as Resolved Button
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed:
-                      (controller.currentIssue.value?.status ==
-                                  IssueStatus.resolved ||
-                              controller.isLoading.value)
-                          ? null
-                          : () => _markAsResolved(),
+                  onPressed: (controller.currentIssue.value?.status ==
+                              IssueStatus.resolved ||
+                          controller.isLoading.value)
+                      ? null
+                      : () => _markAsResolved(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        (controller.currentIssue.value?.status ==
-                                    IssueStatus.resolved ||
-                                controller.isLoading.value)
-                            ? Colors.grey
-                            : AppColors.primary,
+                    backgroundColor: (controller.currentIssue.value?.status ==
+                                IssueStatus.resolved ||
+                            controller.isLoading.value)
+                        ? Colors.grey
+                        : AppColors.primary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child:
-                      controller.isLoading.value
-                          ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          )
-                          : Text(
-                            (controller.currentIssue.value?.status ==
-                                    IssueStatus.resolved)
-                                ? 'Already Resolved'
-                                : 'Mark as Resolved',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                  child: controller.isLoading.value
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
                             ),
                           ),
+                        )
+                      : Text(
+                          (controller.currentIssue.value?.status ==
+                                  IssueStatus.resolved)
+                              ? 'Already Resolved'
+                              : 'Mark as Resolved',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -656,31 +650,30 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
   void _showImagePickerDialog() {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Select Images'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.camera_alt),
-                  title: const Text('Camera'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    controller.pickImages(ImageSource.camera);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.photo_library),
-                  title: const Text('Gallery'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    controller.pickImages(ImageSource.gallery);
-                  },
-                ),
-              ],
+      builder: (context) => AlertDialog(
+        title: const Text('Select Images'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Camera'),
+              onTap: () {
+                Navigator.of(context).pop();
+                controller.pickImages(ImageSource.camera);
+              },
             ),
-          ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Gallery'),
+              onTap: () {
+                Navigator.of(context).pop();
+                controller.pickImages(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -690,7 +683,6 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
         'Required Field',
         'Please Enter Required Field Before Proceeding',
       );
-     
       return;
     }
 
@@ -711,7 +703,6 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
         'Issue Resolved',
         'Issue marked as resolved successfully!',
       );
-    
 
       // Navigate back after a short delay
       Future.delayed(const Duration(seconds: 1), () {
@@ -726,20 +717,6 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
             ? controller.errorMessage.value
             : 'Failed to resolve issue. Please try again.',
       );
-    
     }
   }
-
-  // void _showSnackBar(String message) {
-  //   Get.snackbar(
-  //     'Notification',
-  //     message,
-  //     snackPosition: SnackPosition.BOTTOM,
-  //     backgroundColor: Colors.green,
-  //     colorText: Colors.white,
-  //     borderRadius: 8,
-  //     margin: const EdgeInsets.all(16),
-  //     duration: const Duration(seconds: 2),
-  //   );
-  // }
 }

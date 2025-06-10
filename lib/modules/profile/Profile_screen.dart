@@ -234,24 +234,24 @@ void _showLogoutConfirmationDialog() {
                         );
                       }),
 
-                      GestureDetector(
-                        onTap: () async {
-                          // Add image picker functionality
-                          await controller.updateProfilePicture();
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Colors.blue,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.camera_alt,
-                            color: AppColors.whiteColor,
-                            size: 18,
-                          ),
-                        ),
-                      ),
+                      // GestureDetector(
+                      //   onTap: () async {
+                      //     // Add image picker functionality
+                      //     await controller.updateProfilePicture();
+                      //   },
+                      //   child: Container(
+                      //     padding: const EdgeInsets.all(4),
+                      //     decoration: const BoxDecoration(
+                      //       color: Colors.blue,
+                      //       shape: BoxShape.circle,
+                      //     ),
+                      //     child: const Icon(
+                      //       Icons.camera_alt,
+                      //       color: AppColors.whiteColor,
+                      //       size: 18,
+                      //     ),
+                      //   ),
+                      // ),
                     ],
                   ),
                   const SizedBox(height: 16),

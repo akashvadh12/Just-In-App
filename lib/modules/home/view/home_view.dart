@@ -36,6 +36,7 @@ class HomeView extends GetView<HomeController> {
           Container(
             width: 42,
             height: 42,
+            padding:EdgeInsets.all(16),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 2),
@@ -53,7 +54,7 @@ class HomeView extends GetView<HomeController> {
             children: [
               Obx(
                 () => Text(
-                  'Good Morning, ${controller.userName.value}',
+                  '${controller.userName.value}',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -111,7 +112,7 @@ class HomeView extends GetView<HomeController> {
 
   Widget _buildBody() {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
