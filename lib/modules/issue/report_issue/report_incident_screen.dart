@@ -29,7 +29,7 @@ class IncidentReportScreen extends StatelessWidget {
                 : SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
                   child: Column(
-                    children: [_buildHeader(), _buildForm(controller)],
+                    children: [_buildForm(controller)],
                   ),
                 ),
       ),

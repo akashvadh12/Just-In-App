@@ -27,6 +27,7 @@ class IncidentReportController extends GetxController {
   final currentPosition = Rxn<LatLng>();
   final mapController = MapController();
   final isLoading = false.obs;
+  final LocalStorageService localStorageService = Get.find<LocalStorageService>();
 
   @override
   void onInit() {
@@ -128,12 +129,47 @@ class IncidentReportController extends GetxController {
     selectedPhotos.remove(photo);
   }
 
+
+
+  Future<String?> getUserId() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      String? storedUserId = prefs.getString('user_id');
+
+      if (storedUserId == null || storedUserId.isEmpty) {
+        final userDataString = prefs.getString('user_data');
+        if (userDataString != null && userDataString.isNotEmpty) {
+          try {
+            final userData = jsonDecode(userDataString);
+            if (userData is Map<String, dynamic> &&
+                userData['userId'] != null) {
+              storedUserId = userData['userId'].toString();
+              if (storedUserId.isNotEmpty) {
+                await prefs.setString('user_id', storedUserId);
+              }
+            }
+          } catch (e) {
+            print('Error parsing user data: $e');
+          }
+        }
+      }
+
+      print('Retrieved user ID: $storedUserId');
+      return storedUserId?.isNotEmpty == true ? storedUserId : null;
+    } catch (e) {
+      print('Error retrieving user ID: $e');
+      return null;
+    }
+  }
+
   Future<String?> getAuthToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.getString('device_token');
+      final token = prefs.getString('auth_token');
+      return token?.isNotEmpty == true ? token : null;
     } catch (e) {
-      print("Token fetch error: $e");
+      print('Error retrieving token: $e');
       return null;
     }
   }
@@ -160,11 +196,11 @@ class IncidentReportController extends GetxController {
       return;
     }
 
-    final token = await getAuthToken();
-    final user = await LocalStorageService.instance.getUserModel();
+     final userId = await getUserId();
+      final token = await localStorageService.getString("deviceToken");
 
-      print("user token : $token, user : $user");
-    if (token == null || user == null) {
+      print("user token👍👍 : $token, user👍👍 : $userId");
+    if ( userId == null) {
       CustomSnackbar.showError('Unauthorized', 'Please login to continue.');
       return;
     }
@@ -181,7 +217,7 @@ class IncidentReportController extends GetxController {
         await _submitWithoutImages(
           uri,
           headers,
-          user.userId,
+          userId,
           position,
           description,
         );
@@ -189,7 +225,7 @@ class IncidentReportController extends GetxController {
         await _submitWithImages(
           uri,
           headers,
-          user.userId,
+          userId,
           position,
           description,
         );

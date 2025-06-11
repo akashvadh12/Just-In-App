@@ -98,12 +98,6 @@ class AuthController extends GetxController {
         // Save login status
         await storage.saveLoginStatus(true);
 
-        // Save auth token if available
-        final accessToken = data['accessToken'] as String?;
-        if (accessToken != null) {
-          await storage.saveToken(accessToken);
-        }
-
         // Save device token
         if (deviceToken != null && deviceToken.isNotEmpty) {
           await storage.saveString('deviceToken', deviceToken);

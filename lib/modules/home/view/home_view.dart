@@ -9,12 +9,17 @@ import 'package:security_guard/modules/notification/notification_screen.dart';
 
 import 'package:security_guard/modules/petrol/views/patrol_check_in_view.dart';
 import 'package:security_guard/modules/profile/Profile_screen.dart';
+import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
 
 class HomeView extends GetView<HomeController> {
   const HomeView({Key? key}) : super(key: key);
 
+
   @override
   Widget build(BuildContext context) {
+
+ final BottomNavController bottomNavController = Get.find<BottomNavController>();;
+
     if (!Get.isRegistered<HomeController>()) {
       Get.lazyPut(() => HomeController());
     }
@@ -22,7 +27,7 @@ class HomeView extends GetView<HomeController> {
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
       appBar: _buildAppBar(),
-      body: _buildBody(),
+      body: _buildBody(bottomNavController),
     );
   }
 
@@ -110,7 +115,7 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(bottomNavController) {
     return SingleChildScrollView(
       padding: EdgeInsets.all(24),
       child: Column(
@@ -120,7 +125,7 @@ class HomeView extends GetView<HomeController> {
           SizedBox(height: 24),
           _buildSectionTitle('Quick Actions'),
           SizedBox(height: 12),
-          _buildQuickActions(),
+          _buildQuickActions(bottomNavController),
           SizedBox(height: 24),
           _buildSectionTitle('Today\'s Overview'),
           SizedBox(height: 12),
@@ -235,7 +240,7 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickActions(bottomNavController) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -243,19 +248,19 @@ class HomeView extends GetView<HomeController> {
           icon: Icons.directions_walk,
           label: 'Start\nPatrol',
           color: Color(0xFF4285F4),
-          onTap: () => Get.to(() => PatrolCheckInScreen()),
+          onTap: () => bottomNavController.changeTab(2),
         ),
         _buildActionButton(
           icon: Icons.fingerprint,
           label: 'Mark\nAttendance',
           color: Color(0xFF4285F4),
-          onTap: () => Get.to(() => GuardAttendanceScreen()),
+          onTap: () => bottomNavController.changeTab(1),
         ),
         _buildActionButton(
           icon: Icons.warning,
           label: 'Raise\nIssue',
           color: Color(0xFF4285F4),
-          onTap: () => Get.to(() => IncidentReportScreen()),
+          onTap: () => bottomNavController.changeTab(3),
         ),
       ],
     );
