@@ -22,14 +22,13 @@ class _SplashScreenState extends State<SplashScreen> {
     
     try {
       final storage = LocalStorageService.instance;
-      final isLoggedIn = storage.isLoggedIn();
-      final user = storage.getUserModel();
+      final deviceToken = storage.getDeviceToken();
       
-      if (isLoggedIn && user != null) {
-        // User is logged in, navigate to main app
+      if (deviceToken != null && deviceToken.isNotEmpty) {
+        // Device token exists, navigate to main app
         Get.offAllNamed(Routes.BOTTOM_NAV);
       } else {
-        // User is not logged in, navigate to login
+        // Device token does not exist, navigate to login
         Get.offAllNamed(Routes.LOGIN);
       }
     } catch (e) {

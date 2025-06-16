@@ -33,14 +33,16 @@ class BottomNavBarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() => Scaffold(
+         
           body: screens[controller.currentIndex.value],
           bottomNavigationBar: BottomNavigationBar(
             currentIndex: controller.currentIndex.value,
             onTap: controller.changeTab,
-            selectedItemColor: AppColors.primary,
-            unselectedItemColor: Colors.grey,
+            selectedItemColor: AppColors.background,
+            unselectedItemColor:  Colors.grey,
             items: items,
             type: BottomNavigationBarType.fixed,
+            backgroundColor:AppColors.primary ,
           ),
         ));
   }

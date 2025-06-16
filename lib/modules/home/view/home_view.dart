@@ -57,16 +57,16 @@ class HomeView extends GetView<HomeController> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Obx(
-                () => Text(
-                  '${controller.userName.value}',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              // Obx(
+              //   () => Text(
+              //     '${controller.userName.value}',
+              //     style: TextStyle(
+              //       color: Colors.white,
+              //       fontSize: 18,
+              //       fontWeight: FontWeight.bold,
+              //     ),
+              //   ),
+              // ),
               Obx(
                 () => Text(
                   controller.formattedDate,

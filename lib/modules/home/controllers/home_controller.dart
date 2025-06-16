@@ -1,35 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:security_guard/modules/auth/models/user_model.dart';
-import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
+import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 
 class HomeController extends GetxController {
-  // User data
-  final userName = 'User'.obs;
-  final userPhotoUrl = ''.obs;
-  final userId = ''.obs;
+  // User data from ProfileController
+  final ProfileController profileController = Get.find<ProfileController>();
+
+  String get userName => profileController.userModel.value?.name ?? 'User';
+  String get userPhotoUrl => profileController.userModel.value?.photoPath ?? '';
+  String get userId => profileController.userModel.value?.userId ?? '';
+
   final notificationCount = 1.obs;
   final currentDate = DateTime.now().obs;
 
   @override
   void onInit() {
     super.onInit();
-    loadUserData();
-  }
-
-  void loadUserData() {
-    try {
-      final storage = LocalStorageService.instance;
-      final user = storage.getUserModel();
-
-      if (user != null) {
-        userName.value = user.name;
-        userPhotoUrl.value = user.photoPath;
-        userId.value = user.userId;
-      }
-    } catch (e) {
-      print('Error loading user data in HomeController: $e');
-    }
+    // No need to load user data from storage, ProfileController handles it
   }
 
   // Attendance data

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
@@ -15,6 +16,8 @@ class AttendanceHistoryController extends GetxController {
   var reportRecords = <AttendanceRecord>[].obs;
   var fromDate = DateTime.now().obs;
   var toDate = DateTime.now().obs;
+    final ProfileController profileController = Get.find<ProfileController>();
+  
 
   // Base URL
   final String baseUrl =
@@ -77,7 +80,7 @@ class AttendanceHistoryController extends GetxController {
     try {
       isLoading.value = true;
 
-      final userId = await getUserId();
+      final userId = profileController.userModel.value?.userId;
       final authToken = await getAuthToken();
 
       if (userId == null || userId.isEmpty) {
@@ -121,7 +124,7 @@ class AttendanceHistoryController extends GetxController {
     try {
       isLoading.value = true;
 
-      final userId = await getUserId();
+      final userId = profileController.userModel.value?.userId;
       final authToken = await getAuthToken();
 
       if (userId == null || userId.isEmpty) {
@@ -162,8 +165,9 @@ class AttendanceHistoryController extends GetxController {
     try {
       isLoading.value = true;
 
-      final userId = await getUserId();
+final userId = profileController.userModel.value?.userId;
       final authToken = await getAuthToken();
+    print("the user id is🔴🔴🔴 : $userId and authtoken $authToken");
 
       if (userId == null || userId.isEmpty) {
         _showError(

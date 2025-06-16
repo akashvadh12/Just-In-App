@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
@@ -17,6 +18,7 @@ class GuardAttendanceController extends GetxController {
   var clockOutTime;
   var isLoadingLocation = false.obs;
   var isProcessingAttendance = false.obs;
+    final ProfileController profileController = Get.find<ProfileController>();
 
   // API endpoint
   static const String attendanceApiUrl =
@@ -282,7 +284,7 @@ class GuardAttendanceController extends GetxController {
       }
 
       // Get user credentials
-      final userId = await getUserId();
+      final userId = profileController.userModel.value?.userId;
       final authToken = await getAuthToken();
 
       if (userId == null || userId.isEmpty) {

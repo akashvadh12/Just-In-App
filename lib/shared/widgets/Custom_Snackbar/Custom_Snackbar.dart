@@ -2,6 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
  
 class CustomSnackbar {
+
+  static void showSnackbar({
+    required String title,
+    required String message,
+    required Color backgroundColor,
+    IconData? icon,
+  }) {
+    Get.snackbar(
+      title,
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: backgroundColor,
+      colorText: Colors.white,
+      duration: const Duration(seconds: 3),
+      margin: const EdgeInsets.all(10),
+      borderRadius: 8,
+      icon: icon != null ? Icon(icon, color: Colors.white) : null,
+      isDismissible: true,
+      forwardAnimationCurve: Curves.easeOutBack,
+    );
+  }
+
   static void showSuccess(String title, String message) {
     Get.snackbar(
       title,

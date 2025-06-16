@@ -4,6 +4,7 @@ import 'package:security_guard/core/api/api_service.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/modules/auth/controllers/auth_controller.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
+import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:security_guard/routes/app_pages.dart';
 
 void main() async {
@@ -13,7 +14,9 @@ void main() async {
 
   // Initialize services before running the app
   await initServices();
+  Get.put(ProfileController());
   Get.put(AuthController());
+  
 
   runApp(MyApp());
 }

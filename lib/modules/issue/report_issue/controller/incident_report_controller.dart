@@ -15,6 +15,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as path;
 import 'package:security_guard/modules/issue/issue_list/issue_view/issue_screen.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
+import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:security_guard/shared/widgets/Custom_Snackbar/Custom_Snackbar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -129,47 +130,21 @@ class IncidentReportController extends GetxController {
     selectedPhotos.remove(photo);
   }
 
-
-
   Future<String?> getUserId() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-
-      String? storedUserId = prefs.getString('user_id');
-
-      if (storedUserId == null || storedUserId.isEmpty) {
-        final userDataString = prefs.getString('user_data');
-        if (userDataString != null && userDataString.isNotEmpty) {
-          try {
-            final userData = jsonDecode(userDataString);
-            if (userData is Map<String, dynamic> &&
-                userData['userId'] != null) {
-              storedUserId = userData['userId'].toString();
-              if (storedUserId.isNotEmpty) {
-                await prefs.setString('user_id', storedUserId);
-              }
-            }
-          } catch (e) {
-            print('Error parsing user data: $e');
-          }
-        }
-      }
-
-      print('Retrieved user ID: $storedUserId');
-      return storedUserId?.isNotEmpty == true ? storedUserId : null;
+      final profileController = Get.find<ProfileController>();
+      return profileController.userModel.value?.userId;
     } catch (e) {
       print('Error retrieving user ID: $e');
       return null;
     }
   }
 
-  Future<String?> getAuthToken() async {
+  Future<String?> getDeviceToken() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-      return token?.isNotEmpty == true ? token : null;
+      return localStorageService.getDeviceToken();
     } catch (e) {
-      print('Error retrieving token: $e');
+      print('Error retrieving device token: $e');
       return null;
     }
   }
@@ -196,11 +171,11 @@ class IncidentReportController extends GetxController {
       return;
     }
 
-     final userId = await getUserId();
-      final token = await localStorageService.getString("deviceToken");
+    final userId = await getUserId();
+    final token = await getDeviceToken();
 
-      print("user token👍👍 : $token, user👍👍 : $userId");
-    if ( userId == null) {
+    print("user token👍👍 : $token, user👍👍 : $userId");
+    if (userId == null) {
       CustomSnackbar.showError('Unauthorized', 'Please login to continue.');
       return;
     }

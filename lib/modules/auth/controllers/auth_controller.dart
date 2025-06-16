@@ -1,16 +1,21 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
 import 'package:security_guard/core/theme/app_colors.dart';
+import 'package:security_guard/data/services/api_post_service.dart';
 import 'package:security_guard/modules/auth/models/user_model.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
+import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:security_guard/routes/app_rout.dart';
+import 'package:security_guard/shared/widgets/Custom_Snackbar/Custom_Snackbar.dart';
 
 class AuthController extends GetxController {
+  // Controllers
   final credentialsController = TextEditingController();
   final passwordController = TextEditingController();
 
+  // Reactive variables
   final isPasswordHidden = true.obs;
   final isLoading = false.obs;
   final isSendingOTP = false.obs;
@@ -18,6 +23,18 @@ class AuthController extends GetxController {
   final isLoggedIn = false.obs;
   final loginWithPhone = false.obs;
 
+  // Services
+  final ApiPostServices _apiService = ApiPostServices();
+  final LocalStorageService _storage = LocalStorageService.instance;
+    final ProfileController profileController = Get.find<ProfileController>();
+
+  @override
+  void onInit() {
+    super.onInit();
+    checkLoginStatus();
+  }
+
+  // Toggle methods
   void togglePasswordVisibility() => isPasswordHidden.toggle();
 
   void toggleLoginMethod() {
@@ -35,167 +52,186 @@ class AuthController extends GetxController {
     passwordController.clear();
   }
 
+  /// Check if user is already logged in
   Future<void> checkLoginStatus() async {
     try {
-      final storage = LocalStorageService.instance;
-      isLoggedIn.value = storage.isLoggedIn();
+      // Only check for device token, not login status in storage
+      final deviceToken = _storage.getDeviceToken();
+      final loggedIn = deviceToken != null && deviceToken.isNotEmpty;
+      isLoggedIn.value = loggedIn;
+      if (loggedIn) {
+        log('✅ User is already logged in');
+        Get.offAllNamed(Routes.BOTTOM_NAV);
+      }
     } catch (e) {
-      print('Error checking login status: $e');
+      log('❌ Error checking login status: $e');
       isLoggedIn.value = false;
     }
   }
 
+  /// Set login status
   void setLoggedIn(bool status) {
     isLoggedIn.value = status;
   }
 
+  /// Main login method using ApiPostServices
   Future<void> login() async {
     final input = credentialsController.text.trim();
     final password = passwordController.text.trim();
 
-    if (input.isEmpty || password.isEmpty) {
-      _showErrorSnackbar(
-        'Please enter your ${loginWithPhone.value ? 'phone number' : 'user ID'} and password.',
-      );
-      return;
-    }
+    // Validation
+    if (!_validateInput(input, password)) return;
 
     isLoading.value = true;
-    final url = Uri.parse(
-      'https://official.solarvision-cairo.com/api/Auth/UserAuthentication',
-    );
 
     try {
-      final body =
-          loginWithPhone.value
-              ? {"phoneNumber": input, "password": password}
-              : {"userName": input, "password": password};
-
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
+      log('🔐 Attempting login with ${loginWithPhone.value ? 'phone' : 'username'}: $input');
+      
+      // Use centralized API service
+      final response = await _apiService.login(
+        input: input,
+        password: password,
+        loginWithPhone: loginWithPhone.value,
       );
 
-      final Map<String, dynamic> data = jsonDecode(response.body);
-
-      if (response.statusCode == 200 &&
-          data['status'] == true &&
-          (data['userInf']?.isNotEmpty ?? false)) {
-        final userData = data['userInf'][0];
-        final name = userData['name'] ?? 'User';
-        final deviceToken = userData['deviceToken'] ?? '';
-
-        // Create user model from API response
-        final user = UserModel.fromJson(userData);
-
-        // Get storage service
-        final storage = LocalStorageService.instance;
-
-        // Save user data
-        await storage.saveUserModel(user);
-
-        // Save login status
-        await storage.saveLoginStatus(true);
-
-        // Save device token
-        if (deviceToken != null && deviceToken.isNotEmpty) {
-          await storage.saveString('deviceToken', deviceToken);
-        }
-
-        setLoggedIn(true);
-        _showSuccessSnackbar('Welcome, $name!');
-
-        Get.offAllNamed(Routes.BOTTOM_NAV);
-      } else {
-        _showErrorSnackbar(
-          'Invalid ${loginWithPhone.value ? 'phone number' : 'user ID'} or password.',
-        );
-      }
+      await _handleLoginResponse(response);
     } catch (e) {
-      _showErrorSnackbar('Login failed. Please try again later.\nError: $e');
+      log('❌ Login error: $e');
+      _showErrorSnackbar('Login failed. Please try again later.');
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<String?> getAuthToken() async {
-    final storage = LocalStorageService.instance;
-    return storage.getToken();
+  /// Validate login input
+  bool _validateInput(String input, String password) {
+    if (input.isEmpty || password.isEmpty) {
+      _showErrorSnackbar(
+        'Please enter your ${loginWithPhone.value ? 'phone number' : 'user ID'} and password.',
+      );
+      return false;
+    }
+
+    // Additional phone number validation
+    if (loginWithPhone.value && !_isValidPhoneNumber(input)) {
+      _showErrorSnackbar('Please enter a valid phone number.');
+      return false;
+    }
+
+    return true;
   }
 
+  /// Simple phone number validation
+  bool _isValidPhoneNumber(String phone) {
+    final phoneRegExp = RegExp(r'^\+?[\d\s-()]{8,15}$');
+    return phoneRegExp.hasMatch(phone);
+  }
+
+  /// Handle login API response
+  Future<void> _handleLoginResponse(Map<String, dynamic> response) async {
+    try {
+      if (response['status'] == true && 
+          response['userInf'] != null && 
+          (response['userInf'] as List).isNotEmpty) {
+        final userData = response['userInf'][0] as Map<String, dynamic>;
+        final name = userData['name'] ?? 'User';
+        final deviceToken = userData['deviceToken'] ?? '';
+
+        profileController.userModel.value = UserModel.fromJson(response['userInf'][0]);
+
+        // Create user model and update a GetX controller (not LocalStorageService)
+        // TODO: Set userModel in ProfileController or AuthController as needed
+
+        // Save device token if available
+        if (deviceToken.isNotEmpty) {
+          await _storage.saveDeviceToken(deviceToken);
+        }
+
+        setLoggedIn(true);
+        log('✅ Login successful for user: $name');
+        _showSuccessSnackbar('Welcome, $name!');
+        Get.offAllNamed(Routes.BOTTOM_NAV);
+      } else {
+        final errorMessage = response['message'] ?? 
+          'Invalid ${loginWithPhone.value ? 'phone number' : 'user ID'} or password.';
+        _showErrorSnackbar(errorMessage);
+      }
+    } catch (e) {
+      log('❌ Error handling login response: $e');
+      _showErrorSnackbar('An error occurred while processing login.');
+    }
+  }
+
+  /// Send OTP (placeholder implementation)
   Future<void> sendOTP() async {
     final phone = credentialsController.text.trim();
+    
     if (phone.isEmpty) {
       _showErrorSnackbar('Please enter your phone number first.');
       return;
     }
 
-    isSendingOTP.value = true;
-    await Future.delayed(const Duration(seconds: 2));
-    isSendingOTP.value = false;
+    if (!_isValidPhoneNumber(phone)) {
+      _showErrorSnackbar('Please enter a valid phone number.');
+      return;
+    }
 
-    _showSnackbar(
-      title: 'Success',
-      message: 'OTP sent successfully!',
-      backgroundColor: AppColors.greenColor,
-    );
+    isSendingOTP.value = true;
+
+    try {
+      // TODO: Implement actual OTP API call using _apiService
+      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
+      
+      log('📱 OTP sent to: $phone');
+      _showSuccessSnackbar('OTP sent successfully!');
+    } catch (e) {
+      log('❌ OTP sending failed: $e');
+      _showErrorSnackbar('Failed to send OTP. Please try again.');
+    } finally {
+      isSendingOTP.value = false;
+    }
   }
 
+  /// Navigate to forgot password screen
   void navigateToForgotPassword() {
     Get.toNamed(Routes.FORGOT_PASSWORD);
   }
 
+  /// Logout user
   Future<void> logout() async {
     try {
-      // Clear user data from storage
-      final storage = LocalStorageService.instance;
-      await storage.clearUserData();
-
-      // Update UI state
+      log('🚪 Logging out user');
+      await _storage.removeDeviceToken();
       isLoggedIn.value = false;
       clearFields();
-
-      // Navigate to login screen
+      log('✅ Logout successful');
       Get.offAllNamed(Routes.LOGIN);
     } catch (e) {
-      print('Error during logout: $e');
-      // Force navigation to login screen even if there's an error
+      log('❌ Error during logout: $e');
       Get.offAllNamed(Routes.LOGIN);
     }
   }
 
+  // Snackbar helper methods
   void _showErrorSnackbar(String message) {
-    _showSnackbar(
+    CustomSnackbar.showSnackbar(
       title: 'Error',
       message: message,
       backgroundColor: AppColors.error,
+      icon: Icons.error_outline,
     );
   }
 
   void _showSuccessSnackbar(String message) {
-    _showSnackbar(
+    CustomSnackbar.showSnackbar(
       title: 'Success',
       message: message,
       backgroundColor: AppColors.secondary,
+      icon: Icons.check_circle_outline,
     );
   }
 
-  void _showSnackbar({
-    required String title,
-    required String message,
-    required Color backgroundColor,
-  }) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: backgroundColor,
-      colorText: Colors.white,
-      duration: const Duration(seconds: 3),
-      margin: const EdgeInsets.all(10),
-    );
-  }
+
 
   @override
   void onClose() {
