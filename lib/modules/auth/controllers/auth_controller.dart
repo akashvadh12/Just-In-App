@@ -26,7 +26,7 @@ class AuthController extends GetxController {
   // Services
   final ApiPostServices _apiService = ApiPostServices();
   final LocalStorageService _storage = LocalStorageService.instance;
-    final ProfileController profileController = Get.find<ProfileController>();
+  final ProfileController profileController = Get.find<ProfileController>();
 
   @override
   void onInit() {
@@ -85,8 +85,10 @@ class AuthController extends GetxController {
     isLoading.value = true;
 
     try {
-      log('🔐 Attempting login with ${loginWithPhone.value ? 'phone' : 'username'}: $input');
-      
+      log(
+        '🔐 Attempting login with ${loginWithPhone.value ? 'phone' : 'username'}: $input',
+      );
+
       // Use centralized API service
       final response = await _apiService.login(
         input: input,
@@ -130,19 +132,19 @@ class AuthController extends GetxController {
   /// Handle login API response
   Future<void> _handleLoginResponse(Map<String, dynamic> response) async {
     try {
-      if (response['status'] == true && 
-          response['userInf'] != null && 
+      if (response['status'] == true &&
+          response['userInf'] != null &&
           (response['userInf'] as List).isNotEmpty) {
         final userData = response['userInf'][0] as Map<String, dynamic>;
         final name = userData['name'] ?? 'User';
         final deviceToken = userData['deviceToken'] ?? '';
 
-        profileController.userModel.value = UserModel.fromJson(response['userInf'][0]);
+        profileController.userModel.value = UserModel.fromJson(
+          response['userInf'][0],
+        );
 
-        // Create user model and update a GetX controller (not LocalStorageService)
-        // TODO: Set userModel in ProfileController or AuthController as needed
+        await _storage.saveUserId(userData['userID'] ?? '');
 
-        // Save device token if available
         if (deviceToken.isNotEmpty) {
           await _storage.saveDeviceToken(deviceToken);
         }
@@ -152,8 +154,9 @@ class AuthController extends GetxController {
         _showSuccessSnackbar('Welcome, $name!');
         Get.offAllNamed(Routes.BOTTOM_NAV);
       } else {
-        final errorMessage = response['message'] ?? 
-          'Invalid ${loginWithPhone.value ? 'phone number' : 'user ID'} or password.';
+        final errorMessage =
+            response['message'] ??
+            'Invalid ${loginWithPhone.value ? 'phone number' : 'user ID'} or password.';
         _showErrorSnackbar(errorMessage);
       }
     } catch (e) {
@@ -165,7 +168,7 @@ class AuthController extends GetxController {
   /// Send OTP (placeholder implementation)
   Future<void> sendOTP() async {
     final phone = credentialsController.text.trim();
-    
+
     if (phone.isEmpty) {
       _showErrorSnackbar('Please enter your phone number first.');
       return;
@@ -181,7 +184,7 @@ class AuthController extends GetxController {
     try {
       // TODO: Implement actual OTP API call using _apiService
       await Future.delayed(const Duration(seconds: 2)); // Simulate API call
-      
+
       log('📱 OTP sent to: $phone');
       _showSuccessSnackbar('OTP sent successfully!');
     } catch (e) {
@@ -230,8 +233,6 @@ class AuthController extends GetxController {
       icon: Icons.check_circle_outline,
     );
   }
-
-
 
   @override
   void onClose() {

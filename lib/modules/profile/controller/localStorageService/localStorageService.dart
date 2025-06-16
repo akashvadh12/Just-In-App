@@ -19,13 +19,29 @@ class LocalStorageService extends GetxService {
     }
   }
 
-  // Device token methods ONLY
   Future<void> saveDeviceToken(String deviceToken) async {
     try {
       await _prefs.setString('device_token', deviceToken);
       print('Device token saved successfully');
     } catch (e) {
       print('Error saving device token: $e');
+    }
+  }
+  Future<void> saveUserId(String userId) async {
+    try {
+      await _prefs.setString('user_id', userId);
+      print('user Id  saved successfully for user: $userId');
+    } catch (e) {
+      print('Error saving User Id: $e');
+    }
+  }
+
+  Future<String?> getUserId() async {
+    try {
+      return _prefs.getString('user_id');
+    } catch (e) {
+      print('Error retrieving user Id: $e');
+      return null;
     }
   }
 

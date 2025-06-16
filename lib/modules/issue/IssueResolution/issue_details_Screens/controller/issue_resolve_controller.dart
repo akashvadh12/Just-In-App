@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:security_guard/core/api/api_service.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
+import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class IssueDetailController extends GetxController {
@@ -17,6 +18,7 @@ class IssueDetailController extends GetxController {
   final RxBool isLoadingLocation = false.obs;
   final RxString errorMessage = ''.obs;
 // Location distance check will be performed in resolveIssue method.
+  final LocalStorageService _storage = LocalStorageService.instance;
 
   late String userId;
 
@@ -77,7 +79,7 @@ class IssueDetailController extends GetxController {
       isLoading.value = true;
       errorMessage.value = '';
 
-      final token = await getAuthToken();
+      final token = await _storage.getDeviceToken();
       if (token == null) {
         throw Exception('Authentication token not found');
       }
@@ -118,15 +120,5 @@ class IssueDetailController extends GetxController {
     }
   }
 
-  Future<String?> getAuthToken() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-      print("Retrieved Auth Token: ${token ?? 'Not found'}");
-      return token;
-    } catch (e) {
-      print("Error retrieving auth token: $e");
-      return null;
-    }
-  }
+  
 }

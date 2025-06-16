@@ -18,7 +18,7 @@ class GuardAttendanceController extends GetxController {
   var clockOutTime;
   var isLoadingLocation = false.obs;
   var isProcessingAttendance = false.obs;
-    final ProfileController profileController = Get.find<ProfileController>();
+  final ProfileController profileController = Get.find<ProfileController>();
 
   // API endpoint
   static const String attendanceApiUrl =
@@ -319,6 +319,10 @@ class GuardAttendanceController extends GetxController {
       request.fields['Latitude'] = currentPosition.value!.latitude.toString();
       request.fields['Longitude'] = currentPosition.value!.longitude.toString();
       request.fields['SelfieBase64'] = imageBase64;
+      request.fields['EntryTimestamp'] = DateTime.now().toIso8601String();
+      if (type == 'out') {
+        request.fields['ExitTimestamp'] = DateTime.now().toIso8601String();
+      }
 
       // Add file upload
       var multipartFile = await http.MultipartFile.fromPath(
@@ -335,6 +339,11 @@ class GuardAttendanceController extends GetxController {
       print('Longitude: ${currentPosition.value!.longitude}');
       print('Base64 length: ${imageBase64.length}');
       print('File path: ${capturedImage.value!.path}');
+      print('Entry Timestamp: ${request.fields['EntryTimestamp']}');
+      if (type == 'out') {
+        print('Exit Timestamp: ${request.fields['ExitTimestamp']}');
+      }
+
 
       // Send request
       final streamedResponse = await request.send().timeout(

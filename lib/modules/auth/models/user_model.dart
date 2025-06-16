@@ -14,6 +14,11 @@ class UserModel {
   final String? email;
   final String? phone;
   final String? token;
+  final String? clockIn;
+  final String? clockOut;
+  final String? todayPatrolStatus;
+  final String? attendanceStatus;
+  final Map<String, dynamic>? issuesCount;
 
   UserModel({
     required this.userId,
@@ -28,6 +33,11 @@ class UserModel {
     this.email,
     this.phone,
     this.token,
+    this.clockIn,
+    this.clockOut,
+    this.todayPatrolStatus,
+    this.attendanceStatus,
+    this.issuesCount,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -44,6 +54,11 @@ class UserModel {
       email: json['email']?.toString() ?? json['email_No']?.toString(),
       phone: json['phone']?.toString() ?? json['mobile_No']?.toString() ?? json['mobileNo']?.toString(),
       token: json['token']?.toString() ?? json['deviceToken']?.toString(),
+      clockIn: json['clockIn']?.toString(),
+      clockOut: json['clockOut']?.toString(),
+      todayPatrolStatus: json['todayPatrolStatus']?.toString(),
+      attendanceStatus: json['attendanceStatus']?.toString(),
+      issuesCount: json['issuesCount'] != null ? Map<String, dynamic>.from(json['issuesCount']) : null,
     );
   }
 
@@ -61,6 +76,11 @@ class UserModel {
       'email': email,
       'phone': phone,
       'token': token,
+      'clockIn': clockIn,
+      'clockOut': clockOut,
+      'todayPatrolStatus': todayPatrolStatus,
+      'attendanceStatus': attendanceStatus,
+      'issuesCount': issuesCount,
     };
   }
 
@@ -92,6 +112,11 @@ class UserModel {
     String? email,
     String? phone,
     String? token,
+    String? clockIn,
+    String? clockOut,
+    String? todayPatrolStatus,
+    String? attendanceStatus,
+    Map<String, dynamic>? issuesCount,
   }) {
     return UserModel(
       userId: userId ?? this.userId,
@@ -106,6 +131,11 @@ class UserModel {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       token: token ?? this.token,
+      clockIn: clockIn ?? this.clockIn,
+      clockOut: clockOut ?? this.clockOut,
+      todayPatrolStatus: todayPatrolStatus ?? this.todayPatrolStatus,
+      attendanceStatus: attendanceStatus ?? this.attendanceStatus,
+      issuesCount: issuesCount ?? this.issuesCount,
     );
   }
 

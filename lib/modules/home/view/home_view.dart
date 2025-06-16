@@ -4,11 +4,7 @@ import 'package:get/get.dart';
 import 'package:security_guard/modules/attandance/AttendanceScreen/GuardAttendanceScreen.dart';
 
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
-import 'package:security_guard/modules/issue/report_issue/report_incident_screen.dart';
 import 'package:security_guard/modules/notification/notification_screen.dart';
-
-import 'package:security_guard/modules/petrol/views/patrol_check_in_view.dart';
-import 'package:security_guard/modules/profile/Profile_screen.dart';
 import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
 
 class HomeView extends GetView<HomeController> {
@@ -38,35 +34,37 @@ class HomeView extends GetView<HomeController> {
       automaticallyImplyLeading: false,
       title: Row(
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            padding:EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-              image: DecorationImage(
-                image: NetworkImage(
-                  "https://randomuser.me/api/portraits/men/32.jpg",
+          Obx(() => Container(
+                width: 42,
+                height: 42,
+                padding: EdgeInsets.all(0),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                  image: DecorationImage(
+                    image: NetworkImage(
+                      controller.profileController.userModel.value?.photoPath.isNotEmpty == true
+                          ? controller.profileController.userModel.value!.photoPath
+                          : 'https://cdn-icons-png.flaticon.com/512/1053/1053244.png',
+                    ),
+                    fit: BoxFit.cover,
+                  ),
                 ),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
+              )),
           SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Obx(
-              //   () => Text(
-              //     '${controller.userName.value}',
-              //     style: TextStyle(
-              //       color: Colors.white,
-              //       fontSize: 18,
-              //       fontWeight: FontWeight.bold,
-              //     ),
-              //   ),
-              // ),
+              Obx(
+                () => Text(
+                  controller.profileController.userModel.value?.name ?? 'User',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
               Obx(
                 () => Text(
                   controller.formattedDate,
@@ -140,7 +138,7 @@ class HomeView extends GetView<HomeController> {
   }
 
   Widget _buildAttendanceCard() {
-    return Container(
+    return Obx(() => Container(
       width: double.infinity,
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -167,13 +165,13 @@ class HomeView extends GetView<HomeController> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Color(0xFFE6F7EE),
+                  color: controller.attendanceStatus.value == 'Marked' ? Color(0xFFE6F7EE) : Color(0xFFFFE6E6),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  'IN',
+                  controller.attendanceStatus.value.isNotEmpty ? controller.attendanceStatus.value : 'Not Marked',
                   style: TextStyle(
-                    color: Color(0xFF4CAF50),
+                    color: controller.attendanceStatus.value == 'Marked' ? Color(0xFF4CAF50) : Colors.red,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -192,13 +190,11 @@ class HomeView extends GetView<HomeController> {
                     style: TextStyle(color: Colors.grey, fontSize: 14),
                   ),
                   SizedBox(height: 4),
-                  Obx(
-                    () => Text(
-                      controller.clockInTime.value,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  Text(
+                    '-', // You can bind actual clock in time if available from API
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
@@ -207,17 +203,15 @@ class HomeView extends GetView<HomeController> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Hours Today',
+                    'Today Patrol',
                     style: TextStyle(color: Colors.grey, fontSize: 14),
                   ),
                   SizedBox(height: 4),
-                  Obx(
-                    () => Text(
-                      controller.hoursToday.value,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  Text(
+                    controller.todayPatrolStatus.value.isNotEmpty ? controller.todayPatrolStatus.value : '-',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
@@ -226,7 +220,7 @@ class HomeView extends GetView<HomeController> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildSectionTitle(String title) {
@@ -302,7 +296,7 @@ class HomeView extends GetView<HomeController> {
   }
 
   Widget _buildOverviewCards() {
-    return Row(
+    return Obx(() => Row(
       children: [
         Expanded(
           child: Container(
@@ -322,20 +316,18 @@ class HomeView extends GetView<HomeController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Completed Patrols',
+                  'New Issues',
                   style: TextStyle(color: Colors.grey[600], fontSize: 14),
                 ),
                 SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Obx(
-                      () => Text(
-                        '${controller.completedPatrols}/${controller.totalPatrols}',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    Text(
+                      '${controller.issuesNew}',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     Container(
@@ -344,7 +336,7 @@ class HomeView extends GetView<HomeController> {
                         color: Colors.green[100],
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.check, color: Colors.green, size: 16),
+                      child: Icon(Icons.fiber_new, color: Colors.green, size: 16),
                     ),
                   ],
                 ),
@@ -371,33 +363,27 @@ class HomeView extends GetView<HomeController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Active Issues',
+                  'Resolved Issues',
                   style: TextStyle(color: Colors.grey[600], fontSize: 14),
                 ),
                 SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Obx(
-                      () => Text(
-                        '${controller.activeIssues}',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    Text(
+                      '${controller.issuesResolved}',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     Container(
                       padding: EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.orange[100],
+                        color: Colors.blue[100],
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        Icons.warning,
-                        color: Colors.orange,
-                        size: 16,
-                      ),
+                      child: Icon(Icons.check, color: Colors.blue, size: 16),
                     ),
                   ],
                 ),
@@ -406,7 +392,7 @@ class HomeView extends GetView<HomeController> {
           ),
         ),
       ],
-    );
+    ));
   }
 
   Widget _buildRecentActivities() {

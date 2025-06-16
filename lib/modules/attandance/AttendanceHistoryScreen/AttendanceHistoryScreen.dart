@@ -14,11 +14,15 @@ class AttendanceHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      
       appBar: AppBar(
         title: const Text(
           'Attendance',
           style: TextStyle(color: Colors.white),
         ),
+          iconTheme: const IconThemeData(
+      color: Colors.white, // Set back button (and other icons) color here
+    ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),

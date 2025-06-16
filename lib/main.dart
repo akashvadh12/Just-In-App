@@ -11,8 +11,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Get.putAsync(() => LocalStorageService().init());
-
-  // Initialize services before running the app
   await initServices();
   Get.put(ProfileController());
   Get.put(AuthController());
@@ -21,22 +19,16 @@ void main() async {
   runApp(MyApp());
 }
 
-// Initialize all essential services
 Future<void> initServices() async {
   print('Starting services initialization...');
 
   try {
-    // Initialize LocalStorageService first
+
     await Get.putAsync(() => LocalStorageService().init(), permanent: true);
-
-    // You can initialize other services here as well
-    // Example:
-    // await Get.putAsync(() => SomeOtherService().init(), permanent: true);
-
     print('All services initialized successfully');
   } catch (e) {
     print('Error initializing services: $e');
-    // Handle initialization errors gracefully
+
   }
 }
 

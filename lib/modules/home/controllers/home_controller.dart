@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:security_guard/modules/auth/models/user_model.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:security_guard/modules/auth/models/user_model.dart';
+import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 
 class HomeController extends GetxController {
   // User data from ProfileController
@@ -17,7 +20,7 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // No need to load user data from storage, ProfileController handles it
+    fetchDashboardData();
   }
 
   // Attendance data
@@ -57,6 +60,14 @@ class HomeController extends GetxController {
 
   // Navigation index
   final selectedIndex = 0.obs;
+
+  // Dashboard data
+  final attendanceStatus = ''.obs;
+  final todayPatrolStatus = ''.obs;
+  final issuesNew = 0.obs;
+  final issuesPending = 0.obs;
+  final issuesResolved = 0.obs;
+  final dashboardLoading = false.obs;
 
   // Formatting logic for the date
   String get formattedDate {
@@ -117,5 +128,43 @@ class HomeController extends GetxController {
   void navigateTo(int index) {
     selectedIndex.value = index;
     // Implementation for navigation
+  }
+
+  final LocalStorageService _storage = LocalStorageService.instance;
+
+  Future<void> fetchDashboardData() async {
+    dashboardLoading.value = true;
+    try {
+      // Get userId from LocalStorageService
+      String? userId =  await _storage.getUserId();
+      print('User ID from storage🔴🔴: $userId');
+      // if (userId == null || userId.isEmpty) {
+      //   userId = profileController.userModel.value?.userId ?? '';
+      // }
+      // if (userId.isEmpty) {
+      //   dashboardLoading.value = false;
+      //   return;
+      // }
+      final url = Uri.parse('https://official.solarvision-cairo.com/dashboard?userId=$userId');
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        attendanceStatus.value = data['attendanceStatus']?.toString() ?? '';
+        todayPatrolStatus.value = data['todayPatrolStatus']?.toString() ?? '';
+        issuesNew.value = data['issuesCount']?['new'] ?? 0;
+        issuesPending.value = data['issuesCount']?['pending'] ?? 0;
+        issuesResolved.value = data['issuesCount']?['resolved'] ?? 0;
+        // Update user info/photo if present in dashboard response
+        if (data['userID'] != null) {
+          profileController.userModel.value = UserModel.fromJson(data);
+        }
+      } else {
+        Get.snackbar('Error', 'Failed to fetch dashboard data');
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Error fetching dashboard data: $e');
+    } finally {
+      dashboardLoading.value = false;
+    }
   }
 }
