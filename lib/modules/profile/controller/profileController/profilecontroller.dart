@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/modules/auth/models/user_model.dart';
 import 'package:security_guard/data/services/api_post_service.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
@@ -11,7 +12,8 @@ class ProfileController extends GetxController {
 
   // Only device token is stored in SharedPreferences
   final LocalStorageService _storage = LocalStorageService.instance;
-  final ApiPostServices _apiService = ApiPostServices();
+  final ApiPostServices _apiPostService = ApiPostServices();
+  final ApiGetServices _apiGetService = ApiGetServices();
 
   @override
   void onInit() {
@@ -23,7 +25,7 @@ class ProfileController extends GetxController {
   Future<void> fetchUserProfile(String userId) async {
     isLoading.value = true;
     try {
-      final response = await _apiService.getProfileAPI(userId);
+      final response = await _apiGetService.getProfileAPI(userId);
       if (response != null && response['status'] == true && response['user'] != null) {
         userModel.value = UserModel.fromJson(response['user']);
       } else {
@@ -48,7 +50,7 @@ class ProfileController extends GetxController {
     }
     isLoading.value = true;
     try {
-      final response = await _apiService.updateProfileAPI(
+      final response = await _apiPostService.updateProfileAPI(
         userId: userId,
         name: name,
         email: email,
@@ -82,7 +84,7 @@ class ProfileController extends GetxController {
     }
     isLoading.value = true;
     try {
-      final response = await _apiService.updatePasswordAPI(
+      final response = await _apiPostService.updatePasswordAPI(
         userId: userId,
         oldPassword: oldPassword,
         newPassword: newPassword,
@@ -102,7 +104,7 @@ class ProfileController extends GetxController {
   Future<void> updateProfilePicture({required String userId, required File imageFile}) async {
     isLoading.value = true;
     try {
-      final response = await _apiService.uploadProfileImageAPI(
+      final response = await _apiPostService.uploadProfileImageAPI(
         userId: userId,
         imageFile: imageFile,
       );
@@ -127,10 +129,10 @@ class ProfileController extends GetxController {
 
   // Snackbar helpers
   void _showErrorSnackbar(String message) {
-    Get.snackbar('Error', message, snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+    Get.snackbar('Error', message, snackPosition: SnackPosition.TOP, backgroundColor: Colors.red, colorText: Colors.white);
   }
 
   void _showSuccessSnackbar(String message) {
-    Get.snackbar('Success', message, snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green, colorText: Colors.white);
+    Get.snackbar('Success', message, snackPosition: SnackPosition.TOP, backgroundColor: Colors.green, colorText: Colors.white);
   }
 }

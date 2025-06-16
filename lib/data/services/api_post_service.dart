@@ -318,18 +318,7 @@ class ApiPostServices {
   }
 
   /// Get user profile by userId
-  Future<Map<String, dynamic>?> getProfileAPI(String userId) async {
-    const endpoint = 'profile';
-    final params = {'UserId': userId};
-    final headers = await _getAuthenticatedHeaders();
-    try {
-      final response = await _client.getWithParams(endpoint, params, headers: headers);
-      return _parseResponse(response);
-    } catch (e) {
-      log('$_logTag Get profile error: $e');
-      return {'status': false, 'message': 'Failed to get profile'};
-    }
-  }
+
 
   /// Update user profile
   Future<Map<String, dynamic>?> updateProfileAPI({

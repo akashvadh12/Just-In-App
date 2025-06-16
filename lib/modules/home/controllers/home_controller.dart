@@ -138,13 +138,13 @@ class HomeController extends GetxController {
       // Get userId from LocalStorageService
       String? userId =  await _storage.getUserId();
       print('User ID from storage🔴🔴: $userId');
-      // if (userId == null || userId.isEmpty) {
-      //   userId = profileController.userModel.value?.userId ?? '';
-      // }
-      // if (userId.isEmpty) {
-      //   dashboardLoading.value = false;
-      //   return;
-      // }
+      if (userId == null || userId.isEmpty) {
+        userId = profileController.userModel.value?.userId ?? '';
+      }
+      if (userId.isEmpty) {
+        dashboardLoading.value = false;
+        return;
+      }
       final url = Uri.parse('https://official.solarvision-cairo.com/dashboard?userId=$userId');
       final response = await http.get(url);
       if (response.statusCode == 200) {

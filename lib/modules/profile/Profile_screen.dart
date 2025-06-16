@@ -176,63 +176,63 @@ void _showLogoutConfirmationDialog() {
                   Stack(
                     alignment: Alignment.bottomRight,
                     children: [
-                      // Obx(() {
-                      //   final imagePath = controller.userModel.value!.photoPath;
+                      Obx(() {
+                        final imagePath = controller.userModel.value!.photoPath;
 
-                      //   Widget imageWidget;
+                        Widget imageWidget;
 
-                      //   if (imagePath.isEmpty) {
-                      //     // No image selected, show placeholder icon
-                      //     imageWidget = const Icon(
-                      //       Icons.person,
-                      //       size: 60,
-                      //       color: Colors.grey,
-                      //     );
-                      //   } else if (imagePath.startsWith('http') ||
-                      //       imagePath.startsWith('https')) {
-                      //     // It's a URL, use Image.network
-                      //     imageWidget = Image.network(
-                      //       imagePath,
-                      //       fit: BoxFit.cover,
-                      //       errorBuilder: (context, error, stackTrace) {
-                      //         return const Icon(
-                      //           Icons.person,
-                      //           size: 60,
-                      //           color: Colors.grey,
-                      //         );
-                      //       },
-                      //     );
-                      //   } else {
-                      //     // Assume it's a local file path, use Image.file
-                      //     imageWidget = Image.file(
-                      //       File(imagePath),
-                      //       fit: BoxFit.cover,
-                      //       errorBuilder: (context, error, stackTrace) {
-                      //         return const Icon(
-                      //           Icons.person,
-                      //           size: 60,
-                      //           color: Colors.grey,
-                      //         );
-                      //       },
-                      //     );
-                      //   }
+                        if (imagePath.isEmpty) {
+                          // No image selected, show placeholder icon
+                          imageWidget = const Icon(
+                            Icons.person,
+                            size: 60,
+                            color: Colors.grey,
+                          );
+                        } else if (imagePath.startsWith('http') ||
+                            imagePath.startsWith('https')) {
+                          // It's a URL, use Image.network
+                          imageWidget = Image.network(
+                            imagePath,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.person,
+                                size: 60,
+                                color: Colors.grey,
+                              );
+                            },
+                          );
+                        } else {
+                          // Assume it's a local file path, use Image.file
+                          imageWidget = Image.file(
+                            File(imagePath),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.person,
+                                size: 60,
+                                color: Colors.grey,
+                              );
+                            },
+                          );
+                        }
 
-                      //   return Container(
-                      //     width: 100,
-                      //     height: 100,
-                      //     decoration: BoxDecoration(
-                      //       shape: BoxShape.circle,
-                      //       border: Border.all(
-                      //         color: AppColors.lightGrey,
-                      //         width: 2,
-                      //       ),
-                      //     ),
-                      //     child: ClipRRect(
-                      //       borderRadius: BorderRadius.circular(50),
-                      //       child: imageWidget,
-                      //     ),
-                      //   );
-                      // }),
+                        return Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.lightGrey,
+                              width: 2,
+                            ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(50),
+                            child: imageWidget,
+                          ),
+                        );
+                      }),
 
                       // GestureDetector(
                       //   onTap: () async {
@@ -256,38 +256,38 @@ void _showLogoutConfirmationDialog() {
                   ),
                   const SizedBox(height: 16),
                   // User Name
-                  // Obx(
-                  //   () => Text(
-                  //     controller.userName.value,
-                  //     style: const TextStyle(
-                  //       fontSize: 20,
-                  //       fontWeight: FontWeight.bold,
-                  //     ),
-                  //   ),
-                  // ),
-                  // const SizedBox(height: 4),
-                  // // User ID
-                  // Obx(
-                  //   () => Text(
-                  //     'ID: ${controller.userId.value}',
-                  //     style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                  //   ),
-                  // ),
-                  // const SizedBox(height: 8),
-                  // // User Contact Info
-                  // Obx(
-                  //   () => Text(
-                  //     controller.userPhone.value,
-                  //     style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                  //   ),
-                  // ),
-                  // const SizedBox(height: 4),
-                  // Obx(
-                  //   () => Text(
-                  //     controller.userEmail.value,
-                  //     style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                  //   ),
-                  // ),
+                  Obx(
+                    () => Text(
+                      controller.userModel.value!.name ?? 'User Name',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  // User ID
+                  Obx(
+                    () => Text(
+                      'ID: ${controller.userModel.value!.userId}',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // User Contact Info
+                  Obx(
+                    () => Text(
+                      controller.userModel.value!.phone?? 'Phone Number',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Obx(
+                    () => Text(
+                      controller.userModel.value!.email?? 'Email Address',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -319,9 +319,9 @@ void _showLogoutConfirmationDialog() {
                       setState(() {
                         _showEditProfileSection = !_showEditProfileSection;
                         _showPasswordSection = false;
-                        // _nameController.text = controller.userName.value;
-                        // _emailController.text = controller.userEmail.value;
-                        // _phoneController.text = controller.userPhone.value;
+                        _nameController.text = controller.userModel.value!.name ?? '';
+                        _emailController.text = controller.userModel.value!.email ?? '';
+                        _phoneController.text = controller.userModel.value!.phone ?? '';
                       });
                     },
                   ),
