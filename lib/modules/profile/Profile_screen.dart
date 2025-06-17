@@ -177,12 +177,10 @@ void _showLogoutConfirmationDialog() {
                     alignment: Alignment.bottomRight,
                     children: [
                       Obx(() {
-                        final imagePath = controller.userModel.value!.photoPath;
-
+                        final user = controller.userModel.value;
+                        final imagePath = user?.photoPath ?? '';
                         Widget imageWidget;
-
                         if (imagePath.isEmpty) {
-                          // No image selected, show placeholder icon
                           imageWidget = const Icon(
                             Icons.person,
                             size: 60,
@@ -190,7 +188,6 @@ void _showLogoutConfirmationDialog() {
                           );
                         } else if (imagePath.startsWith('http') ||
                             imagePath.startsWith('https')) {
-                          // It's a URL, use Image.network
                           imageWidget = Image.network(
                             imagePath,
                             fit: BoxFit.cover,
@@ -203,7 +200,6 @@ void _showLogoutConfirmationDialog() {
                             },
                           );
                         } else {
-                          // Assume it's a local file path, use Image.file
                           imageWidget = Image.file(
                             File(imagePath),
                             fit: BoxFit.cover,
@@ -216,7 +212,6 @@ void _showLogoutConfirmationDialog() {
                             },
                           );
                         }
-
                         return Container(
                           width: 100,
                           height: 100,
@@ -257,36 +252,48 @@ void _showLogoutConfirmationDialog() {
                   const SizedBox(height: 16),
                   // User Name
                   Obx(
-                    () => Text(
-                      controller.userModel.value!.name ?? 'User Name',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    () {
+                      final user = controller.userModel.value;
+                      return Text(
+                        user?.name ?? 'User Name',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 4),
                   // User ID
                   Obx(
-                    () => Text(
-                      'ID: ${controller.userModel.value!.userId}',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                    ),
+                    () {
+                      final user = controller.userModel.value;
+                      return Text(
+                        'ID:  {user?.userId ?? "-"}',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      );
+                    },
                   ),
                   const SizedBox(height: 8),
                   // User Contact Info
                   Obx(
-                    () => Text(
-                      controller.userModel.value!.phone?? 'Phone Number',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                    ),
+                    () {
+                      final user = controller.userModel.value;
+                      return Text(
+                        user?.phone ?? 'Phone Number',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      );
+                    },
                   ),
                   const SizedBox(height: 4),
                   Obx(
-                    () => Text(
-                      controller.userModel.value!.email?? 'Email Address',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                    ),
+                    () {
+                      final user = controller.userModel.value;
+                      return Text(
+                        user?.email ?? 'Email Address',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -319,9 +326,10 @@ void _showLogoutConfirmationDialog() {
                       setState(() {
                         _showEditProfileSection = !_showEditProfileSection;
                         _showPasswordSection = false;
-                        _nameController.text = controller.userModel.value!.name ?? '';
-                        _emailController.text = controller.userModel.value!.email ?? '';
-                        _phoneController.text = controller.userModel.value!.phone ?? '';
+                        final user = controller.userModel.value;
+                        _nameController.text = user?.name ?? '';
+                        _emailController.text = user?.email ?? '';
+                        _phoneController.text = user?.phone ?? '';
                       });
                     },
                   ),

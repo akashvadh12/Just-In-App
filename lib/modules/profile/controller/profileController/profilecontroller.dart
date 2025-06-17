@@ -136,3 +136,4 @@ class ProfileController extends GetxController {
     Get.snackbar('Success', message, snackPosition: SnackPosition.TOP, backgroundColor: Colors.green, colorText: Colors.white);
   }
 }
+
