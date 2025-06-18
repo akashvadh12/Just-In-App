@@ -24,8 +24,6 @@ class HomeController extends GetxController {
   }
 
   // Attendance data
-  final isClockIn = true.obs;
-  final clockInTime = '07:45 AM'.obs;
   final hoursToday = '6h 15m'.obs;
 
   // Patrol data
@@ -63,6 +61,7 @@ class HomeController extends GetxController {
 
   // Dashboard data
   final attendanceStatus = ''.obs;
+  final clockInTime = '09:00 AM'.obs;
   final todayPatrolStatus = ''.obs;
   final issuesNew = 0.obs;
   final issuesPending = 0.obs;
@@ -136,7 +135,7 @@ class HomeController extends GetxController {
     dashboardLoading.value = true;
     try {
       // Get userId from LocalStorageService
-      String? userId =  await _storage.getUserId();
+      String? userId = await _storage.getUserId();
       print('User ID from storage🔴🔴: $userId');
       if (userId == null || userId.isEmpty) {
         userId = profileController.userModel.value?.userId ?? '';
@@ -145,7 +144,9 @@ class HomeController extends GetxController {
         dashboardLoading.value = false;
         return;
       }
-      final url = Uri.parse('https://official.solarvision-cairo.com/dashboard?userId=$userId');
+      final url = Uri.parse(
+        'https://official.solarvision-cairo.com/dashboard?userId=$userId',
+      );
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -154,15 +155,44 @@ class HomeController extends GetxController {
         issuesNew.value = data['issuesCount']?['new'] ?? 0;
         issuesPending.value = data['issuesCount']?['pending'] ?? 0;
         issuesResolved.value = data['issuesCount']?['resolved'] ?? 0;
+        clockInTime.value = data['clockIn']?.toString() ?? '09:00 AM';
+
+        print('Dashboard data fetched successfully: $data');
         // Update user info/photo if present in dashboard response
         if (data['userID'] != null) {
           profileController.userModel.value = UserModel.fromJson(data);
         }
+      } else if (response.statusCode == 404) {
+        Get.snackbar(
+          "Not Found",
+          "Dashboard data not found for user ID: $userId",
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          icon: const Icon(Icons.error, color: Colors.white),
+          duration: const Duration(seconds: 3),
+        );
+      } else if (response.statusCode == 500) {
+        Get.snackbar(
+          "Server Error",
+          "Internal server error. Please try again later.",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          icon: const Icon(Icons.error, color: Colors.white),
+          duration: const Duration(seconds: 3),
+        );
       } else {
-        Get.snackbar('Error', 'Failed to fetch dashboard data');
+        Get.snackbar(
+          "Oops!",
+          "Dashboard not loading. Check your internet and try again.",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          icon: const Icon(Icons.wifi_off, color: Colors.white),
+          duration: const Duration(seconds: 3),
+        );
       }
     } catch (e) {
-      Get.snackbar('Error', 'Error fetching dashboard data: $e');
+      Get.snackbar('Error', 'Error fetching dashboard data');
+      print('Error fetching dashboard data:🔴🔴🔴🐞🐞 $e');
     } finally {
       dashboardLoading.value = false;
     }

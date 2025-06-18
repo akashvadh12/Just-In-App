@@ -28,6 +28,13 @@ class IssueDetailController extends GetxController {
     this.userId = userId;
   }
 
+  @override
+  void onInit() {
+    super.onInit();
+    // Load user ID from local storage
+    getCurrentLocation();
+  }
+
   Future<void> pickImages(ImageSource source) async {
     try {
       final picker = ImagePicker();

@@ -16,6 +16,7 @@ class UserModel {
   final String? token;
   final String? clockIn;
   final String? clockOut;
+  var clockStatus;
   final String? todayPatrolStatus;
   final String? attendanceStatus;
   final Map<String, dynamic>? issuesCount;
@@ -35,6 +36,7 @@ class UserModel {
     this.token,
     this.clockIn,
     this.clockOut,
+    this.clockStatus,
     this.todayPatrolStatus,
     this.attendanceStatus,
     this.issuesCount,
@@ -56,6 +58,9 @@ class UserModel {
       token: json['token']?.toString() ?? json['deviceToken']?.toString(),
       clockIn: json['clockIn']?.toString(),
       clockOut: json['clockOut']?.toString(),
+      clockStatus: json['clockStatus'] is bool
+    ? json['clockStatus']
+    : json['clockStatus']?.toString().toLowerCase() == 'true',
       todayPatrolStatus: json['todayPatrolStatus']?.toString(),
       attendanceStatus: json['attendanceStatus']?.toString(),
       issuesCount: json['issuesCount'] != null ? Map<String, dynamic>.from(json['issuesCount']) : null,
@@ -78,6 +83,7 @@ class UserModel {
       'token': token,
       'clockIn': clockIn,
       'clockOut': clockOut,
+      'clockStatus': clockStatus,
       'todayPatrolStatus': todayPatrolStatus,
       'attendanceStatus': attendanceStatus,
       'issuesCount': issuesCount,

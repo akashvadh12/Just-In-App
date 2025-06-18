@@ -11,6 +11,7 @@ import 'package:security_guard/core/theme/app_text_styles.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_view/issue_screen.dart'
     hide AppColors;
 import 'package:security_guard/modules/issue/report_issue/controller/incident_report_controller.dart';
+import 'package:photo_view/photo_view.dart';
 
 class IncidentReportScreen extends StatelessWidget {
   const IncidentReportScreen({Key? key}) : super(key: key);
@@ -20,7 +21,7 @@ class IncidentReportScreen extends StatelessWidget {
     final controller = Get.put(IncidentReportController());
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor:  AppColors.background,
       appBar: _buildAppBar(),
       body: Obx(
         () =>
@@ -38,37 +39,13 @@ class IncidentReportScreen extends StatelessWidget {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      elevation: 0,
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.black87,
-      title: const Text(
-        'Report Incident',
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-      ),
-      leading: IconButton(
-        icon: Container(
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(Icons.arrow_back_ios_new, size: 18),
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text(
+          'Report Incident',
+          style: TextStyle(color: Colors.white),
         ),
-        onPressed: () => Navigator.pop(Get.context!),
-      ),
-      actions: [
-        Container(
-          margin: const EdgeInsets.only(right: 16),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: IconButton(
-            icon: Icon(Icons.help_outline, color: AppColors.primary),
-            onPressed: () => _showHelpDialog(),
-          ),
-        ),
-      ],
-    );
+        elevation: 0,
+      );
   }
 
   Widget _buildHeader() {
@@ -203,8 +180,8 @@ class IncidentReportScreen extends StatelessWidget {
           _buildDescriptionCard(controller),
           const SizedBox(height: 32),
           _buildSubmitButton(controller),
-          const SizedBox(height: 16),
-          _buildViewReportsButton(),
+          // const SizedBox(height: 16),
+          // _buildViewReportsButton(),
           const SizedBox(height: 24),
         ],
       ),
@@ -439,6 +416,128 @@ class IncidentReportScreen extends StatelessWidget {
     );
   }
 
+
+
+void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
+  final controller = PhotoViewController();
+  final scaleStateController = PhotoViewScaleStateController();
+  
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) {
+      return Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          children: [
+            AspectRatio(
+              aspectRatio: 1,
+              child: PhotoView(
+                imageProvider: imageProvider,
+                backgroundDecoration: const BoxDecoration(color: Colors.black),
+                minScale: PhotoViewComputedScale.contained,
+                maxScale: PhotoViewComputedScale.covered * 2.0,
+                controller: controller,
+                scaleStateController: scaleStateController,
+              ),
+            ),
+            // Close button
+            Positioned(
+              top: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+              ),
+            ),
+            // Zoom controls
+            Positioned(
+              bottom: 16,
+              right: 16,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Zoom in button
+                  GestureDetector(
+                    onTap: () {
+                      final currentScale = controller.scale ?? 1.0;
+                      controller.scale = (currentScale * 1.1).clamp(0.2, 2.0);
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      child: const Icon(
+                        Icons.zoom_in,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Zoom out button
+                  GestureDetector(
+                    onTap: () {
+                      final currentScale = controller.scale ?? 1.0;
+                      controller.scale = (currentScale / 1.5).clamp(0.2, 2.0);
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      child: const Icon(
+                        Icons.zoom_out,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Reset zoom button
+                  GestureDetector(
+                    onTap: () {
+                      controller.scale = 1.0;
+                      scaleStateController.scaleState = PhotoViewScaleState.initial;
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      child: const Icon(
+                        Icons.center_focus_strong,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
   Widget _buildAddPhotoButton(IncidentReportController controller) {
     return GestureDetector(
       onTap: () => _showImagePickerOptions(Get.context!, controller),
@@ -487,26 +586,34 @@ class IncidentReportScreen extends StatelessWidget {
   Widget _buildPhotoItem(XFile img, IncidentReportController controller) {
     return Stack(
       children: [
-        Container(
-          width: 100,
-          margin: const EdgeInsets.only(right: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+      GestureDetector(
+          onTap: () {
+          _showZoomableImage(
+            Get.context!,
+            FileImage(File(img.path)),
+          );
+        },
+          child: Container(
+            width: 100,
+            margin: const EdgeInsets.only(right: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(
+                File(img.path),
+                fit: BoxFit.cover,
+                width: 100,
+                height: 100,
               ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.file(
-              File(img.path),
-              fit: BoxFit.cover,
-              width: 100,
-              height: 100,
             ),
           ),
         ),

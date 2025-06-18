@@ -13,6 +13,7 @@ import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as path;
+import 'package:security_guard/modules/issue/issue_list/controller/issue_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_view/issue_screen.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
@@ -28,7 +29,10 @@ class IncidentReportController extends GetxController {
   final currentPosition = Rxn<LatLng>();
   final mapController = MapController();
   final isLoading = false.obs;
-  final LocalStorageService localStorageService = Get.find<LocalStorageService>();
+  final LocalStorageService localStorageService =
+      Get.find<LocalStorageService>();
+
+  final IssuesController issuesController = Get.find<IssuesController>();
 
   @override
   void onInit() {
@@ -155,18 +159,27 @@ class IncidentReportController extends GetxController {
     final position = currentPosition.value;
 
     // Validation
-    if (description.isEmpty) {
-      CustomSnackbar.showError(
-        'Validation Error',
-        'Please provide a description of the incident.',
-      );
-      return;
-    }
 
     if (position == null) {
       CustomSnackbar.showError(
         'Validation Error',
         'Location is required. Please enable location services.',
+      );
+      return;
+    }
+
+    if (selectedPhotos.isEmpty && description.isEmpty) {
+      CustomSnackbar.showError(
+        'Validation Error',
+        'Please provide a attach images.',
+      );
+      return;
+    }
+
+    if (description.toString().trim().isEmpty) {
+      CustomSnackbar.showError(
+        'Validation Error',
+        'Please provide a description of the incident.',
       );
       return;
     }
@@ -188,52 +201,12 @@ class IncidentReportController extends GetxController {
     final headers = {'Authorization': 'Bearer $token'};
 
     try {
-      if (selectedPhotos.isEmpty) {
-        await _submitWithoutImages(
-          uri,
-          headers,
-          userId,
-          position,
-          description,
-        );
-      } else {
-        await _submitWithImages(
-          uri,
-          headers,
-          userId,
-          position,
-          description,
-        );
-      }
+      await _submitWithImages(uri, headers, userId, position, description);
     } catch (e) {
       CustomSnackbar.showError("Error", "Something went wrong: $e");
     } finally {
       isLoading.value = false;
     }
-  }
-
-  Future<void> _submitWithoutImages(
-    Uri uri,
-    Map<String, String> headers,
-    String userId,
-    LatLng position,
-    String description,
-  ) async {
-    final body = jsonEncode({
-      "userId": userId,
-      "latitude": position.latitude,
-      "longitude": position.longitude,
-      "description": description,
-      "images": [],
-    });
-
-    final response = await http.post(
-      uri,
-      headers: {...headers, 'Content-Type': 'application/json'},
-      body: body,
-    );
-
-    _handleResponse(response);
   }
 
   Future<void> _submitWithImages(
@@ -319,16 +292,15 @@ class IncidentReportController extends GetxController {
               ],
             ),
             actions: [
-              TextButton(
-                onPressed: () {
-                  Get.back();
-                  Get.offAll(() => const IssuesScreen());
-                },
-                child: const Text('View Reports'),
-              ),
-              ElevatedButton(
-                onPressed: () => Get.back(),
-                child: const Text('OK'),
+              Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Get.back();
+                    Get.back();
+                    issuesController.refreshIssues();
+                  },
+                  child: const Text('OK'),
+                ),
               ),
             ],
           ),

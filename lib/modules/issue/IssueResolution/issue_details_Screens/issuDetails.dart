@@ -9,8 +9,10 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
 import 'package:security_guard/modules/issue/IssueResolution/issue_details_Screens/controller/issue_resolve_controller.dart';
+import 'package:security_guard/modules/issue/issue_list/controller/issue_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
 import 'package:security_guard/shared/widgets/Custom_Snackbar/Custom_Snackbar.dart';
+import 'package:photo_view/photo_view.dart';
 
 class IssueDetailScreen extends StatefulWidget {
   final Issue issue;
@@ -30,6 +32,9 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
   final TextEditingController _resolutionController = TextEditingController();
   late IssueDetailController controller;
   late Issue _currentIssue;
+
+  final IssuesController issuesController = Get.find<IssuesController>();
+
 
   @override
   void initState() {
@@ -55,7 +60,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
-          'Issue Details',
+          'Resolve Issue ',
           style: TextStyle(color: Colors.white),
         ),
         elevation: 0,
@@ -68,10 +73,10 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
               children: [
                 _buildIssueHeader(),
                 _buildLocationMap(controller),
+                _buildCurrentLocationDisplay(),
+                _buildResolutionSection(),
                 _buildPhotosSection(),
                 _buildUpdatedPhotosSection(),
-                _buildResolutionSection(),
-                _buildCurrentLocationDisplay(),
                 _buildActionButtons(),
                 const SizedBox(height: 20),
               ],
@@ -227,6 +232,126 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     );
   }
 
+void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
+  final controller = PhotoViewController();
+  final scaleStateController = PhotoViewScaleStateController();
+  
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) {
+      return Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          children: [
+            AspectRatio(
+              aspectRatio: 1,
+              child: PhotoView(
+                imageProvider: imageProvider,
+                backgroundDecoration: const BoxDecoration(color: Colors.black),
+                minScale: PhotoViewComputedScale.contained,
+                maxScale: PhotoViewComputedScale.covered * 2.0,
+                controller: controller,
+                scaleStateController: scaleStateController,
+              ),
+            ),
+            // Close button
+            Positioned(
+              top: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+              ),
+            ),
+            // Zoom controls
+            Positioned(
+              bottom: 16,
+              right: 16,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Zoom in button
+                  GestureDetector(
+                    onTap: () {
+                      final currentScale = controller.scale ?? 1.0;
+                      controller.scale = (currentScale * 1.1).clamp(0.2, 2.0);
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      child: const Icon(
+                        Icons.zoom_in,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Zoom out button
+                  GestureDetector(
+                    onTap: () {
+                      final currentScale = controller.scale ?? 1.0;
+                      controller.scale = (currentScale / 1.5).clamp(0.2, 2.0);
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      child: const Icon(
+                        Icons.zoom_out,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Reset zoom button
+                  GestureDetector(
+                    onTap: () {
+                      controller.scale = 1.0;
+                      scaleStateController.scaleState = PhotoViewScaleState.initial;
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      child: const Icon(
+                        Icons.center_focus_strong,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
   Widget _buildPhotosSection() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -260,29 +385,35 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
               scrollDirection: Axis.horizontal,
               itemCount: _currentIssue.images.length,
               itemBuilder: (context, index) {
-                return Container(
-                  width: 100,
-                  height: 100,
-                  margin: const EdgeInsets.only(right: 12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.grey[200],
+                return GestureDetector(
+                  onTap: () => _showZoomableImage(
+                    context,
+                    NetworkImage(_currentIssue.images[index]),
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      _currentIssue.images[index],
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[200],
-                          child: const Icon(
-                            Icons.camera_alt,
-                            color: Colors.grey,
-                            size: 40,
-                          ),
-                        );
-                      },
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    margin: const EdgeInsets.only(right: 12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.grey[200],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        _currentIssue.images[index],
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[200],
+                            child: const Icon(
+                              Icons.camera_alt,
+                              color: Colors.grey,
+                              size: 40,
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 );
@@ -335,19 +466,25 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                   itemBuilder: (context, index) {
                     return Stack(
                       children: [
-                        Container(
-                          width: 100,
-                          height: 100,
-                          margin: const EdgeInsets.only(right: 12),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.grey[200],
+                        GestureDetector(
+                          onTap: () => _showZoomableImage(
+                            context,
+                            FileImage(controller.selectedImages[index]),
                           ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.file(
-                              controller.selectedImages[index],
-                              fit: BoxFit.cover,
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: Colors.grey[200],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(
+                                controller.selectedImages[index],
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),
@@ -507,7 +644,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                 child: OutlinedButton.icon(
                   onPressed: controller.isLoading.value
                       ? null
-                      : () => _showImagePickerDialog(),
+                      : () => _showImagePickerOptions(context),
                   icon: const Icon(Icons.camera_alt, color: AppColors.primary),
                   label: const Text(
                     'Add Updated Photos',
@@ -521,44 +658,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-              // Capture Current Location Button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: OutlinedButton.icon(
-                  onPressed: controller.isLoading.value
-                      ? null
-                      : () => controller.getCurrentLocation(),
-                  icon: controller.isLoadingLocation.value
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.primary,
-                            ),
-                          ),
-                        )
-                      : const Icon(
-                          Icons.location_on,
-                          color: AppColors.primary,
-                        ),
-                  label: Text(
-                    controller.isLoadingLocation.value
-                        ? 'Getting Location...'
-                        : 'Capture Current Location',
-                    style: const TextStyle(color: AppColors.primary),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.primary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
+
               const SizedBox(height: 20),
               // Mark as Resolved Button
               SizedBox(
@@ -647,35 +747,133 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     );
   }
 
-  void _showImagePickerDialog() {
-    showDialog(
+  void _showImagePickerOptions(
+    BuildContext context,
+    // IncidentReportController controller,
+  ) {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Images'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Camera'),
-              onTap: () {
-                Navigator.of(context).pop();
-                controller.pickImages(ImageSource.camera);
-              },
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
             ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Gallery'),
-              onTap: () {
-                Navigator.of(context).pop();
-                controller.pickImages(ImageSource.gallery);
-              },
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Add Photo',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildImageOption(
+                    icon: Icons.photo_camera,
+                    title: 'Camera',
+                    subtitle: 'Take a new photo',
+                    color: Colors.blue,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      // controller.pickImage();
+                       controller.pickImages(ImageSource.camera);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _buildImageOption(
+                    icon: Icons.photo_library,
+                    title: 'Gallery',
+                    subtitle: 'Choose from gallery',
+                    color: Colors.green,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      // controller.pickMultipleImages();
+                   controller.pickImages(ImageSource.gallery);
+
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  
+  Widget _buildImageOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.grey.shade400,
+              size: 16,
             ),
           ],
         ),
       ),
     );
   }
+
 
   void _markAsResolved() async {
     if (_resolutionController.text.trim().isEmpty) {
@@ -707,6 +905,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       // Navigate back after a short delay
       Future.delayed(const Duration(seconds: 1), () {
         if (mounted) {
+          issuesController.refreshIssues();
           Navigator.pop(context, controller.currentIssue.value);
         }
       });

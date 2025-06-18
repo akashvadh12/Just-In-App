@@ -27,7 +27,9 @@ class GuardAttendanceController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    isClockedIn.value = profileController.userModel.value?.clockStatus ?? false;
     print('GuardAttendanceController initialized');
+    print('Clocked In: ${isClockedIn.value} - User In: ${profileController.userModel.value?.clockStatus}');
   }
 
   Future<void> capturePhoto() async {
@@ -81,7 +83,7 @@ class GuardAttendanceController extends GetxController {
       print('Error capturing photo: $e');
       Get.snackbar(
         "Camera Error",
-        "Failed to capture photo: ${e.toString()}",
+        "Failed to capture photo: Please try again",
         backgroundColor: Colors.red,
         colorText: Colors.white,
         icon: const Icon(Icons.camera_alt, color: Colors.white),
@@ -96,6 +98,54 @@ class GuardAttendanceController extends GetxController {
     isLoadingLocation.value = true;
 
     try {
+      // 1. Fetch office location from API
+      final officeResponse = await http.get(
+        Uri.parse('https://official.solarvision-cairo.com/GetOfficeLoc?CompanyId=1'),
+      );
+      if (officeResponse.statusCode != 200) {
+        Get.snackbar(
+          "Office Location Error",
+          "Failed to fetch office location from server.",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          icon: const Icon(Icons.error, color: Colors.white),
+          duration: const Duration(seconds: 3),
+        );
+        isLocationVerified.value = false;
+        isLoadingLocation.value = false;
+        return;
+      }
+      final officeList = jsonDecode(officeResponse.body);
+      if (officeList is! List || officeList.isEmpty) {
+        Get.snackbar(
+          "Office Location Error",
+          "No office location data received.",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          icon: const Icon(Icons.error, color: Colors.white),
+          duration: const Duration(seconds: 3),
+        );
+        isLocationVerified.value = false;
+        isLoadingLocation.value = false;
+        return;
+      }
+      final office = officeList[0];
+      final officeLat = double.tryParse(office['latitude'].toString());
+      final officeLng = double.tryParse(office['longitude'].toString());
+      if (officeLat == null || officeLng == null) {
+        Get.snackbar(
+          "Office Location Error",
+          "Invalid office coordinates received.",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          icon: const Icon(Icons.error, color: Colors.white),
+          duration: const Duration(seconds: 3),
+        );
+        isLocationVerified.value = false;
+        isLoadingLocation.value = false;
+        return;
+      }
+
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         Get.snackbar(
@@ -147,18 +197,38 @@ class GuardAttendanceController extends GetxController {
       );
 
       currentPosition.value = position;
-      isLocationVerified.value = true;
 
-      Get.snackbar(
-        "Location Verified",
-        "GPS location verified successfully",
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        icon: const Icon(Icons.location_on, color: Colors.white),
-        duration: const Duration(seconds: 2),
+      // 2. Compare current location to office location (within 200 meters)
+      final distance = Geolocator.distanceBetween(
+        position.latitude,
+        position.longitude,
+        officeLat,
+        officeLng,
       );
+      print('Distance to office: [32m${distance.toStringAsFixed(2)} meters[0m');
+      if (distance <= 200) {
+        isLocationVerified.value = true;
+        Get.snackbar(
+          "Location Verified",
+          "GPS location verified successfully (within office range)",
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          icon: const Icon(Icons.location_on, color: Colors.white),
+          duration: const Duration(seconds: 2),
+        );
+      } else {
+        isLocationVerified.value = false;
+        Get.snackbar(
+          "Out of Range",
+          "You are not within the allowed office location range.",
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          icon: const Icon(Icons.location_off, color: Colors.white),
+          duration: const Duration(seconds: 3),
+        );
+      }
 
-      print('Location obtained: ${position.latitude}, ${position.longitude}');
+      print('Location obtained: [34m${position.latitude}, ${position.longitude}[0m');
     } catch (e) {
       print('Location error: $e');
       isLocationVerified.value = false;
@@ -432,6 +502,7 @@ class GuardAttendanceController extends GetxController {
 
     if (success) {
       isClockedIn.value = true;
+      profileController.userModel.value?.clockStatus = true;
       clockInTime = DateTime.now();
       lastAction.value = "Clocked IN at ${formatTime(clockInTime!)}";
 
@@ -451,6 +522,7 @@ class GuardAttendanceController extends GetxController {
 
     if (success) {
       isClockedIn.value = false;
+      profileController.userModel.value?.clockStatus = false;
       clockOutTime = DateTime.now();
       lastAction.value = "Clocked OUT at ${formatTime(clockOutTime!)}";
 
@@ -460,7 +532,7 @@ class GuardAttendanceController extends GetxController {
       );
 
       // Clear captured image after successful attendance
-      capturedImage.value = null;
+      // capturedImage.value = null;
       print('Clock out completed successfully');
     }
   }

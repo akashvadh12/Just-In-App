@@ -16,8 +16,7 @@ class AttendanceHistoryController extends GetxController {
   var reportRecords = <AttendanceRecord>[].obs;
   var fromDate = DateTime.now().obs;
   var toDate = DateTime.now().obs;
-    final ProfileController profileController = Get.find<ProfileController>();
-  
+  final ProfileController profileController = Get.find<ProfileController>();
 
   // Base URL
   final String baseUrl =
@@ -58,9 +57,10 @@ class AttendanceHistoryController extends GetxController {
     Get.snackbar(
       title,
       message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Get.theme.colorScheme.error,
-      colorText: Get.theme.colorScheme.onError,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+      icon: const Icon(Icons.error, color: Colors.white),
+      duration: const Duration(seconds: 3),
     );
   }
 
@@ -108,6 +108,15 @@ class AttendanceHistoryController extends GetxController {
             data.map((json) => AttendanceRecord.fromJson(json)).toList();
 
         // _showSuccess("Success", "Attendance history loaded successfully");
+      } else if (response.statusCode == 500) {
+        Get.snackbar(
+          "Server Error",
+          "Internal server error. Please try again later.",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          icon: const Icon(Icons.error, color: Colors.white),
+          duration: const Duration(seconds: 3),
+        );
       } else {
         _showError("Error", "Failed to load attendance history");
       }
@@ -128,10 +137,10 @@ class AttendanceHistoryController extends GetxController {
       final authToken = await getAuthToken();
 
       if (userId == null || userId.isEmpty) {
-        _showError(
-          "Authentication Error",
-          "User ID not found. Please login again",
-        );
+        // _showError(
+        //   "Authentication Error",
+        //   "User ID not found. Please login again",
+        // );
         return;
       }
 
@@ -165,9 +174,9 @@ class AttendanceHistoryController extends GetxController {
     try {
       isLoading.value = true;
 
-final userId = profileController.userModel.value?.userId;
+      final userId = profileController.userModel.value?.userId;
       final authToken = await getAuthToken();
-    print("the user id is🔴🔴🔴 : $userId and authtoken $authToken");
+      print("the user id is🔴🔴🔴 : $userId and authtoken $authToken");
 
       if (userId == null || userId.isEmpty) {
         _showError(

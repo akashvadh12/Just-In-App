@@ -4,14 +4,19 @@ import 'package:get/get.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/modules/attandance/AttendanceHistoryScreen/AttendanceHistoryScreen.dart';
 import 'package:security_guard/modules/attandance/attandance_controller/Attendance_controller.dart';
+import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 
 class GuardAttendanceScreen extends StatelessWidget {
   final GuardAttendanceController controller = Get.put(
     GuardAttendanceController(),
   );
+  final ProfileController profileController = Get.find<ProfileController>();
+
 
   @override
   Widget build(BuildContext context) {
+    controller.isClockedIn.value = controller.profileController.userModel.value?.clockStatus ?? false;
+    print('Clocked In Status: ${controller.isClockedIn.value} for user: ${profileController.userModel.value?.clockStatus}');
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: _buildAppBar(),
@@ -114,7 +119,7 @@ class GuardAttendanceScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$greeting, John!',
+                  '$greeting, ${profileController.userModel.value?.name}!',
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: 16,
@@ -436,136 +441,136 @@ class GuardAttendanceScreen extends StatelessWidget {
     });
   }
 
-  Widget _buildClockSection() {
-    return Obx(() {
-      final now = DateTime.now();
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withOpacity(0.3),
-              spreadRadius: 0,
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
+ // ...existing code...
+Widget _buildClockSection() {
+  return Obx(() {
+    final now = DateTime.now();
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
         ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Current Time',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        controller.formatTime(now),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        "${now.day} ${_month(now.month)} ${now.year}",
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.fingerprint, color: Colors.white, size: 32),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildClockButton(
-                    label: 'Clock In',
-                    icon: Icons.login,
-                    isEnabled:
-                        controller.isLocationVerified.value &&
-                        !controller.isClockedIn.value &&
-                        controller.capturedImage.value != null,
-                    onPressed: controller.clockIn,
-                    color: Colors.green,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildClockButton(
-                    label: 'Clock Out',
-                    icon: Icons.logout,
-                    isEnabled:
-                        controller.isLocationVerified.value &&
-                        controller.isClockedIn.value,
-                    onPressed: controller.clockOut,
-                    color: Colors.red,
-                  ),
-                ),
-              ],
-            ),
-            if (controller.lastAction.value != "No recent activity") ...[
-              const SizedBox(height: 16),
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.3),
+            spreadRadius: 0,
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.access_time,
-                      color: Colors.white.withOpacity(0.8),
-                      size: 16,
-                    ),
-                    const SizedBox(width: 8),
                     Text(
-                      controller.lastAction.value,
+                      'Current Time',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      controller.formatTime(now),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      "${now.day} ${_month(now.month)} ${now.year}",
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.8),
                         fontSize: 14,
                       ),
                     ),
                   ],
                 ),
               ),
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.fingerprint, color: Colors.white, size: 32),
+              ),
             ],
-          ],
+          ),
+          const SizedBox(height: 24),
+         Row(
+  children: [
+    if (profileController.userModel.value?.clockStatus == false)
+      Expanded(
+        child: _buildClockButton(
+          label: 'Clock In',
+          icon: Icons.login,
+          isEnabled: true,
+          onPressed: controller.clockIn,
+          color: Colors.green,
         ),
-      );
-    });
-  }
+      ),
+    if (profileController.userModel.value?.clockStatus == false)
+      const SizedBox(width: 16),
+    if (profileController.userModel.value?.clockStatus == true)
+      Expanded(
+        child: _buildClockButton(
+          label: 'Clock Out',
+          icon: Icons.logout,
+          isEnabled: true,
+          onPressed: controller.clockOut,
+          color: Colors.red,
+        ),
+      ),
+  ],
+),
 
+          if (controller.lastAction.value != "No recent activity") ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    color: Colors.white.withOpacity(0.8),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    controller.lastAction.value,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  });
+}
+// ...existing code...
   Widget _buildClockButton({
     required String label,
     required IconData icon,

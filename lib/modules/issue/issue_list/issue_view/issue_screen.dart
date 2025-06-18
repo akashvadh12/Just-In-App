@@ -6,6 +6,7 @@ import 'package:security_guard/core/theme/app_text_styles.dart';
 import 'package:security_guard/modules/issue/issue_list/controller/issue_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
 import 'package:security_guard/modules/issue/IssueResolution/issue_details_Screens/issue_Resolve_card.dart';
+import 'package:security_guard/modules/issue/report_issue/report_incident_screen.dart';
 
 class IssuesScreen extends StatelessWidget {
   const IssuesScreen({super.key});
@@ -21,12 +22,12 @@ class IssuesScreen extends StatelessWidget {
           iconTheme: const IconThemeData(color: Colors.white),
           title: const Text('Issues', style: TextStyle(color: Colors.white)),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.search, color: Colors.white),
-              onPressed: () {
-                // Implement search functionality
-              },
-            ),
+            // IconButton(
+            //   icon: const Icon(Icons.search, color: Colors.white),
+            //   onPressed: () {
+            //     // Implement search functionality
+            //   },
+            // ),
             IconButton(
               icon: const Icon(Icons.refresh, color: Colors.white),
               onPressed: () => controller.refreshIssues(),
@@ -56,7 +57,15 @@ class IssuesScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            // Navigate to issue creation screen
+            Get.to(IncidentReportScreen());
+
+          },
+          backgroundColor: AppColors.primary,
+          child: const Icon(Icons.add, color: Colors.white),
+      )),
     );
   }
 
@@ -112,6 +121,7 @@ class IssuesScreen extends StatelessWidget {
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: SizedBox(
+              
               height: Get.height * 0.6,
               child: Center(
                 child: Column(
@@ -168,14 +178,3 @@ class IssuesScreen extends StatelessWidget {
   }
 }
 
-// Updated main.dart (no service initialization needed)
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return GetMaterialApp(title: 'Security Guard', home: IssuesScreen());
-  }
-}

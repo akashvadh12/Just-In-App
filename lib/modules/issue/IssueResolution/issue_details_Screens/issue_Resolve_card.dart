@@ -43,28 +43,28 @@ class IssueCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      margin: const EdgeInsets.only(bottom: 16 ),
+      // elevation: 1,
+      color: Colors.white,
+      // shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: InkWell(
-        borderRadius: BorderRadius.circular(10),
+        // borderRadius: BorderRadius.circular(10),
         onTap: () async {
           final userId = await SharedPrefHelper.getStoredUserId();
           await SharedPrefHelper.saveIssueId(issue.id); // Save issue ID
-
+    
           print('User ID retrieved: $userId');
           print('Issue ID saved: ${issue.id}');
-
+    
           final updatedIssue = await Navigator.push<Issue>(
             context,
             MaterialPageRoute(
-              builder: (context) => IssueDetailScreen(
-                issue: issue,
-                userId: issue.id ?? '',
-              ),
+              builder:
+                  (context) =>
+                      IssueDetailScreen(issue: issue, userId: issue.id ?? ''),
             ),
           );
-
+    
           if (updatedIssue != null && onIssueUpdated != null) {
             onIssueUpdated!(updatedIssue);
           }
@@ -99,7 +99,9 @@ class IssueCard extends StatelessWidget {
                         width: 80,
                         height: 80,
                         color: AppColors.lightGrey,
-                        child: const Center(child: CircularProgressIndicator()),
+                        child: const Center(
+                          child: CircularProgressIndicator(),
+                        ),
                       );
                     },
                   ),
@@ -116,7 +118,9 @@ class IssueCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             issue.title,
-                            style: AppTextStyles.heading.copyWith(fontSize: 16),
+                            style: AppTextStyles.heading.copyWith(
+                              fontSize: 16,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
