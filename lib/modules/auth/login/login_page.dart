@@ -302,16 +302,16 @@ class LoginPage extends StatelessWidget {
                       SizedBox(height: 40),
 
                       // Bottom indicator
-                      Center(
-                        child: Container(
-                          width: 40,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade300,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
+                      // Center(
+                      //   child: Container(
+                      //     width: 40,
+                      //     height: 4,
+                      //     decoration: BoxDecoration(
+                      //       color: Colors.grey.shade300,
+                      //       borderRadius: BorderRadius.circular(2),
+                      //     ),
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),

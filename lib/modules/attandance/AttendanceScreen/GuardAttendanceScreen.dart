@@ -15,8 +15,8 @@ class GuardAttendanceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    controller.isClockedIn.value = controller.profileController.userModel.value?.clockStatus ?? false;
-    print('Clocked In Status: ${controller.isClockedIn.value} for user: ${profileController.userModel.value?.clockStatus}');
+    // controller.isClockedIn.value = controller.profileController.userModel.value?.clockStatus ?? false;
+    // print('Clocked In Status: ${controller.isClockedIn.value} for user: ${profileController.userModel.value?.clockStatus}');
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: _buildAppBar(),

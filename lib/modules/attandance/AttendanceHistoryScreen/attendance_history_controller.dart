@@ -104,10 +104,28 @@ class AttendanceHistoryController extends GetxController {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        attendanceRecords.value =
-            data.map((json) => AttendanceRecord.fromJson(json)).toList();
 
-        // _showSuccess("Success", "Attendance history loaded successfully");
+        final today = DateTime.now();
+
+        final filteredRecords =
+            data
+                .map((json) => AttendanceRecord.fromJson(json))
+                .where((record) {
+                  // Parse the date from the record
+                  final recordDate = DateTime.tryParse(record.date);
+                  if (recordDate == null) return false;
+
+                  // Keep only records that are on or before today
+                  return recordDate.isBefore(
+                    today.add(Duration(days: 0)),
+                  ); // inclusive of today
+                })
+                .toList()
+                .reversed
+                .toList();
+        ;
+
+        attendanceRecords.value = filteredRecords;
       } else if (response.statusCode == 500) {
         Get.snackbar(
           "Server Error",

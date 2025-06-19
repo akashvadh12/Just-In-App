@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 
@@ -13,18 +14,6 @@ import 'package:security_guard/modules/profile/liveChatScreen.dart';
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:image_picker/image_picker.dart';
-
-// Mock live chat screen
-class LiveChatScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    Get.put(LocalStorageService());
-    return Scaffold(
-      appBar: AppBar(title: const Text('Live Chat Support'), elevation: 0),
-      body: Center(child: Text('Live Chat Screen Coming Soon')),
-    );
-  }
-}
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -46,6 +35,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   bool _showPasswordSection = false;
   bool _showEditProfileSection = false;
+  bool _isCurrentPasswordVisible = false;
+  bool _isNewPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   @override
   void initState() {
@@ -128,31 +120,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // Show logout confirmation dialog
-void _showLogoutConfirmationDialog() {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('Confirm Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context), // Cancel closes dialog
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              controller.logout();    // 1. Call logout on your controller
-              Navigator.pop(context); // 2. Close the dialog
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Logout'),
-          ),
-        ],
-      );
-    },
-  );
-}
+  void _showLogoutConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Logout'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context), // Cancel closes dialog
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                controller.logout(); // 1. Call logout on your controller
+                Navigator.pop(context); // 2. Close the dialog
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -251,50 +243,42 @@ void _showLogoutConfirmationDialog() {
                   ),
                   const SizedBox(height: 16),
                   // User Name
-                  Obx(
-                    () {
-                      final user = controller.userModel.value;
-                      return Text(
-                        user?.name ?? 'User Name',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      );
-                    },
-                  ),
+                  Obx(() {
+                    final user = controller.userModel.value;
+                    return Text(
+                      user?.name ?? 'User',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  }),
                   const SizedBox(height: 4),
                   // User ID
-                  Obx(
-                    () {
-                      final user = controller.userModel.value;
-                      return Text(
-                        'ID:  {user?.userId ?? "-"}',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                      );
-                    },
-                  ),
+                  Obx(() {
+                    final user = controller.userModel.value;
+                    return Text(
+                      'ID: ${user?.userId ?? "-"}',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    );
+                  }),
                   const SizedBox(height: 8),
                   // User Contact Info
-                  Obx(
-                    () {
-                      final user = controller.userModel.value;
-                      return Text(
-                        user?.phone ?? 'Phone Number',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                      );
-                    },
-                  ),
+                  Obx(() {
+                    final user = controller.userModel.value;
+                    return Text(
+                      user?.phone ?? '-',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    );
+                  }),
                   const SizedBox(height: 4),
-                  Obx(
-                    () {
-                      final user = controller.userModel.value;
-                      return Text(
-                        user?.email ?? 'Email Address',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                      );
-                    },
-                  ),
+                  Obx(() {
+                    final user = controller.userModel.value;
+                    return Text(
+                      user?.email ?? '-',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    );
+                  }),
                 ],
               ),
             ),
@@ -386,6 +370,7 @@ void _showLogoutConfirmationDialog() {
                           ),
                           const SizedBox(height: 8),
                           TextField(
+                            enabled: false,
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             decoration: InputDecoration(
@@ -415,40 +400,56 @@ void _showLogoutConfirmationDialog() {
                             style: TextStyle(fontSize: 14, color: Colors.grey),
                           ),
                           const SizedBox(height: 8),
-                          TextField(
-                            controller: _phoneController,
-                            keyboardType: TextInputType.phone,
-                            decoration: InputDecoration(
-                              hintText: 'Enter your phone number',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  color: Colors.grey[300]!,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  color: Colors.grey[300]!,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                            ),
-                          ),
+                         TextFormField(
+  controller: _phoneController,
+  keyboardType: TextInputType.phone,
+  maxLength: 10,
+  inputFormatters: [
+    FilteringTextInputFormatter.digitsOnly,
+    LengthLimitingTextInputFormatter(10),
+  ],
+  decoration: InputDecoration(
+    hintText: 'Enter your phone number',
+    counterText: '', // hides the character counter
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: BorderSide(
+        color: Colors.grey[300]!,
+      ),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: BorderSide(
+        color: Colors.grey[300]!,
+      ),
+    ),
+    contentPadding: const EdgeInsets.symmetric(
+      horizontal: 16,
+      vertical: 12,
+    ),
+  ),
+  validator: (value) {
+    if (value == null || value.isEmpty) {
+      return 'Phone number is required';
+    } else if (value.length != 10) {
+      return 'Phone number must be 10 digits';
+    }
+    return null;
+  },
+),
+
                           const SizedBox(height: 16),
                           // Update Button
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
                               onPressed: () {
-                                // controller.updateProfile(
-                                //   name: _nameController.text,
-                                //   email: _emailController.text,
-                                //   phone: _phoneController.text,
-                                // );
+                                controller.updateProfile(
+                                  userId: controller.userModel.value!.userId,
+                                  name: _nameController.text,
+                                  email: _emailController.text,
+                                  phone: _phoneController.text,
+                                );
                                 setState(() {
                                   _showEditProfileSection = false;
                                 });
@@ -470,28 +471,28 @@ void _showLogoutConfirmationDialog() {
                       ),
                     ),
                   const Divider(height: 1),
-                  // Edit Profile Picture
-                  ListTile(
-                    leading: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        color: AppColors.whiteColor,
-                        size: 20,
-                      ),
-                    ),
-                    title: const Text('Edit Profile Picture'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () async {
-                      // Add image picker functionality
-                      // await controller.updateProfilePicture();
-                    },
-                  ),
-                  const Divider(height: 1),
+                  // // Edit Profile Picture
+                  // ListTile(
+                  //   leading: Container(
+                  //     padding: const EdgeInsets.all(6),
+                  //     decoration: BoxDecoration(
+                  //       color: Colors.blue,
+                  //       borderRadius: BorderRadius.circular(4),
+                  //     ),
+                  //     child: const Icon(
+                  //       Icons.camera_alt,
+                  //       color: AppColors.whiteColor,
+                  //       size: 20,
+                  //     ),
+                  //   ),
+                  //   title: const Text('Edit Profile Picture'),
+                  //   trailing: const Icon(Icons.chevron_right),
+                  //   onTap: () async {
+                  //     // Add image picker functionality
+                  //     // await controller.updateProfilePicture();
+                  //   },
+                  // ),
+                  // const Divider(height: 1),
                   // Change Password
                   ListTile(
                     leading: Container(
@@ -525,6 +526,9 @@ void _showLogoutConfirmationDialog() {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Add these boolean variables to your State class
+
+                          // Updated widget code
                           const Text(
                             'Change Password',
                             style: TextStyle(
@@ -541,7 +545,7 @@ void _showLogoutConfirmationDialog() {
                           const SizedBox(height: 8),
                           TextField(
                             controller: _currentPasswordController,
-                            obscureText: true,
+                            obscureText: !_isCurrentPasswordVisible,
                             decoration: InputDecoration(
                               hintText: 'Enter current password',
                               border: OutlineInputBorder(
@@ -560,6 +564,20 @@ void _showLogoutConfirmationDialog() {
                                 horizontal: 16,
                                 vertical: 12,
                               ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isCurrentPasswordVisible
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isCurrentPasswordVisible =
+                                        !_isCurrentPasswordVisible;
+                                  });
+                                },
+                              ),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -571,7 +589,7 @@ void _showLogoutConfirmationDialog() {
                           const SizedBox(height: 8),
                           TextField(
                             controller: _newPasswordController,
-                            obscureText: true,
+                            obscureText: !_isNewPasswordVisible,
                             decoration: InputDecoration(
                               hintText: 'Enter new password',
                               border: OutlineInputBorder(
@@ -590,6 +608,20 @@ void _showLogoutConfirmationDialog() {
                                 horizontal: 16,
                                 vertical: 12,
                               ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isNewPasswordVisible
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isNewPasswordVisible =
+                                        !_isNewPasswordVisible;
+                                  });
+                                },
+                              ),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -601,7 +633,7 @@ void _showLogoutConfirmationDialog() {
                           const SizedBox(height: 8),
                           TextField(
                             controller: _confirmPasswordController,
-                            obscureText: true,
+                            obscureText: !_isConfirmPasswordVisible,
                             decoration: InputDecoration(
                               hintText: 'Confirm new password',
                               border: OutlineInputBorder(
@@ -619,6 +651,20 @@ void _showLogoutConfirmationDialog() {
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 12,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isConfirmPasswordVisible
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isConfirmPasswordVisible =
+                                        !_isConfirmPasswordVisible;
+                                  });
+                                },
                               ),
                             ),
                           ),
@@ -676,10 +722,11 @@ void _showLogoutConfirmationDialog() {
                                   return;
                                 }
 
-                                // controller.updatePassword(
-                                //   oldPassword: _currentPasswordController.text,
-                                //   newPassword: _newPasswordController.text,
-                                // );
+                                controller.updatePassword(
+                                  userId: controller.userModel.value!.userId,
+                                  oldPassword: _currentPasswordController.text,
+                                  newPassword: _newPasswordController.text,
+                                );
 
                                 // Clear fields and hide section
                                 _currentPasswordController.clear();

@@ -56,9 +56,10 @@ class ProfileController extends GetxController {
         email: email,
         phone: phone,
       );
-      if (response != null && response['status'] == true) {
+      if (response != null ) {
         userModel.value = userModel.value?.copyWith(name: name, email: email, phone: phone);
         _showSuccessSnackbar('Profile updated successfully');
+         
       } else {
         _showErrorSnackbar(response?['message'] ?? 'Failed to update profile');
       }
@@ -89,8 +90,9 @@ class ProfileController extends GetxController {
         oldPassword: oldPassword,
         newPassword: newPassword,
       );
-      if (response != null && response['status'] == true) {
+      if (response != null) {
         _showSuccessSnackbar('Password updated successfully');
+       
       } else {
         _showErrorSnackbar(response?['message'] ?? 'Failed to update password');
       }
@@ -111,6 +113,7 @@ class ProfileController extends GetxController {
       if (response != null && response['status'] == true && response['profileImage'] != null) {
         userModel.value = userModel.value?.copyWith(photoPath: response['profileImage']);
         _showSuccessSnackbar('Profile picture updated');
+        
       } else {
         _showErrorSnackbar(response?['message'] ?? 'Failed to update profile picture');
       }

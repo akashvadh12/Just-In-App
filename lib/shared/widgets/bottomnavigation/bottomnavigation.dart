@@ -33,18 +33,50 @@ class BottomNavBarWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => Scaffold(
-         
+    return Obx(
+      () => WillPopScope(
+        onWillPop: () async {
+          if (controller.currentIndex.value == 0) {
+            bool? confirmExit = await showDialog(
+              context: context,
+              builder:
+                  (context) => AlertDialog(
+                    title: const Text('Exit App'),
+                    content: const Text(
+                      'Are you sure you want to exit the app?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('Exit'),
+                      ),
+                    ],
+                  ),
+            );
+            return confirmExit ?? false;
+          } else {
+            controller.changeTab(0); // Navigate to Home tab
+            return false; // Prevent back navigation
+          }
+        },
+
+        child: Scaffold(
           body: screens[controller.currentIndex.value],
           bottomNavigationBar: BottomNavigationBar(
             currentIndex: controller.currentIndex.value,
             onTap: controller.changeTab,
             selectedItemColor: AppColors.background,
-            unselectedItemColor:  Colors.grey,
+            unselectedItemColor: Colors.grey,
             items: items,
             type: BottomNavigationBarType.fixed,
-            backgroundColor:AppColors.primary ,
+            backgroundColor: AppColors.primary,
           ),
-        ));
+        ),
+      ),
+    );
   }
 }

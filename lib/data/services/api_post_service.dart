@@ -329,14 +329,14 @@ class ApiPostServices {
   }) async {
     const endpoint = 'profile/update';
     final body = {
-      'UserId': userId,
-      'Name': name,
-      'Email': email,
-      'Phone': phone,
+      'userId': userId,
+      'name': name,
+      'email': email,
+      'mobile_No': phone,
     };
     final headers = await _getAuthenticatedHeaders();
     try {
-      final response = await _client.post(endpoint, body, headers: headers);
+      final response = await _client.put(endpoint, body, headers: headers);
       return _parseResponse(response);
     } catch (e) {
       log('$_logTag Update profile error: $e');
@@ -358,7 +358,7 @@ class ApiPostServices {
     };
     final headers = await _getAuthenticatedHeaders();
     try {
-      final response = await _client.post(endpoint, body, headers: headers);
+      final response = await _client.put(endpoint, body, headers: headers);
       return _parseResponse(response);
     } catch (e) {
       log('$_logTag Update password error: $e');

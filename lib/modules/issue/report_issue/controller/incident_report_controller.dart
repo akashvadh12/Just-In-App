@@ -168,7 +168,7 @@ class IncidentReportController extends GetxController {
       return;
     }
 
-    if (selectedPhotos.isEmpty && description.isEmpty) {
+    if (selectedPhotos.isEmpty ) {
       CustomSnackbar.showError(
         'Validation Error',
         'Please provide a attach images.',

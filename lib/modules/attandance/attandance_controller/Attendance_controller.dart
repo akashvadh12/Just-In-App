@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
@@ -19,6 +20,7 @@ class GuardAttendanceController extends GetxController {
   var isLoadingLocation = false.obs;
   var isProcessingAttendance = false.obs;
   final ProfileController profileController = Get.find<ProfileController>();
+  final HomeController dashboardController = Get.put(HomeController());
 
   // API endpoint
   static const String attendanceApiUrl =
@@ -501,8 +503,10 @@ class GuardAttendanceController extends GetxController {
     final success = await markAttendance('in');
 
     if (success) {
+
       isClockedIn.value = true;
       profileController.userModel.value?.clockStatus = true;
+      dashboardController.fetchDashboardData(); // Update dashboard data after clock in
       clockInTime = DateTime.now();
       lastAction.value = "Clocked IN at ${formatTime(clockInTime!)}";
 
@@ -524,6 +528,7 @@ class GuardAttendanceController extends GetxController {
       isClockedIn.value = false;
       profileController.userModel.value?.clockStatus = false;
       clockOutTime = DateTime.now();
+      dashboardController.fetchDashboardData();
       lastAction.value = "Clocked OUT at ${formatTime(clockOutTime!)}";
 
       _showSuccess(

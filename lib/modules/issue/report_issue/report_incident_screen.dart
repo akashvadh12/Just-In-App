@@ -360,15 +360,25 @@ class IncidentReportScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 const Expanded(
-                  child: Text(
-                    'Incident Photos',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Incident Photos',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                        const Text(
+                  ' *',
+                  style: TextStyle(color: Colors.red, fontSize: 16),
                 ),
+                    ],
+                  ),
+
+                ),
+               
                 Obx(
                   () =>
                       controller.selectedPhotos.isNotEmpty
@@ -577,6 +587,7 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
                 color: Colors.grey,
               ),
             ),
+            
           ],
         ),
       ),
