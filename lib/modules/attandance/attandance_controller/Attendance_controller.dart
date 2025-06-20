@@ -528,7 +528,7 @@ class GuardAttendanceController extends GetxController {
       isClockedIn.value = false;
       profileController.userModel.value?.clockStatus = false;
       clockOutTime = DateTime.now();
-      dashboardController.fetchDashboardData();
+      // dashboardController.fetchDashboardData();
       lastAction.value = "Clocked OUT at ${formatTime(clockOutTime!)}";
 
       _showSuccess(

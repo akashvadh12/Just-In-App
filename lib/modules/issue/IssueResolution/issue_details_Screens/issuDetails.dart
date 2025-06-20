@@ -638,7 +638,8 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
           child: Column(
             children: [
               // Add Updated Photos Button
-              SizedBox(
+           (controller.currentIssue.value?.status ==
+                                  IssueStatus.resolved) ? SizedBox.shrink() : SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: OutlinedButton.icon(
@@ -657,7 +658,7 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
                     ),
                   ),
                 ),
-              ),
+              ) ,
 
               const SizedBox(height: 20),
               // Mark as Resolved Button

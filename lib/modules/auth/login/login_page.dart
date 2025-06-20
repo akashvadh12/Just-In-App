@@ -249,7 +249,7 @@ class LoginPage extends StatelessWidget {
                                   : 'Signup',
                           onPressed: () {
                             authController.login();
-                            authController.clearFields();
+                            // authController.clearFields();
                           },
                           isLoading: authController.isLoading.value,
                         ),
