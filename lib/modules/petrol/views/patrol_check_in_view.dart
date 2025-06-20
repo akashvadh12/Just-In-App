@@ -58,7 +58,7 @@ class PatrolCheckInScreen extends StatelessWidget {
           Obx(() => controller.currentPatrolLocation.value != null
               ? _buildStepProgress()
               : const SizedBox.shrink()),
-          // Patrol locations list or step-wise UI
+          
           Expanded(
             child: Obx(() {
               if (controller.currentPatrolLocation.value == null) {
@@ -73,44 +73,86 @@ class PatrolCheckInScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPatrolLocationsList() {
-    return Column(
-      children: [
-        // Add Manual Patrol Button
-        Container(
-          width: double.infinity,
-          margin: const EdgeInsets.all(16),
-          child: ElevatedButton.icon(
-            onPressed: () => controller.addManualPatrol(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            icon: const Icon(Icons.add, color: AppColors.whiteColor),
-            label: Text(
-              '➕ Add Manual Patrol',
-              style: AppTextStyles.subtitle.copyWith(color: AppColors.whiteColor),
-            ),
+
+Widget _buildPatrolLocationsList() {
+  return Column(
+    children: [
+      // Add Manual Patrol Button
+      Container(
+        width: double.infinity,
+        margin: const EdgeInsets.all(16),
+        child: ElevatedButton.icon(
+          onPressed: () => controller.addManualPatrol(),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          icon: const Icon(Icons.add, color: AppColors.whiteColor),
+          label: Text(
+            '➕ Add Manual Patrol',
+            style: AppTextStyles.subtitle.copyWith(color: AppColors.whiteColor),
           ),
         ),
-        // Patrol Locations List
-        Expanded(
-          child: Obx(() => ListView.builder(
+      ),
+      // Loading indicator or Patrol Locations List
+      Expanded(
+        child: Obx(() {
+          if (controller.isLoadingLocations.value) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading patrol locations...'),
+                ],
+              ),
+            );
+          }
+          
+          if (controller.patrolLocations.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.location_off,
+                    size: 64,
+                    color: AppColors.greyColor,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No patrol locations available',
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: AppColors.greyColor,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => controller.refreshPatrolLocations(),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+          
+          return ListView.builder(
             itemCount: controller.patrolLocations.length,
             itemBuilder: (context, index) {
               final location = controller.patrolLocations[index];
               return _buildPatrolLocationCard(location, index);
             },
-          )),
-        ),
-      ],
-    );
-  }
+          );
+        }),
+      ),
+    ],
+  );
+}
 
- // ...existing code...
-Widget _buildPatrolLocationCard(dynamic location, int index) {
-  final isCompleted = controller.completedPatrols.contains(location['id']);
+Widget _buildPatrolLocationCard(PatrolLocation location, int index) {
+  final isCompleted = controller.completedPatrols.contains(location.locationId);
   final isNext = controller.getNextPatrolIndex() == index;
   
   return Container(
@@ -141,17 +183,37 @@ Widget _buildPatrolLocationCard(dynamic location, int index) {
           ),
         ),
         title: Text(
-          location['name'] ?? 'Patrol Location ${index + 1}',
+          location.locationName,
           style: AppTextStyles.subtitle.copyWith(
             color: isCompleted ? AppColors.greenColor : AppColors.blackColor,
           ),
         ),
-        subtitle: Text(
-          location['address'] ?? '${location['latitude']}, ${location['longitude']}',
-          style: AppTextStyles.hint,
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'ID: ${location.locationId}',
+              style: AppTextStyles.hint.copyWith(fontSize: 12),
+            ),
+            Text(
+              '${location.latitude.toStringAsFixed(6)}, ${location.longitude.toStringAsFixed(6)}',
+              style: AppTextStyles.hint,
+            ),
+            if (location.barcodeUrl.isNotEmpty)
+              Text(
+                'QR Code Available',
+                style: AppTextStyles.hint.copyWith(
+                  color: AppColors.primary,
+                  fontSize: 12,
+                ),
+              ),
+          ],
         ),
-        trailing: isNext 
-            ? Container(
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (isNext)
+              Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.primary,
@@ -165,13 +227,35 @@ Widget _buildPatrolLocationCard(dynamic location, int index) {
                   ),
                 ),
               )
-            : isCompleted 
-                ? const Icon(Icons.check_circle, color: AppColors.greenColor)
-                : const Icon(Icons.chevron_right, color: AppColors.greyColor),
+            else if (isCompleted)
+              const Icon(Icons.check_circle, color: AppColors.greenColor)
+            else
+              const Icon(Icons.chevron_right, color: AppColors.greyColor),
+            
+            // Status indicator
+            if (!location.status)
+              Container(
+                margin: const EdgeInsets.only(top: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Inactive',
+                  style: AppTextStyles.hint.copyWith(
+                    color: AppColors.error,
+                    fontSize: 10,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     ),
   );
 }
+
 // ...existing code...
 
   Widget _buildStepProgress() {
@@ -336,6 +420,29 @@ Widget _buildPatrolLocationCard(dynamic location, int index) {
             ),
           ),
         )),
+        const SizedBox(height: 24),
+
+         SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () {
+              controller.cancelCurrentPatrol();
+              controller.currentStep.value = 0; // Reset step
+              controller.isManualPatrol.value = false; // Reset manual patrol flag
+              controller.currentPatrolLocation.value = null; // Clear current location
+
+            } ,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text(
+               'Back' ,
+              style: AppTextStyles.subtitle.copyWith(color: AppColors.whiteColor),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -518,7 +625,7 @@ Widget _buildPatrolLocationCard(dynamic location, int index) {
               Obx(() => Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('📍 Location: ${controller.currentPatrolLocation.value?['name'] ?? "Manual Patrol"}'),
+                  Text('📍 Location: ${controller.currentPatrolLocation.value?.locationName ?? "Manual Patrol"}'),
                   Text('✅ Verified: ${controller.isLocationVerified.value ? "Yes" : "No"}'),
                   if (!controller.isManualPatrol.value)
                     Text('📷 QR Scanned: ${controller.isQRScanned.value ? "Yes" : "No"}'),
@@ -564,6 +671,10 @@ Widget _buildPatrolLocationCard(dynamic location, int index) {
     );
   }
 
+
+
+
+
   Widget _buildMiniMap() {
     return Container(
       decoration: BoxDecoration(
@@ -604,8 +715,8 @@ Widget _buildPatrolLocationCard(dynamic location, int index) {
                       if (controller.currentPatrolLocation.value != null)
                         Marker(
                           point: LatLng(
-                            controller.currentPatrolLocation.value!['latitude'],
-                            controller.currentPatrolLocation.value!['longitude'],
+                            controller.currentPatrolLocation.value!.latitude,
+                            controller.currentPatrolLocation.value!.longitude,
                           ),
                           width: 40,
                           height: 40,
@@ -658,9 +769,9 @@ Widget _buildPatrolLocationCard(dynamic location, int index) {
               ),
             // Patrol locations
             ...controller.patrolLocations.map((location) {
-              final isCompleted = controller.completedPatrols.contains(location['id']);
+              final isCompleted = controller.completedPatrols.contains(location.locationId);
               return Marker(
-                point: LatLng(location['latitude'], location['longitude']),
+                point: LatLng(location.latitude, location.longitude),
                 width: 50,
                 height: 50,
                 child: Container(
@@ -773,4 +884,7 @@ Widget _buildPatrolLocationCard(dynamic location, int index) {
       ),
     );
   }
+
+
+
 }

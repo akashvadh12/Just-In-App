@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -8,6 +9,47 @@ import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
+import 'package:http/http.dart' as http;
+
+class PatrolLocation {
+  final String locationId;
+  final String locationName;
+  final double latitude;
+  final double longitude;
+  final String barcodeUrl;
+  final bool status;
+
+  PatrolLocation({
+    required this.locationId,
+    required this.locationName,
+    required this.latitude,
+    required this.longitude,
+    required this.barcodeUrl,
+    required this.status,
+  });
+
+  factory PatrolLocation.fromJson(Map<String, dynamic> json) {
+    return PatrolLocation(
+      locationId: json['locationId'] ?? '',
+      locationName: json['locationName'] ?? '',
+      latitude: double.tryParse(json['latitude'].toString()) ?? 0.0,
+      longitude: double.tryParse(json['longitude'].toString()) ?? 0.0,
+      barcodeUrl: json['barcodeUrl'] ?? '',
+      status: json['status'] ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'locationId': locationId,
+      'locationName': locationName,
+      'latitude': latitude,
+      'longitude': longitude,
+      'barcodeUrl': barcodeUrl,
+      'status': status,
+    };
+  }
+}
 
 class PatrolCheckInController extends GetxController {
   final currentStep = 1.obs;
@@ -24,10 +66,10 @@ class PatrolCheckInController extends GetxController {
   // QR code result
   final qrResult = Rxn<String>();
 
-  // Location management
-  RxList patrolLocations = <dynamic>[].obs;
-  RxList completedPatrols = <String>[].obs;
-  Rx<dynamic> currentPatrolLocation = Rxn<dynamic>();
+  // Location management - Updated to use PatrolLocation model
+  RxList<PatrolLocation> patrolLocations = <PatrolLocation>[].obs;
+  RxList<String> completedPatrols = <String>[].obs;
+  Rx<PatrolLocation?> currentPatrolLocation = Rxn<PatrolLocation?>();
   RxBool isManualPatrol = false.obs;
   RxBool isQRScanned = false.obs;
 
@@ -35,17 +77,108 @@ class PatrolCheckInController extends GetxController {
   final isLocationVerified = false.obs;
   final isVerifying = false.obs;
 
+  // API loading state
+  final isLoadingLocations = false.obs;
+
+  // API endpoint
+  static const String _apiUrl = 'https://official.solarvision-cairo.com/patrol/get-all-locations';
+
   @override
   void onInit() {
     super.onInit();
     fetchLocation();
-    // Load initial patrol locations
-    patrolLocations.addAll([
-      {'id': '1', 'name': 'Main Gate', 'latitude': 21.9779517, 'longitude': 82.164835, 'address': 'Main Gate Address'},
-      {'id': '2', 'name': 'Backyard', 'latitude': 37.4229999, 'longitude': -122.0850575, 'address': 'Backyard Address'},
-      {'id': '3', 'name': 'Warehouse Entry', 'latitude': 37.4239999, 'longitude': -122.0860575, 'address': 'Warehouse Entry Address'},
-      {'id': '4', 'name': 'Parking Lot', 'latitude': 37.4249999, 'longitude': -122.0870575, 'address': 'Parking Lot Address'},
-    ]);
+    fetchPatrolLocationsFromAPI();
+  }
+
+  // New method to fetch patrol locations from API
+  Future<void> fetchPatrolLocationsFromAPI() async {
+    try {
+      isLoadingLocations.value = true;
+      
+      final response = await http.get(
+        Uri.parse(_apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonData = json.decode(response.body);
+        final List<PatrolLocation> locations = jsonData
+            .map((json) => PatrolLocation.fromJson(json))
+            .toList();
+        
+        patrolLocations.clear();
+        patrolLocations.addAll(locations);
+        
+        Get.snackbar(
+          'Success',
+          'Patrol locations loaded successfully',
+          backgroundColor: AppColors.greenColor,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 2),
+        );
+      } else {
+        throw Exception('Failed to load patrol locations: ${response.statusCode}');
+      }
+    } catch (e) {
+      // Fallback to hardcoded locations if API fails
+      _loadFallbackLocations();
+      
+      Get.snackbar(
+        'API Error',
+        'Failed to load locations from server. Using offline data.',
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+      
+      print('Error fetching patrol locations: $e');
+    } finally {
+      isLoadingLocations.value = false;
+    }
+  }
+
+  // Fallback method with hardcoded locations
+  void _loadFallbackLocations() {
+    final fallbackLocations = [
+      PatrolLocation(
+        locationId: '1',
+        locationName: 'Main Gate',
+        latitude: 21.9779517,
+        longitude: 82.164835,
+        barcodeUrl: '',
+        status: false,
+      ),
+      PatrolLocation(
+        locationId: '2',
+        locationName: 'Backyard',
+        latitude: 37.4229999,
+        longitude: -122.0850575,
+        barcodeUrl: '',
+        status: false,
+      ),
+      PatrolLocation(
+        locationId: '3',
+        locationName: 'Warehouse Entry',
+        latitude: 37.4239999,
+        longitude: -122.0860575,
+        barcodeUrl: '',
+        status: false,
+      ),
+      PatrolLocation(
+        locationId: '4',
+        locationName: 'Parking Lot',
+        latitude: 37.4249999,
+        longitude: -122.0870575,
+        barcodeUrl: '',
+        status: false,
+      ),
+    ];
+    
+    patrolLocations.clear();
+    patrolLocations.addAll(fallbackLocations);
   }
 
   Future<void> fetchLocation() async {
@@ -82,12 +215,12 @@ class PatrolCheckInController extends GetxController {
     }
   }
 
-  void refreshPatrolLocations() {
-    // Simulate refreshing patrol locations
-    patrolLocations.refresh();
+  // Updated refresh method to fetch from API
+  Future<void> refreshPatrolLocations() async {
+    await fetchPatrolLocationsFromAPI();
   }
 
-  void startPatrolForLocation(dynamic location) {
+  void startPatrolForLocation(PatrolLocation location) {
     currentPatrolLocation.value = location;
     currentStep.value = 1;
     isManualPatrol.value = false;
@@ -105,7 +238,7 @@ class PatrolCheckInController extends GetxController {
 
   int getNextPatrolIndex() {
     for (int i = 0; i < patrolLocations.length; i++) {
-      if (!completedPatrols.contains(patrolLocations[i]['id'])) {
+      if (!completedPatrols.contains(patrolLocations[i].locationId)) {
         return i;
       }
     }
@@ -155,8 +288,8 @@ class PatrolCheckInController extends GetxController {
       final distance = Geolocator.distanceBetween(
         currentLatLng.value!.latitude,
         currentLatLng.value!.longitude,
-    currentPatrolLocation.value['latitude'], 
-    currentPatrolLocation.value['longitude'],
+        currentPatrolLocation.value!.latitude,
+        currentPatrolLocation.value!.longitude,
       );
 
       if (distance <= 50) {
@@ -280,7 +413,9 @@ class PatrolCheckInController extends GetxController {
         backgroundColor: AppColors.greenColor,
         colorText: Colors.white,
       );
-      completedPatrols.add(currentPatrolLocation.value['id']);
+      if (currentPatrolLocation.value != null) {
+        completedPatrols.add(currentPatrolLocation.value!.locationId);
+      }
       resetCurrentPatrol();
     } else {
       Get.snackbar(
@@ -313,12 +448,12 @@ class PatrolCheckInController extends GetxController {
     return 'Unknown';
   }
 
-String getTargetGPSString() {
-  if (currentPatrolLocation.value != null) {
-    return '${currentPatrolLocation.value['latitude']}, ${currentPatrolLocation.value['longitude']}';
+  String getTargetGPSString() {
+    if (currentPatrolLocation.value != null) {
+      return '${currentPatrolLocation.value!.latitude}, ${currentPatrolLocation.value!.longitude}';
+    }
+    return 'Unknown';
   }
-  return 'Unknown';
-}
 }
 
 class QRScannerView extends StatelessWidget {
