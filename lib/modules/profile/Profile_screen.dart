@@ -158,130 +158,138 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           children: [
             // Profile Info Section
-            Container(
-              width: double.infinity,
-              color: AppColors.whiteColor,
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Profile Image
-                  Stack(
-                    alignment: Alignment.bottomRight,
-                    children: [
-                      Obx(() {
-                        final user = controller.userModel.value;
-                        final imagePath = user?.photoPath ?? '';
-                        Widget imageWidget;
-                        if (imagePath.isEmpty) {
-                          imageWidget = const Icon(
-                            Icons.person,
-                            size: 60,
-                            color: Colors.grey,
-                          );
-                        } else if (imagePath.startsWith('http') ||
-                            imagePath.startsWith('https')) {
-                          imageWidget = Image.network(
-                            imagePath,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(
-                                Icons.person,
-                                size: 60,
-                                color: Colors.grey,
-                              );
-                            },
-                          );
-                        } else {
-                          imageWidget = Image.file(
-                            File(imagePath),
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(
-                                Icons.person,
-                                size: 60,
-                                color: Colors.grey,
-                              );
-                            },
-                          );
-                        }
-                        return Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppColors.lightGrey,
-                              width: 2,
-                            ),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(50),
-                            child: imageWidget,
-                          ),
-                        );
-                      }),
+     Container(
+  width: double.infinity,
+  color: AppColors.whiteColor,
+  padding: const EdgeInsets.all(16),
+  child: Column(
+    children: [
+      // Profile Image
+      Stack(
+        alignment: Alignment.bottomRight,
+        children: [
+          Obx(() {
+            final user = controller.userModel.value;
+            final imagePath = user?.photoPath ?? '';
+            Widget imageWidget;
 
-                      // GestureDetector(
-                      //   onTap: () async {
-                      //     // Add image picker functionality
-                      //     await controller.updateProfilePicture();
-                      //   },
-                      //   child: Container(
-                      //     padding: const EdgeInsets.all(4),
-                      //     decoration: const BoxDecoration(
-                      //       color: Colors.blue,
-                      //       shape: BoxShape.circle,
-                      //     ),
-                      //     child: const Icon(
-                      //       Icons.camera_alt,
-                      //       color: AppColors.whiteColor,
-                      //       size: 18,
-                      //     ),
-                      //   ),
-                      // ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // User Name
-                  Obx(() {
-                    final user = controller.userModel.value;
-                    return Text(
-                      user?.name ?? 'User',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    );
-                  }),
-                  const SizedBox(height: 4),
-                  // User ID
-                  Obx(() {
-                    final user = controller.userModel.value;
-                    return Text(
-                      'ID: ${user?.userId ?? "-"}',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                    );
-                  }),
-                  const SizedBox(height: 8),
-                  // User Contact Info
-                  Obx(() {
-                    final user = controller.userModel.value;
-                    return Text(
-                      user?.phone ?? '-',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                    );
-                  }),
-                  const SizedBox(height: 4),
-                  Obx(() {
-                    final user = controller.userModel.value;
-                    return Text(
-                      user?.email ?? '-',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                    );
-                  }),
-                ],
+            if (imagePath.isEmpty) {
+              imageWidget = const Icon(
+                Icons.person,
+                size: 60,
+                color: Colors.grey,
+              );
+            } else if (imagePath.startsWith('http')) {
+              imageWidget = Image.network(
+                imagePath,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.person,
+                  size: 60,
+                  color: Colors.grey,
+                ),
+              );
+            } else {
+              imageWidget = Image.file(
+                File(imagePath),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.person,
+                  size: 60,
+                  color: Colors.grey,
+                ),
+              );
+            }
+
+            return Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.lightGrey,
+                  width: 2,
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(50),
+                child: imageWidget,
+              ),
+            );
+          }),
+
+          // Uncomment to enable photo update
+          // GestureDetector(
+          //   onTap: () async {
+          //     await controller.updateProfilePicture();
+          //   },
+          //   child: Container(
+          //     padding: const EdgeInsets.all(4),
+          //     decoration: const BoxDecoration(
+          //       color: Colors.blue,
+          //       shape: BoxShape.circle,
+          //     ),
+          //     child: const Icon(
+          //       Icons.camera_alt,
+          //       color: AppColors.whiteColor,
+          //       size: 18,
+          //     ),
+          //   ),
+          // ),
+        ],
+      ),
+
+      const SizedBox(height: 16),
+
+      // User Details
+      Obx(() {
+        final user = controller.userModel.value;
+        if (user == null) return const SizedBox();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Name
+            Text(
+              user.name ?? 'User',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
             ),
+            const SizedBox(height: 4),
+
+            // User ID
+            if (user.userId != null && user.userId!.isNotEmpty) ...[
+              Text(
+                'ID: ${user.userId}',
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+              const SizedBox(height: 8),
+            ],
+
+            // Phone
+            if (user.phone != null && user.phone!.isNotEmpty) ...[
+              Text(
+                user.phone!,
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+              const SizedBox(height: 4),
+            ],
+
+            // Email
+            if (user.email != null && user.email!.isNotEmpty)
+              Text(
+                user.email!,
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+          ],
+        );
+      }),
+    ],
+  ),
+),
+
 
             const SizedBox(height: 8),
 

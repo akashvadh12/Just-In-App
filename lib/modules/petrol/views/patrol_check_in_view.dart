@@ -33,8 +33,8 @@ class PatrolCheckInScreen extends StatelessWidget {
                 text: 'TRACKER',
               ),
               Tab(
-                icon: Icon(Icons.map),
-                text: 'MAP',
+                icon: Icon(Icons.qr_code_scanner),
+                text: 'Scan QR',
               ),
             ],
           ),
@@ -42,7 +42,7 @@ class PatrolCheckInScreen extends StatelessWidget {
         body: TabBarView(
           children: [
             _buildTrackerTab(),
-            _buildMapTab(),
+            _buildQRScan(),
           ],
         ),
       ),
@@ -81,18 +81,22 @@ Widget _buildPatrolLocationsList() {
       Container(
         width: double.infinity,
         margin: const EdgeInsets.all(16),
-        child: ElevatedButton.icon(
-          onPressed: () => controller.addManualPatrol(),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          icon: const Icon(Icons.add, color: AppColors.whiteColor),
-          label: Text(
-            '➕ Add Manual Patrol',
-            style: AppTextStyles.subtitle.copyWith(color: AppColors.whiteColor),
-          ),
+        child: Row(
+          children: [
+            ElevatedButton.icon(
+              onPressed: () => controller.addManualPatrol(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              // icon: const Icon(Icons.add, color: AppColors.whiteColor),
+              label: Text(
+                '➕ Add Manual Patrol',
+                style: AppTextStyles.subtitle.copyWith(color: AppColors.whiteColor),
+              ),
+            ),
+          ],
         ),
       ),
       // Loading indicator or Patrol Locations List
@@ -269,8 +273,7 @@ Widget _buildPatrolLocationCard(PatrolLocation location, int index) {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildProgressStep(1, '📍', 'Verify', controller.currentStep.value >= 1),
-              if (!controller.isManualPatrol.value) 
-                _buildProgressStep(2, '📷', 'QR Scan', controller.currentStep.value >= 2),
+              
               _buildProgressStep(
                 controller.isManualPatrol.value ? 2 : 3, 
                 '📸', 
@@ -337,19 +340,19 @@ Widget _buildPatrolLocationCard(PatrolLocation location, int index) {
           switch (controller.currentStep.value) {
             case 1:
               return _buildVerifyLocationStep();
+            // case 2:
+            //   return controller.isManualPatrol.value 
+            //       ? _buildPhotoStep() 
+            //       : _buildQRScanStep();
             case 2:
-              return controller.isManualPatrol.value 
-                  ? _buildPhotoStep() 
-                  : _buildQRScanStep();
-            case 3:
               return controller.isManualPatrol.value 
                   ? _buildNotesStep() 
                   : _buildPhotoStep();
-            case 4:
+            case 3:
               return controller.isManualPatrol.value 
                   ? _buildSubmitStep() 
                   : _buildNotesStep();
-            case 5:
+            case 4:
               return _buildSubmitStep();
             default:
               return _buildVerifyLocationStep();
@@ -447,114 +450,144 @@ Widget _buildPatrolLocationCard(PatrolLocation location, int index) {
     );
   }
 
-  Widget _buildQRScanStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '📷 Scan QR Code',
-          style: AppTextStyles.heading,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Scan the QR code at the patrol point to confirm your presence.',
-          style: AppTextStyles.body,
-        ),
-        const SizedBox(height: 24),
+  // Widget _buildQRScanStep() {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Text(
+  //         '📷 Scan QR Code',
+  //         style: AppTextStyles.heading,
+  //       ),
+  //       const SizedBox(height: 8),
+  //       Text(
+  //         'Scan the QR code at the patrol point to confirm your presence.',
+  //         style: AppTextStyles.body,
+  //       ),
+  //       const SizedBox(height: 24),
         
-        Center(
-          child: GestureDetector(
-            onTap: () => controller.openQRScanner(),
-            child: Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                color: AppColors.lightGrey,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primary, width: 2),
+  //       Center(
+  //         child: GestureDetector(
+  //           onTap: () => controller.openQRScanner(),
+  //           child: Container(
+  //             width: 200,
+  //             height: 200,
+  //             decoration: BoxDecoration(
+  //               color: AppColors.lightGrey,
+  //               borderRadius: BorderRadius.circular(12),
+  //               border: Border.all(color: AppColors.primary, width: 2),
+  //             ),
+  //             child: const Column(
+  //               mainAxisAlignment: MainAxisAlignment.center,
+  //               children: [
+  //                 Icon(Icons.qr_code_scanner, size: 64, color: AppColors.primary),
+  //                 SizedBox(height: 16),
+  //                 Text(
+  //                   'Tap to Scan QR Code',
+  //                   style: TextStyle(
+  //                     color: AppColors.primary,
+  //                     fontWeight: FontWeight.bold,
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+        
+  //       const SizedBox(height: 24),
+        
+  //       Obx(() => SizedBox(
+  //         width: double.infinity,
+  //         child: ElevatedButton(
+  //           onPressed: controller.isQRScanned.value 
+  //               ? () => controller.goToNextStep()
+  //               : null,
+  //           style: ElevatedButton.styleFrom(
+  //             backgroundColor: AppColors.primary,
+  //             disabledBackgroundColor: AppColors.greyColor,
+  //             padding: const EdgeInsets.symmetric(vertical: 16),
+  //             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+  //           ),
+  //           child: Text(
+  //             'Continue',
+  //             style: AppTextStyles.subtitle.copyWith(color: AppColors.whiteColor),
+  //           ),
+  //         ),
+  //       )),
+  //     ],
+  //   );
+  // }
+  
+  
+  Widget _buildQRScan() {
+    return Obx(() {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Center(
+              child: Text(
+                'Scan QR Code',
+                style: AppTextStyles.heading,
               ),
-              child: const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.qr_code_scanner, size: 64, color: AppColors.primary),
-                  SizedBox(height: 16),
-                  Text(
-                    'Tap to Scan QR Code',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Center(
+            child: GestureDetector(
+              onTap: () => controller.openQRScanner(),
+              child: Container(
+                width: 280,
+                height: 380,
+                decoration: BoxDecoration(
+                  color: AppColors.lightGrey,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primary, width: 2),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.qr_code_scanner, size: 64, color: AppColors.primary),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Tap to Scan QR Code',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ],
+                    if (controller.scannedQRData.value.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 24.0),
+                        child: Column(
+                          children: [
+                            Text('Scanned Data:', style: AppTextStyles.subtitle),
+                            Text(controller.scannedQRData.value, style: AppTextStyles.hint),
+                            if (controller.isQRMatched.value)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text('Location matched! Patrol started.', style: AppTextStyles.subtitle.copyWith(color: AppColors.greenColor)),
+                              ),
+                            if (controller.qrScanError.value.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text(controller.qrScanError.value, style: AppTextStyles.subtitle.copyWith(color: AppColors.error)),
+                              ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-        
-        const SizedBox(height: 24),
-        
-        Obx(() => SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: controller.isQRScanned.value 
-                ? () => controller.goToNextStep()
-                : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              disabledBackgroundColor: AppColors.greyColor,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text(
-              'Continue',
-              style: AppTextStyles.subtitle.copyWith(color: AppColors.whiteColor),
-            ),
-          ),
-        )),
-      ],
-    );
+        ],
+      );
+    });
   }
 
-  Widget _buildPhotoStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '📸 Upload Photo',
-          style: AppTextStyles.heading,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Take a photo to document your patrol visit.',
-          style: AppTextStyles.body,
-        ),
-        const SizedBox(height: 16),
-        
-        _buildPhotoSection(),
-        
-        const SizedBox(height: 24),
-        
-        Obx(() => SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: controller.capturedImage.value != null 
-                ? () => controller.goToNextStep()
-                : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              disabledBackgroundColor: AppColors.greyColor,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text(
-              'Continue',
-              style: AppTextStyles.subtitle.copyWith(color: AppColors.whiteColor),
-            ),
-          ),
-        )),
-      ],
-    );
-  }
+
 
   Widget _buildNotesStep() {
     return Column(
@@ -673,7 +706,273 @@ Widget _buildPatrolLocationCard(PatrolLocation location, int index) {
 
 
 
+  Widget _buildPhotoStep() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        '📸 Upload Photo',
+        style: AppTextStyles.heading,
+      ),
+      const SizedBox(height: 8),
+      Text(
+        'Take a photo to document your patrol visit.',
+        style: AppTextStyles.body,
+      ),
+      const SizedBox(height: 16),
+      
+      _buildPhotoCard(),
+      
+      const SizedBox(height: 24),
+      
+      Obx(() => SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: controller.capturedImage.value != null 
+              ? () => controller.goToNextStep()
+              : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            disabledBackgroundColor: AppColors.greyColor,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          child: Text(
+            'Continue',
+            style: AppTextStyles.subtitle.copyWith(color: AppColors.whiteColor),
+          ),
+        ),
+      )),
+    ],
+  );
+}
 
+Widget _buildPhotoCard() {
+  return Obx(() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 0,
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header
+          Row(
+            children: [
+              Icon(Icons.camera_alt, color: AppColors.primary, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Photo',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              if (controller.capturedImage.value != null)
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '✓',
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Photo area
+          GestureDetector(
+            onTap: () => controller.takePicture(),
+            child: Container(
+              width: double.infinity,
+              height: 180,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: controller.capturedImage.value != null
+                      ? Colors.green
+                      : Colors.grey.shade300,
+                  width: 2,
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: controller.capturedImage.value != null
+                    ? Stack(
+                        children: [
+                          Image.file(
+                            controller.capturedImage.value!,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: Container(
+                              padding: EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Container(
+                        color: Colors.grey[50],
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.camera_alt,
+                                size: 32,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Tap to capture photo',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Required for patrol documentation',
+                              style: TextStyle(
+                                color: Colors.grey[400],
+                                fontSize: 12,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+            ),
+          ),
+          
+          // // Camera controls (only show when no image is captured)
+          // if (controller.capturedImage.value == null) ...[
+          //   const SizedBox(height: 16),
+          //   Row(
+          //     mainAxisAlignment: MainAxisAlignment.center,
+          //     children: [
+          //       // Flash toggle
+          //       Container(
+          //         decoration: BoxDecoration(
+          //           color: Colors.grey[100],
+          //           borderRadius: BorderRadius.circular(8),
+          //         ),
+          //         child: IconButton(
+          //           icon: Icon(
+          //             controller.isFlashOn.value ? Icons.flash_on : Icons.flash_off,
+          //             color: controller.isFlashOn.value
+          //                 ? AppColors.primary
+          //                 : Colors.grey[600],
+          //             size: 20,
+          //           ),
+          //           onPressed: () => controller.toggleFlash(),
+          //         ),
+          //       ),
+          //       const SizedBox(width: 16),
+                
+          //       // Main camera button
+          //       GestureDetector(
+          //         onTap: () => controller.takePicture(),
+          //         child: Container(
+          //           width: 60,
+          //           height: 60,
+          //           decoration: BoxDecoration(
+          //             color: AppColors.primary,
+          //             shape: BoxShape.circle,
+          //             boxShadow: [
+          //               BoxShadow(
+          //                 color: AppColors.primary.withOpacity(0.3),
+          //                 spreadRadius: 0,
+          //                 blurRadius: 8,
+          //                 offset: const Offset(0, 2),
+          //               ),
+          //             ],
+          //           ),
+          //           child: const Icon(
+          //             Icons.camera_alt,
+          //             color: Colors.white,
+          //             size: 28,
+          //           ),
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ],
+          
+          // Retake option (only show when image is captured)
+          if (controller.capturedImage.value != null) ...[
+            const SizedBox(height: 16),
+            Center(
+              child: TextButton.icon(
+                onPressed: () => controller.retakePhoto(),
+                icon: Icon(Icons.refresh, color: AppColors.primary, size: 18),
+                label: Text(
+                  'Retake Photo',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  });
+}
 
   Widget _buildMiniMap() {
     return Container(
@@ -732,138 +1031,6 @@ Widget _buildPatrolLocationCard(PatrolLocation location, int index) {
               );
       }),
     );
-  }
-
-  Widget _buildMapTab() {
-    return Obx(() => FlutterMap(
-      mapController: controller.mapController,
-      options: MapOptions(
-        initialCenter: controller.currentLatLng.value ?? const LatLng(0, 0),
-        initialZoom: 14,
-        onMapReady: controller.onMapReady,
-      ),
-      children: [
-        TileLayer(
-          urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-          userAgentPackageName: 'com.example.security_guard',
-        ),
-        MarkerLayer(
-          markers: [
-            // Current location
-            if (controller.currentLatLng.value != null)
-              Marker(
-                point: controller.currentLatLng.value!,
-                width: 50,
-                height: 50,
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.blue,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.person,
-                    color: Colors.white,
-                    size: 30,
-                  ),
-                ),
-              ),
-            // Patrol locations
-            ...controller.patrolLocations.map((location) {
-              final isCompleted = controller.completedPatrols.contains(location.locationId);
-              return Marker(
-                point: LatLng(location.latitude, location.longitude),
-                width: 50,
-                height: 50,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isCompleted ? AppColors.greenColor : Colors.red,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                  child: Icon(
-                    isCompleted ? Icons.check : Icons.location_on,
-                    color: Colors.white,
-                    size: 30,
-                  ),
-                ),
-              );
-            }).toList(),
-          ],
-        ),
-      ],
-    ));
-  }
-
-  Widget _buildPhotoSection() {
-    return Obx(() => Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.lightGrey,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Container(
-            height: 180,
-            decoration: BoxDecoration(
-              color: controller.capturedImage.value != null
-                  ? Colors.transparent
-                  : const Color(0xFF222831),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: controller.capturedImage.value != null
-                ? Image.file(
-                    controller.capturedImage.value!,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                  )
-                : const Center(
-                    child: Icon(
-                      Icons.camera_alt,
-                      color: AppColors.greyColor,
-                      size: 48,
-                    ),
-                  ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              IconButton(
-                icon: Icon(
-                  controller.isFlashOn.value ? Icons.flash_on : Icons.flash_off,
-                  color: controller.isFlashOn.value 
-                      ? AppColors.primary 
-                      : AppColors.greyColor,
-                ),
-                onPressed: () => controller.toggleFlash(),
-              ),
-              GestureDetector(
-                onTap: () => controller.takePicture(),
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.camera_alt,
-                    color: AppColors.whiteColor,
-                    size: 30,
-                  ),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.refresh, color: AppColors.greyColor),
-                onPressed: () => controller.retakePhoto(),
-              ),
-            ],
-          ),
-        ],
-      ),
-    ));
   }
 
   Widget _buildNotesSection() {

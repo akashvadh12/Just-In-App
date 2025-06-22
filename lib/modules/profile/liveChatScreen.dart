@@ -40,6 +40,7 @@ class LegalDocumentScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+       iconTheme: const IconThemeData(color: Colors.white),
         title: Text(title, style: const TextStyle(color: Colors.white)),
         elevation: 0,
       ),

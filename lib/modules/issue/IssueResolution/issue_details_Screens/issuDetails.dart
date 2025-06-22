@@ -604,6 +604,8 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
           ),
           const SizedBox(height: 12),
           TextField(
+            enabled:(controller.currentIssue.value?.status ==
+                                  IssueStatus.resolved) ? true : false ,
             controller: _resolutionController,
             maxLines: 5,
             decoration: InputDecoration(

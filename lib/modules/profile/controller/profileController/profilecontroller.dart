@@ -26,7 +26,9 @@ class ProfileController extends GetxController {
     isLoading.value = true;
     try {
       final response = await _apiGetService.getProfileAPI(userId);
-      if (response != null && response['status'] == true && response['user'] != null) {
+      if (response != null &&
+          response['status'] == true &&
+          response['user'] != null) {
         userModel.value = UserModel.fromJson(response['user']);
       } else {
         _showErrorSnackbar(response?['message'] ?? 'Failed to fetch profile');
@@ -56,10 +58,13 @@ class ProfileController extends GetxController {
         email: email,
         phone: phone,
       );
-      if (response != null ) {
-        userModel.value = userModel.value?.copyWith(name: name, email: email, phone: phone);
+      if (response != null) {
+        userModel.value = userModel.value?.copyWith(
+          name: name,
+          email: email,
+          phone: phone,
+        );
         _showSuccessSnackbar('Profile updated successfully');
-         
       } else {
         _showErrorSnackbar(response?['message'] ?? 'Failed to update profile');
       }
@@ -90,11 +95,16 @@ class ProfileController extends GetxController {
         oldPassword: oldPassword,
         newPassword: newPassword,
       );
-      if (response != null) {
-        _showSuccessSnackbar('Password updated successfully');
-       
+
+      // Fixed: Use .contains() instead of .includes(), and fix the logic
+      if (response!["message"].toString().contains(
+        "Old password is incorrect.",
+      )) {
+        // This should show ERROR message, not success
+        _showErrorSnackbar('Old password is incorrect.');
       } else {
-        _showErrorSnackbar(response?['message'] ?? 'Failed to update password');
+        // If no error message, then it's successful
+        _showSuccessSnackbar('Password updated successfully');
       }
     } catch (e) {
       _showErrorSnackbar('Failed to update password');
@@ -103,19 +113,27 @@ class ProfileController extends GetxController {
     }
   }
 
-  Future<void> updateProfilePicture({required String userId, required File imageFile}) async {
+  Future<void> updateProfilePicture({
+    required String userId,
+    required File imageFile,
+  }) async {
     isLoading.value = true;
     try {
       final response = await _apiPostService.uploadProfileImageAPI(
         userId: userId,
         imageFile: imageFile,
       );
-      if (response != null && response['status'] == true && response['profileImage'] != null) {
-        userModel.value = userModel.value?.copyWith(photoPath: response['profileImage']);
+      if (response != null &&
+          response['status'] == true &&
+          response['profileImage'] != null) {
+        userModel.value = userModel.value?.copyWith(
+          photoPath: response['profileImage'],
+        );
         _showSuccessSnackbar('Profile picture updated');
-        
       } else {
-        _showErrorSnackbar(response?['message'] ?? 'Failed to update profile picture');
+        _showErrorSnackbar(
+          response?['message'] ?? 'Failed to update profile picture',
+        );
       }
     } catch (e) {
       _showErrorSnackbar('Failed to update profile picture');
@@ -132,11 +150,22 @@ class ProfileController extends GetxController {
 
   // Snackbar helpers
   void _showErrorSnackbar(String message) {
-    Get.snackbar('Error', message, snackPosition: SnackPosition.TOP, backgroundColor: Colors.red, colorText: Colors.white);
+    Get.snackbar(
+      'Error',
+      message,
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+    );
   }
 
   void _showSuccessSnackbar(String message) {
-    Get.snackbar('Success', message, snackPosition: SnackPosition.TOP, backgroundColor: Colors.green, colorText: Colors.white);
+    Get.snackbar(
+      'Success',
+      message,
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+    );
   }
 }
-

@@ -40,8 +40,8 @@ class GuardAttendanceController extends GetxController {
         source: ImageSource.camera,
         imageQuality: 60,
         preferredCameraDevice: CameraDevice.front,
-        maxWidth: 1024,
-        maxHeight: 768,
+        // maxWidth: 1024,
+        // maxHeight: 768,
       );
 
       if (pickedFile != null) {

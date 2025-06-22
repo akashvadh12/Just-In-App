@@ -83,6 +83,22 @@ class PatrolCheckInController extends GetxController {
   // API endpoint
   static const String _apiUrl = 'https://official.solarvision-cairo.com/patrol/get-all-locations';
 
+  // Add a variable to store the last scanned QR data and status
+  final scannedQRData = ''.obs;
+  final qrScanError = ''.obs;
+  final isQRMatched = false.obs;
+  PatrolLocation? matchedLocation;
+
+  // Add a variable for userId (replace with actual user logic as needed)
+  final String userId = '202408056';
+
+  // Add a variable for generated logId
+  String generateLogId() {
+    final now = DateTime.now();
+    return '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}'
+           '${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}';
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -222,7 +238,7 @@ class PatrolCheckInController extends GetxController {
 
   void startPatrolForLocation(PatrolLocation location) {
     currentPatrolLocation.value = location;
-    currentStep.value = 1;
+    currentStep.value = 2;
     isManualPatrol.value = false;
     isLocationVerified.value = false;
     isQRScanned.value = false;
@@ -324,6 +340,36 @@ class PatrolCheckInController extends GetxController {
     isVerifying.value = false;
   }
 
+  // Parse QR code, match location, and start patrol
+  void handleScannedQRCode(String qrString) {
+    scannedQRData.value = qrString;
+    qrScanError.value = '';
+    isQRMatched.value = false;
+    matchedLocation = null;
+    try {
+      final parts = qrString.split('_');
+      if (parts.length != 4) {
+        qrScanError.value = 'Invalid QR format';
+        return;
+      }
+      final locationId = parts[0];
+      // Find location in patrolLocations
+      final found = patrolLocations.firstWhereOrNull((loc) => loc.locationId == locationId);
+      if (found != null) {
+        matchedLocation = found;
+        isQRMatched.value = true;
+        // Start patrol for this location
+        startPatrolForLocation(found);
+        // Optionally update lat/lng if needed
+      } else {
+        qrScanError.value = 'Location not found in patrol list.';
+      }
+    } catch (e) {
+      qrScanError.value = 'Error parsing QR: $e';
+    }
+  }
+
+  // Update openQRScanner to use handleScannedQRCode
   void openQRScanner() async {
     final cameraPermission = await Permission.camera.request();
     if (!cameraPermission.isGranted) {
@@ -335,7 +381,7 @@ class PatrolCheckInController extends GetxController {
       );
       return;
     }
-
+ print('QR Code Scanned: Waiting for QR scanner to open...');
     Get.to(
       () => QRScannerView(
         onQRViewCreated: (QRViewController controller) {
@@ -343,6 +389,8 @@ class PatrolCheckInController extends GetxController {
             if (scanData.code != null) {
               qrResult.value = scanData.code;
               isQRScanned.value = true;
+              handleScannedQRCode(scanData.code!);
+              print('QR Code Scanned: ${scanData.code}');
               Get.back();
               Get.snackbar(
                 'Success',
@@ -350,7 +398,10 @@ class PatrolCheckInController extends GetxController {
                 backgroundColor: AppColors.greenColor,
                 colorText: Colors.white,
               );
-              goToNextStep();
+              // Only go to next step if matched
+              if (isQRMatched.value) {
+                goToNextStep();
+              }
             }
           });
         },
@@ -358,6 +409,114 @@ class PatrolCheckInController extends GetxController {
     );
   }
 
+  // Update submitPatrolReport to call the check-in API
+  Future<void> submitPatrolReport() async {
+    if ( capturedImage.value != null) {
+      // Prepare data for API
+      final logId = generateLogId();
+      final locationId = isManualPatrol.value
+          ? 'manual'
+          : (matchedLocation?.locationId ?? currentPatrolLocation.value?.locationId ?? '');
+      final latitude = isManualPatrol.value
+          ? (currentLatLng.value?.latitude ?? 0.0).toString()
+          : (matchedLocation?.latitude.toString() ?? currentPatrolLocation.value?.latitude.toString() ?? '');
+      final longitude = isManualPatrol.value
+          ? (currentLatLng.value?.longitude ?? 0.0).toString()
+          : (matchedLocation?.longitude.toString() ?? currentPatrolLocation.value?.longitude.toString() ?? '');
+      final note = notes.value;
+      final imageFile = capturedImage.value;
+      final url = Uri.parse('https://official.solarvision-cairo.com/patrol/checkin');
+      try {
+        final request = http.MultipartRequest('POST', url)
+          ..fields['UserID'] = userId
+          ..fields['Log_Id'] = logId
+          ..fields['LocationId'] = locationId
+          ..fields['Latitude'] = latitude
+          ..fields['Longitude'] = longitude
+          ..fields['Note'] = note
+          ..fields['ActivePatrol'] = 'true';
+        if (imageFile != null) {
+          request.files.add(await http.MultipartFile.fromPath('Selfie', imageFile.path));
+        }
+        final streamedResponse = await request.send();
+        final response = await http.Response.fromStream(streamedResponse);
+        if (response.statusCode == 200) {
+          final respJson = json.decode(response.body);
+          Get.snackbar(
+            'Success',
+            respJson['message'] ?? 'Patrol report submitted successfully',
+            backgroundColor: AppColors.greenColor,
+            colorText: Colors.white,
+          );
+          if (currentPatrolLocation.value != null) {
+            completedPatrols.add(currentPatrolLocation.value!.locationId);
+          }
+          resetCurrentPatrol();
+        } else {
+          Get.snackbar(
+            'Error',
+            'Failed to submit patrol report: ${response.body}',
+            backgroundColor: AppColors.error,
+            colorText: Colors.white,
+          );
+        }
+      } catch (e) {
+        Get.snackbar(
+          'Error',
+          'Failed to submit patrol report: $e',
+          backgroundColor: AppColors.error,
+          colorText: Colors.white,
+        );
+      }
+    } else {
+      Get.snackbar(
+        'Error',
+        'Please complete all steps (QR scan and photo required)',
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  void resetCurrentPatrol() {
+    currentStep.value = 1;
+    currentPatrolLocation.value = null;
+    isManualPatrol.value = false;
+    isLocationVerified.value = false;
+    isQRScanned.value = false;
+    notes.value = '';
+    capturedImage.value = null;
+  }
+
+  // Utility: Get current GPS as string
+  String getCurrentGPSString() {
+    if (currentLatLng.value != null) {
+      return '${currentLatLng.value!.latitude}, ${currentLatLng.value!.longitude}';
+    }
+    return 'Unknown';
+  }
+
+  // Utility: Get target GPS as string
+  String getTargetGPSString() {
+    if (currentPatrolLocation.value != null) {
+      return '${currentPatrolLocation.value!.latitude}, ${currentPatrolLocation.value!.longitude}';
+    }
+    return 'Unknown';
+  }
+
+  // Cancel patrol and reset state
+  void cancelCurrentPatrol() {
+    resetCurrentPatrol();
+    // Optionally, pop the current screen if needed
+    // Get.back();
+  }
+
+  // Toggle camera flash
+  void toggleFlash() {
+    isFlashOn.value = !isFlashOn.value;
+  }
+
+  // Take a picture using the camera
   Future<void> takePicture() async {
     final cameraPermission = await Permission.camera.request();
     if (!cameraPermission.isGranted) {
@@ -369,17 +528,14 @@ class PatrolCheckInController extends GetxController {
       );
       return;
     }
-
     try {
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
         preferredCameraDevice: CameraDevice.rear,
         imageQuality: 80,
       );
-
       if (photo != null) {
         capturedImage.value = File(photo.path);
-        goToNextStep();
       }
     } catch (e) {
       Get.snackbar(
@@ -391,76 +547,17 @@ class PatrolCheckInController extends GetxController {
     }
   }
 
-  void toggleFlash() {
-    isFlashOn.toggle();
-    Get.snackbar(
-      'Flash',
-      isFlashOn.value ? 'Flash turned on' : 'Flash turned off',
-      backgroundColor: AppColors.secondary,
-      colorText: Colors.white,
-    );
-  }
-
+  // Retake photo (clear current image)
   void retakePhoto() {
     capturedImage.value = null;
   }
-
-  void submitPatrolReport() {
-    if (isManualPatrol.value || isQRScanned.value) {
-      Get.snackbar(
-        'Success',
-        'Patrol report submitted successfully',
-        backgroundColor: AppColors.greenColor,
-        colorText: Colors.white,
-      );
-      if (currentPatrolLocation.value != null) {
-        completedPatrols.add(currentPatrolLocation.value!.locationId);
-      }
-      resetCurrentPatrol();
-    } else {
-      Get.snackbar(
-        'Error',
-        'Please complete all steps',
-        backgroundColor: AppColors.error,
-        colorText: Colors.white,
-      );
-    }
-  }
-
-  void cancelCurrentPatrol() {
-    resetCurrentPatrol();
-    Get.back();
-  }
-
-  void resetCurrentPatrol() {
-    currentStep.value = 1;
-    isLocationVerified.value = false;
-    isQRScanned.value = false;
-    capturedImage.value = null;
-    notes.value = '';
-    currentPatrolLocation.value = null;
-  }
-
-  String getCurrentGPSString() {
-    if (currentLatLng.value != null) {
-      return '${currentLatLng.value!.latitude}, ${currentLatLng.value!.longitude}';
-    }
-    return 'Unknown';
-  }
-
-  String getTargetGPSString() {
-    if (currentPatrolLocation.value != null) {
-      return '${currentPatrolLocation.value!.latitude}, ${currentPatrolLocation.value!.longitude}';
-    }
-    return 'Unknown';
-  }
 }
 
+// Move QRScannerView class to a separate file or import it properly if needed.
+// For now, let's forward declare it here to fix the error.
 class QRScannerView extends StatelessWidget {
   final Function(QRViewController) onQRViewCreated;
-
   const QRScannerView({required this.onQRViewCreated});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
