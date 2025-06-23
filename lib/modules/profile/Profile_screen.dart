@@ -158,138 +158,156 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           children: [
             // Profile Info Section
-     Container(
-  width: double.infinity,
-  color: AppColors.whiteColor,
-  padding: const EdgeInsets.all(16),
-  child: Column(
-    children: [
-      // Profile Image
-      Stack(
-        alignment: Alignment.bottomRight,
-        children: [
-          Obx(() {
-            final user = controller.userModel.value;
-            final imagePath = user?.photoPath ?? '';
-            Widget imageWidget;
+            Container(
+              width: double.infinity,
+              color: AppColors.whiteColor,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  // Profile Image
+                  Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
+                      Obx(() {
+                        final user = controller.userModel.value;
+                        final imagePath = user?.photoPath ?? '';
+                        Widget imageWidget;
 
-            if (imagePath.isEmpty) {
-              imageWidget = const Icon(
-                Icons.person,
-                size: 60,
-                color: Colors.grey,
-              );
-            } else if (imagePath.startsWith('http')) {
-              imageWidget = Image.network(
-                imagePath,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.person,
-                  size: 60,
-                  color: Colors.grey,
-                ),
-              );
-            } else {
-              imageWidget = Image.file(
-                File(imagePath),
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.person,
-                  size: 60,
-                  color: Colors.grey,
-                ),
-              );
-            }
+                        if (imagePath.isEmpty) {
+                          imageWidget = const Icon(
+                            Icons.person,
+                            size: 60,
+                            color: Colors.grey,
+                          );
+                        } else if (imagePath.startsWith('http')) {
+                          imageWidget = Image.network(
+                            imagePath,
+                            fit: BoxFit.cover,
+                            errorBuilder:
+                                (_, __, ___) => const Icon(
+                                  Icons.person,
+                                  size: 60,
+                                  color: Colors.grey,
+                                ),
+                          );
+                        } else {
+                          imageWidget = Image.file(
+                            File(imagePath),
+                            fit: BoxFit.cover,
+                            errorBuilder:
+                                (_, __, ___) => const Icon(
+                                  Icons.person,
+                                  size: 60,
+                                  color: Colors.grey,
+                                ),
+                          );
+                        }
 
-            return Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.lightGrey,
-                  width: 2,
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(50),
-                child: imageWidget,
-              ),
-            );
-          }),
+                        return Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.lightGrey,
+                              width: 2,
+                            ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(50),
+                            child: imageWidget,
+                          ),
+                        );
+                      }),
 
-          // Uncomment to enable photo update
-          // GestureDetector(
-          //   onTap: () async {
-          //     await controller.updateProfilePicture();
-          //   },
-          //   child: Container(
-          //     padding: const EdgeInsets.all(4),
-          //     decoration: const BoxDecoration(
-          //       color: Colors.blue,
-          //       shape: BoxShape.circle,
-          //     ),
-          //     child: const Icon(
-          //       Icons.camera_alt,
-          //       color: AppColors.whiteColor,
-          //       size: 18,
-          //     ),
-          //   ),
-          // ),
-        ],
-      ),
+                      // Uncomment to enable photo update
+                      // GestureDetector(
+                      //   onTap: () async {
+                      //     await controller.updateProfilePicture();
+                      //   },
+                      //   child: Container(
+                      //     padding: const EdgeInsets.all(4),
+                      //     decoration: const BoxDecoration(
+                      //       color: Colors.blue,
+                      //       shape: BoxShape.circle,
+                      //     ),
+                      //     child: const Icon(
+                      //       Icons.camera_alt,
+                      //       color: AppColors.whiteColor,
+                      //       size: 18,
+                      //     ),
+                      //   ),
+                      // ),
+                    ],
+                  ),
 
-      const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-      // User Details
-      Obx(() {
-        final user = controller.userModel.value;
-        if (user == null) return const SizedBox();
+                  // User Details
+                  Obx(() {
+                    final user = controller.userModel.value;
+                    if (user == null) return const SizedBox();
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Name
-            Text(
-              user.name ?? 'User',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Name
+                        Center(
+                          child: Text(
+                            user.name ?? 'User',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+
+                        // User ID
+                        if (user.userId != null && user.userId!.isNotEmpty) ...[
+                          Center(
+                            child: Text(
+                              'ID: ${user.userId}',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+
+                        // Phone
+                        if (user.phone != null && user.phone!.isNotEmpty) ...[
+                          Center(
+                            child: Text(
+                              user.phone!,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                        ],
+
+                        // Email
+                        if (user.email != null && user.email!.isNotEmpty)
+                          Center(
+                            child: Text(
+                              user.email!,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  }),
+                ],
               ),
             ),
-            const SizedBox(height: 4),
-
-            // User ID
-            if (user.userId != null && user.userId!.isNotEmpty) ...[
-              Text(
-                'ID: ${user.userId}',
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-            ],
-
-            // Phone
-            if (user.phone != null && user.phone!.isNotEmpty) ...[
-              Text(
-                user.phone!,
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
-              ),
-              const SizedBox(height: 4),
-            ],
-
-            // Email
-            if (user.email != null && user.email!.isNotEmpty)
-              Text(
-                user.email!,
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
-              ),
-          ],
-        );
-      }),
-    ],
-  ),
-),
-
 
             const SizedBox(height: 8),
 
@@ -408,43 +426,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             style: TextStyle(fontSize: 14, color: Colors.grey),
                           ),
                           const SizedBox(height: 8),
-                         TextFormField(
-  controller: _phoneController,
-  keyboardType: TextInputType.phone,
-  maxLength: 10,
-  inputFormatters: [
-    FilteringTextInputFormatter.digitsOnly,
-    LengthLimitingTextInputFormatter(10),
-  ],
-  decoration: InputDecoration(
-    hintText: 'Enter your phone number',
-    counterText: '', // hides the character counter
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: BorderSide(
-        color: Colors.grey[300]!,
-      ),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: BorderSide(
-        color: Colors.grey[300]!,
-      ),
-    ),
-    contentPadding: const EdgeInsets.symmetric(
-      horizontal: 16,
-      vertical: 12,
-    ),
-  ),
-  validator: (value) {
-    if (value == null || value.isEmpty) {
-      return 'Phone number is required';
-    } else if (value.length != 10) {
-      return 'Phone number must be 10 digits';
-    }
-    return null;
-  },
-),
+                          TextFormField(
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                            maxLength: 10,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(10),
+                            ],
+                            decoration: InputDecoration(
+                              hintText: 'Enter your phone number',
+                              counterText: '', // hides the character counter
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Phone number is required';
+                              } else if (value.length != 10) {
+                                return 'Phone number must be 10 digits';
+                              }
+                              return null;
+                            },
+                          ),
 
                           const SizedBox(height: 16),
                           // Update Button

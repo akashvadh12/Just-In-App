@@ -6,6 +6,7 @@ import 'package:security_guard/core/theme/app_text_styles.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:security_guard/modules/petrol/controllers/patrol_controller.dart';
 import 'package:security_guard/modules/petrol/views/patrol_history_view.dart';
+import 'package:security_guard/modules/petrol/views/add_manual_patrol_screen.dart';
 
 class PatrolCheckInScreen extends StatefulWidget {
   const PatrolCheckInScreen({Key? key}) : super(key: key);
@@ -289,7 +290,10 @@ Widget _buildStopPatrolTab() {
           width: double.infinity,
           margin: const EdgeInsets.all(16),
           child: ElevatedButton.icon(
-            onPressed: () => controller.addManualPatrol(),
+            onPressed: () {
+              // Navigate to the new AddManualPatrolScreen
+              Get.to(() => const AddManualPatrolScreen());
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -567,9 +571,9 @@ Widget _buildStopPatrolTab() {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Obx(() {
-          if (controller.isManualPatrol.value && controller.currentStep.value == 2) {
-            return _buildManualPatrolStep();
-          }
+          // if (controller.isManualPatrol.value && controller.currentStep.value == 2) {
+          //   return _buildManualPatrolStep();
+          // }
           switch (controller.currentStep.value) {
             case 1:
               return _buildVerifyLocationStep();
@@ -589,89 +593,6 @@ Widget _buildStopPatrolTab() {
         }),
       ),
     );
-  }
-
-  Widget _buildManualPatrolStep() {
-    return Obx(() {
-      final TextEditingController locationNameController = TextEditingController(text: controller.notes.value);
-      final TextEditingController noteController = TextEditingController();
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Manual Patrol Check-In', style: AppTextStyles.heading),
-          const SizedBox(height: 16),
-          TextField(
-            controller: locationNameController,
-            decoration: const InputDecoration(
-              labelText: 'Manual Location Name',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text('Current GPS: \\${controller.getCurrentGPSString()}'),
-          const SizedBox(height: 16),
-          TextField(
-            controller: noteController,
-            decoration: const InputDecoration(
-              labelText: 'Note (optional)',
-              border: OutlineInputBorder(),
-            ),
-            maxLines: 3,
-          ),
-          const SizedBox(height: 16),
-          controller.capturedImage.value == null
-              ? ElevatedButton.icon(
-                  onPressed: () => controller.takePicture(),
-                  icon: const Icon(Icons.camera_alt),
-                  label: const Text('Take Selfie'),
-                )
-              : Column(
-                  children: [
-                    Image.file(controller.capturedImage.value!, height: 120),
-                    TextButton(
-                      onPressed: () => controller.retakePhoto(),
-                      child: const Text('Retake Photo'),
-                    ),
-                  ],
-                ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: controller.isLoading.value
-                  ? null
-                  : () async {
-                      if (locationNameController.text.trim().isEmpty) {
-                        Get.snackbar('Error', 'Please enter a location name');
-                        return;
-                      }
-                      if (controller.capturedImage.value == null) {
-                        Get.snackbar('Error', 'Please take a selfie');
-                        return;
-                      }
-                      final latLng = controller.currentLatLng.value;
-                      if (latLng == null) {
-                        Get.snackbar('Error', 'Current location not available');
-                        return;
-                      }
-                      // final logId = controller.generateLogId();
-                      await controller.addManualPatrolApi(
-                        manualLocationName: locationNameController.text.trim(),
-                        manualLatitude: latLng.latitude,
-                        manualLongitude: latLng.longitude,
-                        selfie: controller.capturedImage.value!,
-                        note: noteController.text.trim(),
-                        // logId: logId,
-                      );
-                    },
-              child: controller.isLoading.value
-                  ? const CircularProgressIndicator()
-                  : const Text('Submit Manual Patrol'),
-            ),
-          ),
-        ],
-      );
-    });
   }
 
   Widget _buildVerifyLocationStep() {
