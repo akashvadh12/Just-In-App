@@ -10,6 +10,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:http/http.dart' as http;
+import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 
 class PatrolLocation {
   final String locationId;
@@ -52,10 +53,6 @@ class PatrolLocation {
 }
 
 class PatrolCheckInController extends GetxController {
-
-
-
-  
   final currentStep = 1.obs;
   final currentLatLng = Rxn<LatLng>();
   final mapController = MapController();
@@ -77,6 +74,8 @@ class PatrolCheckInController extends GetxController {
   RxBool isManualPatrol = false.obs;
   RxBool isQRScanned = false.obs;
 
+  ProfileController profileController = Get.find<ProfileController>();
+
   // Location verification
   final isLocationVerified = false.obs;
   final isVerifying = false.obs;
@@ -85,7 +84,8 @@ class PatrolCheckInController extends GetxController {
   final isLoadingLocations = false.obs;
 
   // API endpoint
-  static const String _apiUrl = 'https://official.solarvision-cairo.com/patrol/get-all-locations';
+  static const String _apiUrl =
+      'https://official.solarvision-cairo.com/patrol/get-all-locations';
 
   // Add a variable to store the last scanned QR data and status
   final scannedQRData = ''.obs;
@@ -94,43 +94,42 @@ class PatrolCheckInController extends GetxController {
   PatrolLocation? matchedLocation;
 
   // Add a variable for userId (replace with actual user logic as needed)
-  final String userId = '202408056';
+  // final String userId = '202408056';
 
   // Add a variable for generated logId
   String generateLogId() {
     final now = DateTime.now();
     return '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}'
-           '${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}';
+        '${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}';
   }
 
-
-
- final TextEditingController remarksController = TextEditingController();
+  final TextEditingController remarksController = TextEditingController();
   final RxBool isLoading = false.obs;
-  final  lastPatrolStatus = ''.obs;
-  
-  // Replace with actual user ID from your auth system
-  String get userID => "202408056"; // This should come from your user session
-  
+  final lastPatrolStatus = ''.obs;
+
+  // // Replace with actual user ID from your auth system
+  // String get userID => "202408056"; // This should come from your user session
+
   @override
   void onClose() {
     remarksController.dispose();
     super.onClose();
   }
-  
+
   Future<void> stopPatrol() async {
     try {
       isLoading.value = true;
       lastPatrolStatus.value = '';
-      
+
       final response = await _callStopPatrolAPI();
-      
+
       if (response['success']) {
         lastPatrolStatus.value = response['message'];
         await _handleSuccessfulStop(response);
         remarksController.clear();
       } else {
-        lastPatrolStatus.value = 'No active patrol session found for this user.';
+        lastPatrolStatus.value =
+            'No active patrol session found for this user.';
       }
     } catch (e) {
       lastPatrolStatus.value = 'Error: ${e.toString()}';
@@ -138,38 +137,43 @@ class PatrolCheckInController extends GetxController {
       isLoading.value = false;
     }
   }
-  
+
   Future<Map<String, dynamic>> _callStopPatrolAPI() async {
     try {
-      final url = Uri.parse('https://official.solarvision-cairo.com/patrol/checkout');
-      
-      final requestBody = {
-        "userID": userID,
-        "remarks": remarksController.text.trim().isEmpty 
-          ? "Patrol stopped" 
-          : remarksController.text.trim(),
-      };
-      
-      print('Sending request: ${json.encode(requestBody)}');
-      
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          // Add any additional headers like authorization if needed
-          // 'Authorization': 'Bearer $token',
-        },
-        body: json.encode(requestBody),
-      ).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          throw Exception('Request timeout');
-        },
+      final url = Uri.parse(
+        'https://official.solarvision-cairo.com/patrol/checkout',
       );
-      
+
+      final requestBody = {
+        "userID": profileController.userModel.value?.userId ?? '',
+        "remarks":
+            remarksController.text.trim().isEmpty
+                ? "Patrol stopped"
+                : remarksController.text.trim(),
+      };
+
+      print('Sending request: ${json.encode(requestBody)}');
+
+      final response = await http
+          .post(
+            url,
+            headers: {
+              'Content-Type': 'application/json',
+              // Add any additional headers like authorization if needed
+              // 'Authorization': 'Bearer $token',
+            },
+            body: json.encode(requestBody),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw Exception('Request timeout');
+            },
+          );
+
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
-      
+
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         return {
@@ -185,44 +189,38 @@ class PatrolCheckInController extends GetxController {
         };
       }
     } on http.ClientException catch (e) {
-      return {
-        'success': false,
-        'error': 'Network error: ${e.message}',
-      };
+      return {'success': false, 'error': 'Network error: ${e.message}'};
     } catch (e) {
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
-  
+
   Future<void> _handleSuccessfulStop(Map<String, dynamic> response) async {
     // Reset current patrol state
     resetCurrentPatrol();
-    
+
     // Save patrol end information
     await _savePatrolEndInfo(response);
-    
+
     // Show success dialog
     _showSuccessDialog(response);
-    
+
     // Optional: Navigate back or to a specific screen
     // Get.back();
     // or
     // Get.offAllNamed('/home');
   }
-  
+
   Future<void> _savePatrolEndInfo(Map<String, dynamic> response) async {
     // Save to local storage or send to local database
     // This is where you'd typically save the patrol end information
     print('Saving patrol end info: ${response['data']}');
-    
+
     // Example: Save to shared preferences or local database
     // final prefs = await SharedPreferences.getInstance();
     // await prefs.setString('lastPatrolEnd', json.encode(response['data']));
   }
-  
+
   void _showSuccessDialog(Map<String, dynamic> response) {
     Get.dialog(
       AlertDialog(
@@ -249,18 +247,11 @@ class PatrolCheckInController extends GetxController {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('OK'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('OK')),
         ],
       ),
     );
   }
-
-
-
-
 
   @override
   void onInit() {
@@ -269,28 +260,67 @@ class PatrolCheckInController extends GetxController {
     fetchPatrolLocationsFromAPI();
   }
 
+// ...existing code...
   // New method to fetch patrol locations from API
   Future<void> fetchPatrolLocationsFromAPI() async {
     try {
       isLoadingLocations.value = true;
-      
-      final response = await http.get(
-        Uri.parse(_apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 30));
+
+      // Check if user profile is loaded
+      if (profileController.userModel.value == null) {
+        Get.snackbar(
+          'Error',
+          'User profile not loaded',
+          backgroundColor: AppColors.error,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 3),
+        );
+        return;
+      }
+
+      // If logId exists, fetch patrol history for that logId
+      final logId = profileController.userModel.value!.logId;
+      http.Response response;
+
+      if (logId != null && logId.isNotEmpty) {
+        final url = 'https://official.solarvision-cairo.com/patrol/history/$logId';
+        response = await http
+            .get(
+              Uri.parse(url),
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+            )
+            .timeout(const Duration(seconds: 30));
+      } else {
+        // Otherwise, fetch all patrol locations
+        response = await http
+            .get(
+              Uri.parse(_apiUrl),
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+            )
+            .timeout(const Duration(seconds: 30));
+      }
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = json.decode(response.body);
-        final List<PatrolLocation> locations = jsonData
-            .map((json) => PatrolLocation.fromJson(json))
-            .toList();
-        
+        final List<PatrolLocation> locations =
+            jsonData.map((json) => PatrolLocation.fromJson(json)).toList();
+
         patrolLocations.clear();
         patrolLocations.addAll(locations);
-        
+
+          completedPatrols.clear();
+        for (final loc in locations) {
+          if (loc.status) {
+            completedPatrols.add(loc.locationId);
+          }
+        }
+
         Get.snackbar(
           'Success',
           'Patrol locations loaded successfully',
@@ -299,12 +329,14 @@ class PatrolCheckInController extends GetxController {
           duration: const Duration(seconds: 2),
         );
       } else {
-        throw Exception('Failed to load patrol locations: ${response.statusCode}');
+        throw Exception(
+          'Failed to load patrol locations: ${response.statusCode}',
+        );
       }
     } catch (e) {
       // Fallback to hardcoded locations if API fails
       _loadFallbackLocations();
-      
+
       Get.snackbar(
         'API Error',
         'Failed to load locations from server. Using offline data.',
@@ -312,13 +344,13 @@ class PatrolCheckInController extends GetxController {
         colorText: Colors.white,
         duration: const Duration(seconds: 3),
       );
-      
+
       print('Error fetching patrol locations: $e');
     } finally {
       isLoadingLocations.value = false;
     }
   }
-
+// ...existing code...
   // Fallback method with hardcoded locations
   void _loadFallbackLocations() {
     final fallbackLocations = [
@@ -355,7 +387,7 @@ class PatrolCheckInController extends GetxController {
         status: false,
       ),
     ];
-    
+
     patrolLocations.clear();
     patrolLocations.addAll(fallbackLocations);
   }
@@ -414,7 +446,6 @@ class PatrolCheckInController extends GetxController {
     isLocationVerified.value = false;
     isQRScanned.value = false;
   }
-
 
   int getNextPatrolIndex() {
     for (int i = 0; i < patrolLocations.length; i++) {
@@ -518,8 +549,16 @@ class PatrolCheckInController extends GetxController {
       }
       final locationId = parts[0];
       // Find location in patrolLocations
-      final found = patrolLocations.firstWhereOrNull((loc) => loc.locationId == locationId);
+      final found = patrolLocations.firstWhereOrNull(
+        (loc) => loc.locationId == locationId,
+      );
       if (found != null) {
+        // Check if patrol already completed for this location
+        if (completedPatrols.contains(locationId)) {
+          qrScanError.value = 'Patrol already submitted for this location.';
+          isQRMatched.value = false;
+          return;
+        }
         matchedLocation = found;
         isQRMatched.value = true;
         // Start patrol for this location
@@ -534,7 +573,7 @@ class PatrolCheckInController extends GetxController {
   }
 
   // Update openQRScanner to use handleScannedQRCode
-  void openQRScanner() async {
+  void openQRScanner({VoidCallback? onSuccess}) async {
     final cameraPermission = await Permission.camera.request();
     if (!cameraPermission.isGranted) {
       Get.snackbar(
@@ -545,7 +584,7 @@ class PatrolCheckInController extends GetxController {
       );
       return;
     }
- print('QR Code Scanned: Waiting for QR scanner to open...');
+    print('QR Code Scanned: Waiting for QR scanner to open...');
     Get.to(
       () => QRScannerView(
         onQRViewCreated: (QRViewController controller) {
@@ -554,6 +593,7 @@ class PatrolCheckInController extends GetxController {
               qrResult.value = scanData.code;
               isQRScanned.value = true;
               handleScannedQRCode(scanData.code!);
+
               print('QR Code Scanned: ${scanData.code}');
               Get.back();
               Get.snackbar(
@@ -562,9 +602,15 @@ class PatrolCheckInController extends GetxController {
                 backgroundColor: AppColors.greenColor,
                 colorText: Colors.white,
               );
-              // Only go to next step if matched
               if (isQRMatched.value) {
-                goToNextStep();
+                // Check if patrol already completed for this location
+                final locationId = matchedLocation?.locationId;
+                if (locationId != null &&
+                    !completedPatrols.contains(locationId)) {
+                  goToNextStep();
+
+                  if (onSuccess != null) onSuccess();
+                }
               }
             }
           });
@@ -575,32 +621,46 @@ class PatrolCheckInController extends GetxController {
 
   // Update submitPatrolReport to call the check-in API
   Future<void> submitPatrolReport() async {
-    if ( capturedImage.value != null) {
+    if (capturedImage.value != null) {
       // Prepare data for API
       final logId = generateLogId();
-      final locationId = isManualPatrol.value
-          ? 'manual'
-          : (matchedLocation?.locationId ?? currentPatrolLocation.value?.locationId ?? '');
-      final latitude = isManualPatrol.value
-          ? (currentLatLng.value?.latitude ?? 0.0).toString()
-          : (matchedLocation?.latitude.toString() ?? currentPatrolLocation.value?.latitude.toString() ?? '');
-      final longitude = isManualPatrol.value
-          ? (currentLatLng.value?.longitude ?? 0.0).toString()
-          : (matchedLocation?.longitude.toString() ?? currentPatrolLocation.value?.longitude.toString() ?? '');
+      final locationId =
+          isManualPatrol.value
+              ? 'manual'
+              : (matchedLocation?.locationId ??
+                  currentPatrolLocation.value?.locationId ??
+                  '');
+      final latitude =
+          isManualPatrol.value
+              ? (currentLatLng.value?.latitude ?? 0.0).toString()
+              : (matchedLocation?.latitude.toString() ??
+                  currentPatrolLocation.value?.latitude.toString() ??
+                  '');
+      final longitude =
+          isManualPatrol.value
+              ? (currentLatLng.value?.longitude ?? 0.0).toString()
+              : (matchedLocation?.longitude.toString() ??
+                  currentPatrolLocation.value?.longitude.toString() ??
+                  '');
       final note = notes.value;
       final imageFile = capturedImage.value;
-      final url = Uri.parse('https://official.solarvision-cairo.com/patrol/checkin');
+      final url = Uri.parse(
+        'https://official.solarvision-cairo.com/patrol/checkin',
+      );
       try {
-        final request = http.MultipartRequest('POST', url)
-          ..fields['UserID'] = userId
-          ..fields['Log_Id'] = logId
-          ..fields['LocationId'] = locationId
-          ..fields['Latitude'] = latitude
-          ..fields['Longitude'] = longitude
-          ..fields['Note'] = note
-          ..fields['ActivePatrol'] = 'true';
+        final request =
+            http.MultipartRequest('POST', url)
+              ..fields['UserID'] = profileController.userModel.value!.userId
+              ..fields['Log_Id'] = logId
+              ..fields['LocationId'] = locationId
+              ..fields['Latitude'] = latitude
+              ..fields['Longitude'] = longitude
+              ..fields['Note'] = note
+              ..fields['ActivePatrol'] = 'true';
         if (imageFile != null) {
-          request.files.add(await http.MultipartFile.fromPath('Selfie', imageFile.path));
+          request.files.add(
+            await http.MultipartFile.fromPath('Selfie', imageFile.path),
+          );
         }
         final streamedResponse = await request.send();
         final response = await http.Response.fromStream(streamedResponse);

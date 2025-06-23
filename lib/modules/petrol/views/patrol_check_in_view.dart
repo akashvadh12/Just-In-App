@@ -759,6 +759,10 @@ Widget _buildStopPatrolTab() {
   //   );
   // }
 
+void goToFirstInnerTab() {
+  _innerTabController.index = 0;
+}
+
   Widget _buildQRScan() {
     return Obx(() {
       return Column(
@@ -773,7 +777,7 @@ Widget _buildStopPatrolTab() {
           const SizedBox(height: 24),
           Center(
             child: GestureDetector(
-              onTap: () => controller.openQRScanner(),
+              onTap: () => controller.openQRScanner(onSuccess: goToFirstInnerTab),
               child: Container(
                 width: 280,
                 height: 380,

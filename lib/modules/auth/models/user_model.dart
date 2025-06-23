@@ -20,6 +20,7 @@ class UserModel {
   final String? todayPatrolStatus;
   final String? attendanceStatus;
   final Map<String, dynamic>? issuesCount;
+  final String? logId;
 
   UserModel({
     required this.userId,
@@ -40,6 +41,7 @@ class UserModel {
     this.todayPatrolStatus,
     this.attendanceStatus,
     this.issuesCount,
+    this.logId,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -64,6 +66,7 @@ class UserModel {
       todayPatrolStatus: json['todayPatrolStatus']?.toString(),
       attendanceStatus: json['attendanceStatus']?.toString(),
       issuesCount: json['issuesCount'] != null ? Map<String, dynamic>.from(json['issuesCount']) : null,
+      logId: json['logID']?.toString() ?? json['logId']?.toString() ?? '',
     );
   }
 
