@@ -12,6 +12,8 @@ class Issue {
   final IssueStatus status;
   final String imageUrl;
   final List<String> images;
+  final List<String> issuePhotos;
+  final List<String> resolvePhotos;
   final String? creatorName;
   final String? resolverName;
   final double? latitude;
@@ -29,6 +31,8 @@ class Issue {
     required this.status,
     required this.imageUrl,
     this.images = const [],
+    this.issuePhotos = const [],
+    this.resolvePhotos = const [],
     this.creatorName,
     this.resolverName,
     this.latitude,
@@ -39,21 +43,24 @@ class Issue {
   });
 
   factory Issue.fromApiJson(Map<String, dynamic> json) {
-    // Handle different image field formats
+    // Handle new API fields for images
+    List<String> issuePhotos = [];
+    List<String> resolvePhotos = [];
+    if (json['issuePhotos'] != null && json['issuePhotos'] is List) {
+      issuePhotos = (json['issuePhotos'] as List).map((e) => e.toString()).toList();
+    }
+    if (json['resolvePhotos'] != null && json['resolvePhotos'] is List) {
+      resolvePhotos = (json['resolvePhotos'] as List).map((e) => e.toString()).toList();
+    }
+    // Fallback for images (legacy)
     List<String> images = [];
-    
     if (json['images'] != null) {
       if (json['images'] is List) {
-        images = (json['images'] as List<dynamic>)
-            .map((e) => e.toString())
-            .where((url) => url.isNotEmpty)
-            .toList();
+        images = (json['images'] as List<dynamic>).map((e) => e.toString()).toList();
       } else if (json['images'] is String && json['images'].isNotEmpty) {
         images = [json['images']];
       }
     }
-    
-    // Fallback to other image fields
     if (images.isEmpty) {
       if (json['imageUrl'] != null && json['imageUrl'].toString().isNotEmpty) {
         images = [json['imageUrl'].toString()];
@@ -61,7 +68,10 @@ class Issue {
         images = [json['image'].toString()];
       }
     }
-    
+    // Prefer issuePhotos for main image, fallback to images
+    final mainImage = issuePhotos.isNotEmpty
+        ? issuePhotos.first
+        : (images.isNotEmpty ? images.first : '');
     return Issue(
       id: json['issueId']?.toString() ?? json['id']?.toString() ?? '',
       title: _generateTitle(json['description']?.toString() ?? json['title']?.toString() ?? ''),
@@ -69,8 +79,10 @@ class Issue {
       location: _generateLocation(json['latitude'], json['longitude']),
       time: _formatDateTime(json['createdAt']?.toString()),
       status: _parseApiStatus(json['status']?.toString()),
-      imageUrl: images.isNotEmpty ? images.first : '',
+      imageUrl: mainImage,
       images: images,
+      issuePhotos: issuePhotos,
+      resolvePhotos: resolvePhotos,
       creatorName: json['creatorName']?.toString(),
       resolverName: json['resolverName']?.toString(),
       latitude: _parseDouble(json['latitude']),
@@ -181,6 +193,8 @@ class Issue {
     IssueStatus? status,
     String? imageUrl,
     List<String>? images,
+    List<String>? issuePhotos,
+    List<String>? resolvePhotos,
     String? creatorName,
     String? resolverName,
     double? latitude,
@@ -198,6 +212,8 @@ class Issue {
       status: status ?? this.status,
       imageUrl: imageUrl ?? this.imageUrl,
       images: images ?? this.images,
+      issuePhotos: issuePhotos ?? this.issuePhotos,
+      resolvePhotos: resolvePhotos ?? this.resolvePhotos,
       creatorName: creatorName ?? this.creatorName,
       resolverName: resolverName ?? this.resolverName,
       latitude: latitude ?? this.latitude,
@@ -218,6 +234,8 @@ class Issue {
       'status': status.toString().split('.').last,
       'imageUrl': imageUrl,
       'images': images,
+      'issuePhotos': issuePhotos,
+      'resolvePhotos': resolvePhotos,
       'creatorName': creatorName,
       'resolverName': resolverName,
       'latitude': latitude,

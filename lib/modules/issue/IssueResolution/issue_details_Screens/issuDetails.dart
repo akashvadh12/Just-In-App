@@ -76,6 +76,10 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                 _buildCurrentLocationDisplay(),
                 _buildResolutionSection(),
                 _buildPhotosSection(),
+                controller.currentIssue.value?.status ==
+                                  IssueStatus.resolved ?
+                _buildResolvedPhotosSection() : SizedBox.shrink(),
+
                 _buildUpdatedPhotosSection(),
                 _buildActionButtons(),
                 const SizedBox(height: 20),
@@ -383,12 +387,12 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
             height: 100,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              itemCount: _currentIssue.images.length,
+              itemCount: _currentIssue.issuePhotos.length,
               itemBuilder: (context, index) {
                 return GestureDetector(
                   onTap: () => _showZoomableImage(
                     context,
-                    NetworkImage(_currentIssue.images[index]),
+                    NetworkImage(_currentIssue.issuePhotos[index]),
                   ),
                   child: Container(
                     width: 100,
@@ -401,7 +405,79 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: Image.network(
-                        _currentIssue.images[index],
+                        _currentIssue.issuePhotos[index],
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[200],
+                            child: const Icon(
+                              Icons.camera_alt,
+                              color: Colors.grey,
+                              size: 40,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  Widget _buildResolvedPhotosSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Resolved Photos',
+            style: AppTextStyles.heading.copyWith(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 100,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _currentIssue.resolvePhotos.length,
+              itemBuilder: (context, index) {
+                return GestureDetector(
+                  onTap: () => _showZoomableImage(
+                    context,
+                    NetworkImage(_currentIssue.resolvePhotos[index]),
+                  ),
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    margin: const EdgeInsets.only(right: 12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.grey[200],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        _currentIssue.resolvePhotos[index],
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
@@ -605,7 +681,7 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
           const SizedBox(height: 12),
           TextField(
             enabled:(controller.currentIssue.value?.status ==
-                                  IssueStatus.resolved) ? true : false ,
+                                  IssueStatus.resolved) ? false : true ,
             controller: _resolutionController,
             maxLines: 5,
             decoration: InputDecoration(

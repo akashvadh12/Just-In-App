@@ -10,6 +10,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 
 class PatrolLocation {
@@ -260,8 +261,7 @@ class PatrolCheckInController extends GetxController {
     fetchPatrolLocationsFromAPI();
   }
 
-// ...existing code...
-  // New method to fetch patrol locations from API
+// New method to fetch patrol locations from API
   Future<void> fetchPatrolLocationsFromAPI() async {
     try {
       isLoadingLocations.value = true;
@@ -350,7 +350,7 @@ class PatrolCheckInController extends GetxController {
       isLoadingLocations.value = false;
     }
   }
-// ...existing code...
+
   // Fallback method with hardcoded locations
   void _loadFallbackLocations() {
     final fallbackLocations = [
@@ -620,85 +620,135 @@ class PatrolCheckInController extends GetxController {
   }
 
   // Update submitPatrolReport to call the check-in API
-  Future<void> submitPatrolReport() async {
-    if (capturedImage.value != null) {
-      // Prepare data for API
-      final logId = generateLogId();
-      final locationId =
-          isManualPatrol.value
-              ? 'manual'
-              : (matchedLocation?.locationId ??
-                  currentPatrolLocation.value?.locationId ??
-                  '');
-      final latitude =
-          isManualPatrol.value
-              ? (currentLatLng.value?.latitude ?? 0.0).toString()
-              : (matchedLocation?.latitude.toString() ??
-                  currentPatrolLocation.value?.latitude.toString() ??
-                  '');
-      final longitude =
-          isManualPatrol.value
-              ? (currentLatLng.value?.longitude ?? 0.0).toString()
-              : (matchedLocation?.longitude.toString() ??
-                  currentPatrolLocation.value?.longitude.toString() ??
-                  '');
-      final note = notes.value;
-      final imageFile = capturedImage.value;
-      final url = Uri.parse(
-        'https://official.solarvision-cairo.com/patrol/checkin',
-      );
-      try {
-        final request =
-            http.MultipartRequest('POST', url)
-              ..fields['UserID'] = profileController.userModel.value!.userId
-              ..fields['Log_Id'] = logId
-              ..fields['LocationId'] = locationId
-              ..fields['Latitude'] = latitude
-              ..fields['Longitude'] = longitude
-              ..fields['Note'] = note
-              ..fields['ActivePatrol'] = 'true';
-        if (imageFile != null) {
-          request.files.add(
-            await http.MultipartFile.fromPath('Selfie', imageFile.path),
-          );
+Future<void> submitPatrolReport() async {
+  if (capturedImage.value != null) {
+    final locationId =
+        isManualPatrol.value
+            ? 'manual'
+            : (matchedLocation?.locationId ??
+                currentPatrolLocation.value?.locationId ??
+                '');
+    final latitude =
+        isManualPatrol.value
+            ? (currentLatLng.value?.latitude ?? 0.0).toString()
+            : (matchedLocation?.latitude.toString() ??
+                currentPatrolLocation.value?.latitude.toString() ??
+                '');
+    final longitude =
+        isManualPatrol.value
+            ? (currentLatLng.value?.longitude ?? 0.0).toString()
+            : (matchedLocation?.longitude.toString() ??
+                currentPatrolLocation.value?.longitude.toString() ??
+                '');
+    final note = notes.value;
+    final imageFile = capturedImage.value;
+
+    // Determine if this is the last patrol
+    int completedCount = completedPatrols.length;
+    String? submittingLocationId = currentPatrolLocation.value?.locationId;
+    bool isAlreadyCompleted = submittingLocationId != null && completedPatrols.contains(submittingLocationId);
+    int totalLocations = patrolLocations.length;
+    bool isLastPatrol = !isAlreadyCompleted && (completedCount + 1) >= totalLocations;
+
+    final url = Uri.parse(
+      'https://official.solarvision-cairo.com/patrol/checkin',
+    );
+    try {
+      final request =
+          http.MultipartRequest('POST', url)
+            ..fields['UserID'] = profileController.userModel.value!.userId
+            ..fields['Log_Id'] = profileController.userModel.value!.logId ?? ""
+            ..fields['LocationId'] = locationId
+            ..fields['Latitude'] = latitude
+            ..fields['Longitude'] = longitude
+            ..fields['Note'] = note
+            ..fields['ActivePatrol'] = isLastPatrol ? 'false' : 'true';
+      if (imageFile != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath('Selfie', imageFile.path),
+        );
+      }
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      if (response.statusCode == 200) {
+        final respJson = json.decode(response.body);
+        Get.snackbar(
+          'Success',
+          respJson['message'] ?? 'Patrol report submitted successfully',
+          backgroundColor: AppColors.greenColor,
+          colorText: Colors.white,
+        );
+        if (currentPatrolLocation.value != null) {
+          completedPatrols.add(currentPatrolLocation.value!.locationId);
         }
-        final streamedResponse = await request.send();
-        final response = await http.Response.fromStream(streamedResponse);
-        if (response.statusCode == 200) {
-          final respJson = json.decode(response.body);
-          Get.snackbar(
-            'Success',
-            respJson['message'] ?? 'Patrol report submitted successfully',
-            backgroundColor: AppColors.greenColor,
-            colorText: Colors.white,
-          );
-          if (currentPatrolLocation.value != null) {
-            completedPatrols.add(currentPatrolLocation.value!.locationId);
-          }
-          resetCurrentPatrol();
-        } else {
-          Get.snackbar(
-            'Error',
-            'Failed to submit patrol report: ${response.body}',
-            backgroundColor: AppColors.error,
-            colorText: Colors.white,
-          );
-        }
-      } catch (e) {
+        resetCurrentPatrol();
+      } else {
         Get.snackbar(
           'Error',
-          'Failed to submit patrol report: $e',
+          'Failed to submit patrol report: ${response.body}',
           backgroundColor: AppColors.error,
           colorText: Colors.white,
         );
       }
-    } else {
+    } catch (e) {
       Get.snackbar(
         'Error',
-        'Please complete all steps (QR scan and photo required)',
+        'Failed to submit patrol report: $e',
         backgroundColor: AppColors.error,
         colorText: Colors.white,
       );
+    }
+  } else {
+    Get.snackbar(
+      'Error',
+      'Please complete all steps (QR scan and photo required)',
+      backgroundColor: AppColors.error,
+      colorText: Colors.white,
+    );
+  }
+}
+
+  // Add Manual Patrol API
+  Future<void> addManualPatrolApi({
+    required String manualLocationName,
+    required double manualLatitude,
+    required double manualLongitude,
+    required File selfie,
+    required String note,
+    // required String logId,
+  }) async {
+    isLoading.value = true;
+    try {
+      final url = Uri.parse('https://official.solarvision-cairo.com/patrol/unknown-checkin');
+      final userId = profileController.userModel.value?.userId ?? '';
+      final request = http.MultipartRequest('POST', url)
+        ..fields['UserID'] = userId
+        ..fields['ManualLocationName'] = manualLocationName
+        ..fields['ManualLatitude'] = manualLatitude.toString()
+        ..fields['ManualLongitude'] = manualLongitude.toString()
+        ..fields['Log_Id'] = profileController.userModel.value!.logId!
+        ..fields['Note'] = note
+        ..fields['ActivePatrol'] = 'true'
+        ..fields['LocationId'] = '';
+      request.files.add(await http.MultipartFile.fromPath(
+        'Selfie',
+        selfie.path,
+        contentType: MediaType('image', 'png'),
+      ));
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      if (response.statusCode == 200) {
+        final respJson = json.decode(response.body);
+        Get.snackbar('Success', respJson['message'] ?? 'Manual patrol added successfully.', backgroundColor: AppColors.greenColor, colorText: Colors.white);
+        // Optionally reset state or update UI
+        resetCurrentPatrol();
+      } else {
+        Get.snackbar('Error', 'Failed to add manual patrol: ${response.body}', backgroundColor: AppColors.error, colorText: Colors.white);
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to add manual patrol: $e', backgroundColor: AppColors.error, colorText: Colors.white);
+    } finally {
+      isLoading.value = false;
     }
   }
 

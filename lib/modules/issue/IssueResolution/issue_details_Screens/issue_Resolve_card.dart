@@ -42,26 +42,27 @@ class IssueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Use the first issue photo as the main image, fallback to images
+    final mainImage = issue.issuePhotos.isNotEmpty
+        ? issue.issuePhotos.first
+        : (issue.images.isNotEmpty ? issue.images.first : '');
     return Card(
       margin: const EdgeInsets.only(bottom: 16 ),
-      // elevation: 1,
       color: Colors.white,
-      // shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: InkWell(
-        // borderRadius: BorderRadius.circular(10),
         onTap: () async {
           final userId = await SharedPrefHelper.getStoredUserId();
           await SharedPrefHelper.saveIssueId(issue.id); // Save issue ID
     
           print('User ID retrieved: $userId');
-          print('Issue ID saved: ${issue.id}');
+          print('Issue ID saved: [38;5;2m${issue.id}[0m');
     
           final updatedIssue = await Navigator.push<Issue>(
             context,
             MaterialPageRoute(
               builder:
                   (context) =>
-                      IssueDetailScreen(issue: issue, userId: issue.id ?? ''),
+                      IssueDetailScreen(issue: issue, userId: issue.id),
             ),
           );
     
@@ -79,32 +80,42 @@ class IssueCard extends StatelessWidget {
                 child: SizedBox(
                   width: 80,
                   height: 80,
-                  child: Image.network(
-                    issue.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 80,
-                        height: 80,
-                        color: AppColors.lightGrey,
-                        child: const Icon(
-                          Icons.image_not_supported,
-                          color: AppColors.greyColor,
+                  child: mainImage.isNotEmpty
+                      ? Image.network(
+                          mainImage,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 80,
+                              height: 80,
+                              color: AppColors.lightGrey,
+                              child: const Icon(
+                                Icons.image_not_supported,
+                                color: AppColors.greyColor,
+                              ),
+                            );
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              width: 80,
+                              height: 80,
+                              color: AppColors.lightGrey,
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          width: 80,
+                          height: 80,
+                          color: AppColors.lightGrey,
+                          child: const Icon(
+                            Icons.image_not_supported,
+                            color: AppColors.greyColor,
+                          ),
                         ),
-                      );
-                    },
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        width: 80,
-                        height: 80,
-                        color: AppColors.lightGrey,
-                        child: const Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                      );
-                    },
-                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -136,7 +147,8 @@ class IssueCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 12),
-                    Wrap(
+                    // Show thumbnails for all issue photos if available
+                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: [
@@ -174,8 +186,8 @@ class IssueCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                  ])
+            
                   ],
                 ),
               ),

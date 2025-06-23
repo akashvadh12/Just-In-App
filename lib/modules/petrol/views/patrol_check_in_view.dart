@@ -567,13 +567,12 @@ Widget _buildStopPatrolTab() {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Obx(() {
+          if (controller.isManualPatrol.value && controller.currentStep.value == 2) {
+            return _buildManualPatrolStep();
+          }
           switch (controller.currentStep.value) {
             case 1:
               return _buildVerifyLocationStep();
-            // case 2:
-            //   return controller.isManualPatrol.value
-            //       ? _buildPhotoStep()
-            //       : _buildQRScanStep();
             case 2:
               return controller.isManualPatrol.value
                   ? _buildNotesStep()
@@ -590,6 +589,89 @@ Widget _buildStopPatrolTab() {
         }),
       ),
     );
+  }
+
+  Widget _buildManualPatrolStep() {
+    return Obx(() {
+      final TextEditingController locationNameController = TextEditingController(text: controller.notes.value);
+      final TextEditingController noteController = TextEditingController();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Manual Patrol Check-In', style: AppTextStyles.heading),
+          const SizedBox(height: 16),
+          TextField(
+            controller: locationNameController,
+            decoration: const InputDecoration(
+              labelText: 'Manual Location Name',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text('Current GPS: \\${controller.getCurrentGPSString()}'),
+          const SizedBox(height: 16),
+          TextField(
+            controller: noteController,
+            decoration: const InputDecoration(
+              labelText: 'Note (optional)',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 3,
+          ),
+          const SizedBox(height: 16),
+          controller.capturedImage.value == null
+              ? ElevatedButton.icon(
+                  onPressed: () => controller.takePicture(),
+                  icon: const Icon(Icons.camera_alt),
+                  label: const Text('Take Selfie'),
+                )
+              : Column(
+                  children: [
+                    Image.file(controller.capturedImage.value!, height: 120),
+                    TextButton(
+                      onPressed: () => controller.retakePhoto(),
+                      child: const Text('Retake Photo'),
+                    ),
+                  ],
+                ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: controller.isLoading.value
+                  ? null
+                  : () async {
+                      if (locationNameController.text.trim().isEmpty) {
+                        Get.snackbar('Error', 'Please enter a location name');
+                        return;
+                      }
+                      if (controller.capturedImage.value == null) {
+                        Get.snackbar('Error', 'Please take a selfie');
+                        return;
+                      }
+                      final latLng = controller.currentLatLng.value;
+                      if (latLng == null) {
+                        Get.snackbar('Error', 'Current location not available');
+                        return;
+                      }
+                      // final logId = controller.generateLogId();
+                      await controller.addManualPatrolApi(
+                        manualLocationName: locationNameController.text.trim(),
+                        manualLatitude: latLng.latitude,
+                        manualLongitude: latLng.longitude,
+                        selfie: controller.capturedImage.value!,
+                        note: noteController.text.trim(),
+                        // logId: logId,
+                      );
+                    },
+              child: controller.isLoading.value
+                  ? const CircularProgressIndicator()
+                  : const Text('Submit Manual Patrol'),
+            ),
+          ),
+        ],
+      );
+    });
   }
 
   Widget _buildVerifyLocationStep() {
