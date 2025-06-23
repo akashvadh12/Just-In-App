@@ -52,6 +52,10 @@ class PatrolLocation {
 }
 
 class PatrolCheckInController extends GetxController {
+
+
+
+  
   final currentStep = 1.obs;
   final currentLatLng = Rxn<LatLng>();
   final mapController = MapController();
@@ -98,6 +102,165 @@ class PatrolCheckInController extends GetxController {
     return '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}'
            '${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}';
   }
+
+
+
+ final TextEditingController remarksController = TextEditingController();
+  final RxBool isLoading = false.obs;
+  final  lastPatrolStatus = ''.obs;
+  
+  // Replace with actual user ID from your auth system
+  String get userID => "202408056"; // This should come from your user session
+  
+  @override
+  void onClose() {
+    remarksController.dispose();
+    super.onClose();
+  }
+  
+  Future<void> stopPatrol() async {
+    try {
+      isLoading.value = true;
+      lastPatrolStatus.value = '';
+      
+      final response = await _callStopPatrolAPI();
+      
+      if (response['success']) {
+        lastPatrolStatus.value = response['message'];
+        await _handleSuccessfulStop(response);
+        remarksController.clear();
+      } else {
+        lastPatrolStatus.value = 'No active patrol session found for this user.';
+      }
+    } catch (e) {
+      lastPatrolStatus.value = 'Error: ${e.toString()}';
+    } finally {
+      isLoading.value = false;
+    }
+  }
+  
+  Future<Map<String, dynamic>> _callStopPatrolAPI() async {
+    try {
+      final url = Uri.parse('https://official.solarvision-cairo.com/patrol/checkout');
+      
+      final requestBody = {
+        "userID": userID,
+        "remarks": remarksController.text.trim().isEmpty 
+          ? "Patrol stopped" 
+          : remarksController.text.trim(),
+      };
+      
+      print('Sending request: ${json.encode(requestBody)}');
+      
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          // Add any additional headers like authorization if needed
+          // 'Authorization': 'Bearer $token',
+        },
+        body: json.encode(requestBody),
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Request timeout');
+        },
+      );
+      
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Patrol stopped successfully',
+          'endLocation': responseData['endLocation'],
+          'data': responseData,
+        };
+      } else {
+        return {
+          'success': false,
+          'error': 'Server error: ${response.statusCode}',
+        };
+      }
+    } on http.ClientException catch (e) {
+      return {
+        'success': false,
+        'error': 'Network error: ${e.message}',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+  
+  Future<void> _handleSuccessfulStop(Map<String, dynamic> response) async {
+    // Reset current patrol state
+    resetCurrentPatrol();
+    
+    // Save patrol end information
+    await _savePatrolEndInfo(response);
+    
+    // Show success dialog
+    _showSuccessDialog(response);
+    
+    // Optional: Navigate back or to a specific screen
+    // Get.back();
+    // or
+    // Get.offAllNamed('/home');
+  }
+  
+  Future<void> _savePatrolEndInfo(Map<String, dynamic> response) async {
+    // Save to local storage or send to local database
+    // This is where you'd typically save the patrol end information
+    print('Saving patrol end info: ${response['data']}');
+    
+    // Example: Save to shared preferences or local database
+    // final prefs = await SharedPreferences.getInstance();
+    // await prefs.setString('lastPatrolEnd', json.encode(response['data']));
+  }
+  
+  void _showSuccessDialog(Map<String, dynamic> response) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green.shade600),
+            const SizedBox(width: 8),
+            const Text('Patrol Stopped'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(response['message']),
+            if (response['endLocation'] != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'End Location: ${response['endLocation']}',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+
+
 
   @override
   void onInit() {
@@ -238,7 +401,7 @@ class PatrolCheckInController extends GetxController {
 
   void startPatrolForLocation(PatrolLocation location) {
     currentPatrolLocation.value = location;
-    currentStep.value = 2;
+    currentStep.value = 1;
     isManualPatrol.value = false;
     isLocationVerified.value = false;
     isQRScanned.value = false;
@@ -251,6 +414,7 @@ class PatrolCheckInController extends GetxController {
     isLocationVerified.value = false;
     isQRScanned.value = false;
   }
+
 
   int getNextPatrolIndex() {
     for (int i = 0; i < patrolLocations.length; i++) {

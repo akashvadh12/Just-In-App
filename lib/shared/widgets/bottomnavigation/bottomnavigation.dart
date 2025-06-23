@@ -27,7 +27,7 @@ class BottomNavBarWidget extends StatelessWidget {
     BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
     BottomNavigationBarItem(icon: Icon(Icons.access_time), label: 'Attendance'),
     BottomNavigationBarItem(icon: Icon(Icons.security), label: 'Patrol'),
-    BottomNavigationBarItem(icon: Icon(Icons.report_problem), label: 'Report'),
+    BottomNavigationBarItem(icon: Icon(Icons.report_problem), label: 'Issues'),
     BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
   ];
 
