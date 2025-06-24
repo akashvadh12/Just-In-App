@@ -537,7 +537,7 @@ class GuardAttendanceController extends GetxController {
       );
 
       // Clear captured image after successful attendance
-      // capturedImage.value = null;
+      capturedImage.value = null;
       print('Clock out completed successfully');
     }
   }

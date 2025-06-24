@@ -23,23 +23,27 @@ class ProfileController extends GetxController {
     
   }
 
-  Future<void> fetchUserProfile(String userId) async {
-    isLoading.value = true;
-    try {
-      final response = await _apiGetService.getProfileAPI(userId);
-      if (response != null 
-          
-         ) {
-        userModel.value = UserModel.fromJson(response);
+Future<void> fetchUserProfile(String userId) async {
+  isLoading.value = true;
+  try {
+    final response = await _apiGetService.getProfileAPI(userId);
+    if (response != null) {
+      if (userModel.value != null) {
+        // Update existing user data, preserving fields not in the response
+        userModel.value = userModel.value!.updateWith(response);
       } else {
-        _showErrorSnackbar(response?['message'] ?? 'Failed to fetch profile');
+        // Create new user if none exists
+        userModel.value = UserModel.fromJson(response);
       }
-    } catch (e) {
-      _showErrorSnackbar('Failed to fetch profile data');
-    } finally {
-      isLoading.value = false;
+    } else {
+      _showErrorSnackbar(response?['message'] ?? 'Failed to fetch profile');
     }
+  } catch (e) {
+    _showErrorSnackbar('Failed to fetch profile data');
+  } finally {
+    isLoading.value = false;
   }
+}
 
   Future<void> updateProfile({
     required String userId,

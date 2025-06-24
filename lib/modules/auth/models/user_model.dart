@@ -70,6 +70,39 @@ class UserModel {
     );
   }
 
+
+// Add this method to your UserModel class
+
+UserModel updateWith(Map<String, dynamic> json) {
+  return UserModel(
+    userId: json['userID']?.toString() ?? json['userId']?.toString() ?? this.userId,
+    userName: json['userName']?.toString() ?? this.userName,
+    name: json['name']?.toString() ?? this.name,
+    photoPath: json['photoPath']?.toString() ?? this.photoPath,
+    roleId: json['roleID']?.toString() ?? json['roleId']?.toString() ?? this.roleId,
+    siteId: json['siteId']?.toString() ?? this.siteId,
+    companyId: json['companyId']?.toString() ?? this.companyId,
+    deviceToken: json['deviceToken']?.toString() ?? json['token']?.toString() ?? this.deviceToken,
+    deviceId: json['deviceID']?.toString() ?? json['deviceId']?.toString() ?? this.deviceId,
+    email: json['email']?.toString() ?? json['email_No']?.toString() ?? this.email,
+    phone: json['phone']?.toString() ?? json['mobile_No']?.toString() ?? json['mobileNo']?.toString() ?? this.phone,
+    token: json['token']?.toString() ?? json['deviceToken']?.toString() ?? this.token,
+    clockIn: json['clockIn']?.toString() ?? this.clockIn,
+    clockOut: json['clockOut']?.toString() ?? this.clockOut,
+    clockStatus: json['clockStatus'] != null 
+        ? (json['clockStatus'] is bool 
+            ? json['clockStatus'] 
+            : json['clockStatus']?.toString().toLowerCase() == 'true')
+        : this.clockStatus,
+    todayPatrolStatus: json['todayPatrolStatus']?.toString() ?? this.todayPatrolStatus,
+    attendanceStatus: json['attendanceStatus']?.toString() ?? this.attendanceStatus,
+    issuesCount: json['issuesCount'] != null 
+        ? Map<String, dynamic>.from(json['issuesCount']) 
+        : this.issuesCount,
+    logId: json['logID']?.toString() ?? json['logId']?.toString() ?? this.logId,
+  );
+}
+
   Map<String, dynamic> toJson() {
     return {
       'userID': userId,
@@ -107,46 +140,49 @@ class UserModel {
       return null;
     }
   }
-
-  UserModel copyWith({
-    String? userId,
-    String? userName,
-    String? name,
-    String? photoPath,
-    String? roleId,
-    String? siteId,
-    String? companyId,
-    String? deviceToken,
-    String? deviceId,
-    String? email,
-    String? phone,
-    String? token,
-    String? clockIn,
-    String? clockOut,
-    String? todayPatrolStatus,
-    String? attendanceStatus,
-    Map<String, dynamic>? issuesCount,
-  }) {
-    return UserModel(
-      userId: userId ?? this.userId,
-      userName: userName ?? this.userName,
-      name: name ?? this.name,
-      photoPath: photoPath ?? this.photoPath,
-      roleId: roleId ?? this.roleId,
-      siteId: siteId ?? this.siteId,
-      companyId: companyId ?? this.companyId,
-      deviceToken: deviceToken ?? this.deviceToken,
-      deviceId: deviceId ?? this.deviceId,
-      email: email ?? this.email,
-      phone: phone ?? this.phone,
-      token: token ?? this.token,
-      clockIn: clockIn ?? this.clockIn,
-      clockOut: clockOut ?? this.clockOut,
-      todayPatrolStatus: todayPatrolStatus ?? this.todayPatrolStatus,
-      attendanceStatus: attendanceStatus ?? this.attendanceStatus,
-      issuesCount: issuesCount ?? this.issuesCount,
-    );
-  }
+UserModel copyWith({
+  String? userId,
+  String? userName,
+  String? name,
+  String? photoPath,
+  String? roleId,
+  String? siteId,
+  String? companyId,
+  String? deviceToken,
+  String? deviceId,
+  String? email,
+  String? phone,
+  String? token,
+  String? clockIn,
+  String? clockOut,
+  dynamic clockStatus, // Changed to dynamic to handle bool/null
+  String? todayPatrolStatus,
+  String? attendanceStatus,
+  Map<String, dynamic>? issuesCount,
+  String? logId, // Added missing logId
+}) {
+  return UserModel(
+    userId: userId ?? this.userId,
+    userName: userName ?? this.userName,
+    name: name ?? this.name,
+    photoPath: photoPath ?? this.photoPath,
+    roleId: roleId ?? this.roleId,
+    siteId: siteId ?? this.siteId,
+    companyId: companyId ?? this.companyId,
+    deviceToken: deviceToken ?? this.deviceToken,
+    deviceId: deviceId ?? this.deviceId,
+    email: email ?? this.email,
+    phone: phone ?? this.phone,
+    token: token ?? this.token,
+    clockIn: clockIn ?? this.clockIn,
+    clockOut: clockOut ?? this.clockOut,
+    clockStatus: clockStatus ?? this.clockStatus, // Added missing clockStatus
+    todayPatrolStatus: todayPatrolStatus ?? this.todayPatrolStatus,
+    attendanceStatus: attendanceStatus ?? this.attendanceStatus,
+    issuesCount: issuesCount ?? this.issuesCount,
+    logId: logId ?? this.logId, // Added missing logId
+  );
+}
 
   bool get isValid => userId.isNotEmpty && name.isNotEmpty;
 
