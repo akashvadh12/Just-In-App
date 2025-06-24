@@ -161,6 +161,7 @@ class HomeController extends GetxController {
         // Update user info/photo if present in dashboard response
         if (data['userID'] != null) {
           profileController.userModel.value = UserModel.fromJson(data);
+          profileController.fetchUserProfile(userId);
         }
       } else if (response.statusCode == 404) {
         Get.snackbar(

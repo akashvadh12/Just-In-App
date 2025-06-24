@@ -20,16 +20,17 @@ class ProfileController extends GetxController {
     super.onInit();
     // You may want to load userId from an AuthController or similar
     // For demo, you can set userModel.value = ...
+    
   }
 
   Future<void> fetchUserProfile(String userId) async {
     isLoading.value = true;
     try {
       final response = await _apiGetService.getProfileAPI(userId);
-      if (response != null &&
-          response['status'] == true &&
-          response['user'] != null) {
-        userModel.value = UserModel.fromJson(response['user']);
+      if (response != null 
+          
+         ) {
+        userModel.value = UserModel.fromJson(response);
       } else {
         _showErrorSnackbar(response?['message'] ?? 'Failed to fetch profile');
       }
