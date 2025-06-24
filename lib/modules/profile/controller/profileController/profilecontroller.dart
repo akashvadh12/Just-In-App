@@ -124,10 +124,10 @@ class ProfileController extends GetxController {
         imageFile: imageFile,
       );
       if (response != null &&
-          response['status'] == true &&
-          response['profileImage'] != null) {
+         
+          response['photoUrl'] != null) {
         userModel.value = userModel.value?.copyWith(
-          photoPath: response['profileImage'],
+          photoPath: response['photoUrl'],
         );
         _showSuccessSnackbar('Profile picture updated');
       } else {

@@ -371,13 +371,13 @@ class ApiPostServices {
     required String userId,
     required File imageFile,
   }) async {
-    const endpoint = 'profile/upload-image';
+    const endpoint = 'profile/update-photo';
     final headers = await _getAuthenticatedHeaders();
     final uri = Uri.parse('${_client.baseUrl}$endpoint');
     final request = http.MultipartRequest('POST', uri);
     request.headers.addAll(headers..remove('Content-Type'));
-    request.fields['UserId'] = userId;
-    request.files.add(await http.MultipartFile.fromPath('ProfileImage', imageFile.path));
+    request.fields['userId'] = userId;
+    request.files.add(await http.MultipartFile.fromPath('photo', imageFile.path));
     try {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);

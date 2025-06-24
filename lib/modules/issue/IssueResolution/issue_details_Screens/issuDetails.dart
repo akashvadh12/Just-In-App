@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
+import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/issue/IssueResolution/issue_details_Screens/controller/issue_resolve_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/controller/issue_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
@@ -34,8 +35,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
   late Issue _currentIssue;
 
   final IssuesController issuesController = Get.find<IssuesController>();
-
-
+  final HomeController homeController = Get.find<HomeController>();
   @override
   void initState() {
     super.initState();
@@ -985,6 +985,7 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
       Future.delayed(const Duration(seconds: 1), () {
         if (mounted) {
           issuesController.refreshIssues();
+          homeController.fetchDashboardData();
           Navigator.pop(context, controller.currentIssue.value);
         }
       });
