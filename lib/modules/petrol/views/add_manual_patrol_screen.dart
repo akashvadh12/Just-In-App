@@ -55,7 +55,7 @@ class _AddManualPatrolScreenState extends State<AddManualPatrolScreen> {
         centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(24.0),
         child: _buildStepContent(),
       ),
     );
@@ -363,7 +363,9 @@ class _AddManualPatrolScreenState extends State<AddManualPatrolScreen> {
                     controller.isLoading.value = false;
                     // Always navigate back after submit, even if overlays are not open
                     if (mounted) {
+
                       Navigator.of(context).pop();
+                      controller.fetchPatrolLocationsFromAPI();
                     }
                   },
             style: ElevatedButton.styleFrom(

@@ -671,13 +671,22 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Resolution Details',
-            style: AppTextStyles.heading.copyWith(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+           Row(
+             children: [
+               Text(
+                 'Resolution Details',
+                 style: TextStyle(
+                   fontSize: 16,
+                   fontWeight: FontWeight.w600,
+                   color: Colors.black87,
+                 ),
+               ),
+                 const Text(
+           ' *',
+           style: TextStyle(color: Colors.red, fontSize: 16),
+                           ),
+             ],
+           ),
           const SizedBox(height: 12),
           TextField(
             enabled:(controller.currentIssue.value?.status ==
@@ -970,6 +979,7 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
       );
       return;
     }
+  
 
     bool success = await controller.resolveIssue(
       _resolutionController.text.trim(),
@@ -989,13 +999,6 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
           Navigator.pop(context, controller.currentIssue.value);
         }
       });
-    } else {
-      CustomSnackbar.showError(
-        'Resolution Failed',
-        controller.errorMessage.value.isNotEmpty
-            ? controller.errorMessage.value
-            : 'Failed to resolve issue. Please try again.',
-      );
     }
   }
 }

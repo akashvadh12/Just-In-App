@@ -5,6 +5,7 @@ import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:security_guard/modules/petrol/controllers/patrol_controller.dart';
+import 'package:security_guard/modules/petrol/views/animated_qr_scanner.dart';
 import 'package:security_guard/modules/petrol/views/patrol_history_view.dart';
 import 'package:security_guard/modules/petrol/views/add_manual_patrol_screen.dart';
 
@@ -101,13 +102,15 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen>
         children: [
           Obx(
             () =>
-                controller.currentPatrolLocation.value != null  || controller.isManualPatrol.value
+                controller.currentPatrolLocation.value != null ||
+                        controller.isManualPatrol.value
                     ? _buildStepProgress()
                     : const SizedBox.shrink(),
           ),
           Expanded(
             child: Obx(() {
-              if (controller.currentPatrolLocation.value == null && !controller.isManualPatrol.value) {
+              if (controller.currentPatrolLocation.value == null &&
+                  !controller.isManualPatrol.value) {
                 return _buildPatrolLocationsList();
               } else {
                 return _buildStepWisePatrol();
@@ -134,153 +137,160 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen>
   //   );
   // }
 
+  // Enhanced Stop Patrol UI
+  Widget _buildStopPatrolTab() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Icon and title
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.stop_circle,
+              size: 64,
+              color: Colors.red.shade600,
+            ),
+          ),
+          const SizedBox(height: 24),
 
-  
-// Enhanced Stop Patrol UI
-Widget _buildStopPatrolTab() {
-  return Padding(
-    padding: const EdgeInsets.all(16.0),
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Icon and title
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.red.shade50,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.stop_circle,
-            size: 64,
-            color: Colors.red.shade600,
-          ),
-        ),
-        const SizedBox(height: 24),
-        
-        Text(
-          'Stop Current Patrol',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Colors.grey.shade800,
-          ),
-        ),
-        const SizedBox(height: 12),
-        
-        Text(
-          'Are you sure you want to end the current patrol session?',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey.shade600,
-          ),
-        ),
-        const SizedBox(height: 32),
-        
-        // Remarks input field
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
-          ),
-          child: TextField(
-            controller: controller.remarksController,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              hintText: 'Add remarks (optional)',
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.all(16),
+          Text(
+            'Stop Current Patrol',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade800,
             ),
           ),
-        ),
-        const SizedBox(height: 24),
-        
-        // Action buttons
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () {
-                  controller.remarksController.clear();
-                },
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text('Cancel'),
+          const SizedBox(height: 12),
+
+          Text(
+            'Are you sure you want to end the current patrol session?',
+            textAlign: TextAlign.center,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 32),
+
+          // Remarks input field
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: TextField(
+              controller: controller.remarksController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'Add remarks (optional)',
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.all(16),
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Obx(() => ElevatedButton(
-                onPressed: controller.isLoading.value 
-                  ? null 
-                  : () => controller.stopPatrol(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade600,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: controller.isLoading.value
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text(
-                      'Stop Patrol',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 24),
+
+          // Action buttons
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    controller.remarksController.clear();
+                  },
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-              )),
-            ),
-          ],
-        ),
-        
-        const SizedBox(height: 16),
-        
-        // Status display
-        Obx(() {
-          if (controller.lastPatrolStatus.isNotEmpty) {
-            return Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: controller.lastPatrolStatus.contains('successful')
-                  ? Colors.green.shade50
-                  : Colors.red.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: controller.lastPatrolStatus.contains('successful')
-                    ? Colors.green.shade300
-                    : Colors.red.shade300,
+                  ),
+                  child: const Text('Cancel'),
                 ),
               ),
-              child: Text(
-                controller.lastPatrolStatus.value,
-                style: TextStyle(
-                  color: controller.lastPatrolStatus.contains('successful')
-                    ? Colors.green.shade700
-                    : Colors.red.shade700,
-                  fontWeight: FontWeight.w500,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Obx(
+                  () => ElevatedButton(
+                    onPressed:
+                        controller.isLoading.value
+                            ? null
+                            : () => controller.stopPatrol(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade600,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child:
+                        controller.isLoading.value
+                            ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                            : const Text(
+                              'Stop Patrol',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                  ),
                 ),
-                textAlign: TextAlign.center,
               ),
-            );
-          }
-          return const SizedBox.shrink();
-        }),
-      ],
-    ),
-  );
-}
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Status display
+          Obx(() {
+            if (controller.lastPatrolStatus.isNotEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color:
+                      controller.lastPatrolStatus.contains('successful')
+                          ? Colors.green.shade50
+                          : Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color:
+                        controller.lastPatrolStatus.contains('successful')
+                            ? Colors.green.shade300
+                            : Colors.red.shade300,
+                  ),
+                ),
+                child: Text(
+                  controller.lastPatrolStatus.value,
+                  style: TextStyle(
+                    color:
+                        controller.lastPatrolStatus.contains('successful')
+                            ? Colors.green.shade700
+                            : Colors.red.shade700,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          }),
+        ],
+      ),
+    );
+  }
 
   Widget _buildPatrolLocationsList() {
     return Column(
@@ -373,14 +383,14 @@ Widget _buildStopPatrolTab() {
     final isNext = controller.getNextPatrolIndex() == index;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Card(
         elevation: isNext ? 4 : 1,
         color:
             isCompleted
-                ? AppColors.greenColor.withOpacity(0.1)
+                ? AppColors.whiteColor
                 : isNext
-                ? AppColors.primary.withOpacity(0.1)
+                ? AppColors.primary
                 : AppColors.whiteColor,
         child: ListTile(
           onTap:
@@ -407,29 +417,13 @@ Widget _buildStopPatrolTab() {
           title: Text(
             location.locationName,
             style: AppTextStyles.subtitle.copyWith(
-              color: isCompleted ? AppColors.greenColor : AppColors.blackColor,
+              color:
+                  isCompleted
+                      ? AppColors.greenColor
+                      : isNext
+                      ? AppColors.whiteColor
+                      : AppColors.blackColor,
             ),
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'ID: ${location.locationId}',
-                style: AppTextStyles.hint.copyWith(fontSize: 12),
-              ),
-              Text(
-                '${location.latitude.toStringAsFixed(6)}, ${location.longitude.toStringAsFixed(6)}',
-                style: AppTextStyles.hint,
-              ),
-              if (location.barcodeUrl.isNotEmpty)
-                Text(
-                  'QR Code Available',
-                  style: AppTextStyles.hint.copyWith(
-                    color: AppColors.primary,
-                    fontSize: 12,
-                  ),
-                ),
-            ],
           ),
           trailing: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -458,25 +452,25 @@ Widget _buildStopPatrolTab() {
                 const Icon(Icons.chevron_right, color: AppColors.greyColor),
 
               // Status indicator
-              if (!location.status)
-                Container(
-                  margin: const EdgeInsets.only(top: 4),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'Inactive',
-                    style: AppTextStyles.hint.copyWith(
-                      color: AppColors.error,
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
+              // if (!location.status)
+              //   Container(
+              //     margin: const EdgeInsets.only(top: 4),
+              //     padding: const EdgeInsets.symmetric(
+              //       horizontal: 6,
+              //       vertical: 2,
+              //     ),
+              //     decoration: BoxDecoration(
+              //       color: AppColors.error.withOpacity(0.1),
+              //       borderRadius: BorderRadius.circular(8),
+              //     ),
+              //     child: Text(
+              //       'Inactive',
+              //       style: AppTextStyles.hint.copyWith(
+              //         color: AppColors.error,
+              //         fontSize: 10,
+              //       ),
+              //     ),
+              //   ),
             ],
           ),
         ),
@@ -526,13 +520,13 @@ Widget _buildStopPatrolTab() {
               ],
             ),
           ),
-          const SizedBox(height: 8),
-          Obx(
-            () => Text(
-              'Step ${controller.currentStep.value} of ${controller.isManualPatrol.value ? 4 : 5}: ${controller.getCurrentStepTitle()}',
-              style: AppTextStyles.hint,
-            ),
-          ),
+          // const SizedBox(height: 8),
+          // Obx(
+          //   () => Text(
+          //     'Step ${controller.currentStep.value} of ${controller.isManualPatrol.value ? 4 : 5}: ${controller.getCurrentStepTitle()}',
+          //     style: AppTextStyles.hint,
+          //   ),
+          // ),
         ],
       ),
     );
@@ -571,20 +565,13 @@ Widget _buildStopPatrolTab() {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Obx(() {
-          // if (controller.isManualPatrol.value && controller.currentStep.value == 2) {
-          //   return _buildManualPatrolStep();
-          // }
           switch (controller.currentStep.value) {
             case 1:
               return _buildVerifyLocationStep();
             case 2:
-              return controller.isManualPatrol.value
-                  ? _buildNotesStep()
-                  : _buildPhotoStep();
+              return _buildPhotoStep();
             case 3:
-              return controller.isManualPatrol.value
-                  ? _buildSubmitStep()
-                  : _buildNotesStep();
+              return _buildNotesStep();
             case 4:
               return _buildSubmitStep();
             default:
@@ -599,96 +586,111 @@ Widget _buildStopPatrolTab() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('📍 Verify Location', style: AppTextStyles.heading),
-        const SizedBox(height: 8),
-        Text(
-          'Please ensure you are at the correct location by matching GPS coordinates.',
-          style: AppTextStyles.body,
+        Center(child: Text('📍 Verify Location', style: AppTextStyles.heading)),
+        const SizedBox(height: 6),
+        Center(
+          child: Text(
+            'Ensure you are at the correct location by matching GPS coordinates.',
+            style: AppTextStyles.body.copyWith(fontSize: 14),
+          ),
         ),
+        const SizedBox(height: 12),
+
+        // Compact Mini Map
+        SizedBox(height: 140, child: _buildMiniMap()),
+
+        const SizedBox(height: 12),
+
+        // GPS Coordinates - More compact
+        // Obx(
+        //   () => Container(
+        //     padding: const EdgeInsets.all(12),
+        //     decoration: BoxDecoration(
+        //       color: AppColors.lightGrey,
+        //       borderRadius: BorderRadius.circular(6),
+        //     ),
+        //     child: Column(
+        //       crossAxisAlignment: CrossAxisAlignment.start,
+        //       children: [
+        //         Text(
+        //           'Current: ${controller.getCurrentGPSString()}',
+        //           style: TextStyle(fontSize: 12),
+        //         ),
+        //         const SizedBox(height: 2),
+        //         Text(
+        //           'Target: ${controller.getTargetGPSString()}',
+        //           style: TextStyle(fontSize: 12),
+        //         ),
+        //       ],
+        //     ),
+        //   ),
+        // ),
         const SizedBox(height: 16),
 
-        // Mini Map
-        SizedBox(height: 200, child: _buildMiniMap()),
-
-        const SizedBox(height: 16),
-
-        // GPS Coordinates
-        Obx(
-          () => Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.lightGrey,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Current GPS: ${controller.getCurrentGPSString()}'),
-                Text('Target GPS: ${controller.getTargetGPSString()}'),
-              ],
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // Continue Button
-        Obx(
-          () => SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed:
-                  controller.isLocationVerified.value
-                      ? () => controller.goToNextStep()
-                      : () => controller.verifyLocation(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    controller.isLocationVerified.value
-                        ? AppColors.greenColor
-                        : AppColors.primary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+        // Buttons Row - Side by side to save vertical space
+        Row(
+          children: [
+            // Back Button - Smaller
+            Expanded(
+              flex: 1,
+              child: ElevatedButton(
+                onPressed: () {
+                  controller.cancelCurrentPatrol();
+                  controller.currentStep.value = 0;
+                  controller.isManualPatrol.value = false;
+                  controller.currentPatrolLocation.value = null;
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary.withOpacity(0.8),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                 ),
-              ),
-              child: Text(
-                controller.isLocationVerified.value
-                    ? 'Continue'
-                    : 'Verify Location',
-                style: AppTextStyles.subtitle.copyWith(
-                  color: AppColors.whiteColor,
+                child: Text(
+                  'Back',
+                  style: AppTextStyles.subtitle.copyWith(
+                    color: AppColors.whiteColor,
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () {
-              controller.cancelCurrentPatrol();
-              controller.currentStep.value = 0; // Reset step
-              controller.isManualPatrol.value =
-                  false; // Reset manual patrol flag
-              controller.currentPatrolLocation.value =
-                  null; // Clear current location
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              'Back',
-              style: AppTextStyles.subtitle.copyWith(
-                color: AppColors.whiteColor,
-              ),
-            ),
-          ),
+            const SizedBox(width: 12),
+            // Continue/Verify Button - Larger
+           
+           Obx(
+             ()=> controller.isVerifyingLocation.value ? Expanded(child: Center(child: const CircularProgressIndicator())) : Expanded(
+                flex: 2,
+                child:   ElevatedButton(
+                    onPressed:
+                        controller.isLocationVerified.value
+                            ? () => controller.goToNextStep()
+                            : () => controller.verifyLocation(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          controller.isLocationVerified.value
+                              ? AppColors.greenColor
+                              : AppColors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    child: Text(
+                      controller.isLocationVerified.value
+                          ? 'Continue'
+                          : 'Verify Location',
+                      style: AppTextStyles.subtitle.copyWith(
+                        color: AppColors.whiteColor,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              
+           ),
+          ],
         ),
       ],
     );
@@ -762,13 +764,12 @@ Widget _buildStopPatrolTab() {
   //   );
   // }
 
-void goToFirstInnerTab() {
-  _innerTabController.index = 0;
-}
+  void goToFirstInnerTab() {
+    _innerTabController.index = 0;
+  }
 
   Widget _buildQRScan() {
-    return Obx(() {
-      return Column(
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
@@ -778,84 +779,22 @@ void goToFirstInnerTab() {
             ),
           ),
           const SizedBox(height: 24),
-          Center(
-            child: GestureDetector(
-              onTap: () => controller.openQRScanner(onSuccess: goToFirstInnerTab),
-              child: Container(
-                width: 280,
-                height: 380,
-                decoration: BoxDecoration(
-                  color: AppColors.lightGrey,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary, width: 2),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.qr_code_scanner,
-                      size: 64,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Tap to Scan QR Code',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (controller.scannedQRData.value.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 24.0),
-                        child: Column(
-                          children: [
-                            Text(
-                              'Scanned Data:',
-                              style: AppTextStyles.subtitle,
-                            ),
-                            Text(
-                              controller.scannedQRData.value,
-                              style: AppTextStyles.hint,
-                            ),
-                            if (controller.isQRMatched.value)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Text(
-                                  'Location matched! Patrol started.',
-                                  style: AppTextStyles.subtitle.copyWith(
-                                    color: AppColors.greenColor,
-                                  ),
-                                ),
-                              ),
-                            if (controller.qrScanError.value.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Text(
-                                  controller.qrScanError.value,
-                                  style: AppTextStyles.subtitle.copyWith(
-                                    color: AppColors.error,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
+          QRScannerWidget(
+            onTap: () => controller.openQRScanner(onSuccess: goToFirstInnerTab),
+            controller: controller,
           ),
         ],
       );
-    });
+   
   }
 
   Widget _buildNotesStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('📝 Add Patrol Notes', style: AppTextStyles.heading),
+        Center(
+          child: Text('📝 Add Patrol Notes', style: AppTextStyles.heading),
+        ),
         const SizedBox(height: 8),
         Text(
           'Add any observations or notes about your patrol (optional).',
@@ -894,7 +833,7 @@ void goToFirstInnerTab() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('✅ Submit Report', style: AppTextStyles.heading),
+        Center(child: Text('✅ Submit Report', style: AppTextStyles.heading)),
         const SizedBox(height: 8),
         Text(
           'Review your patrol information and submit the report.',
@@ -929,9 +868,9 @@ void goToFirstInnerTab() {
                       // Text(
                       //   '📷 QR Scanned: ${controller.isQRScanned.value ? "Yes" : "No"}',
                       // ),
-                    Text(
-                      '📸 Photo: ${controller.capturedImage.value != null ? "Captured" : "None"}',
-                    ),
+                      Text(
+                        '📸 Photo: ${controller.capturedImage.value != null ? "Captured" : "None"}',
+                      ),
                     Text(
                       '📝 Notes: ${controller.notes.value.isNotEmpty ? controller.notes.value : "None"}',
                     ),
@@ -986,17 +925,19 @@ void goToFirstInnerTab() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('📸 Upload Photo', style: AppTextStyles.heading),
-        const SizedBox(height: 8),
-        Text(
-          'Take a photo to document your patrol visit.',
-          style: AppTextStyles.body,
+        Center(child: Text('📸 Upload Photo', style: AppTextStyles.heading)),
+        const SizedBox(height: 6),
+        Center(
+          child: Text(
+            'Take a photo to document your patrol visit.',
+            style: AppTextStyles.body.copyWith(fontSize: 13),
+          ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
         _buildPhotoCard(),
 
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
 
         Obx(
           () => SizedBox(
@@ -1009,45 +950,17 @@ void goToFirstInnerTab() {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 disabledBackgroundColor: AppColors.greyColor,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
               ),
               child: Text(
                 'Continue',
                 style: AppTextStyles.subtitle.copyWith(
                   color: AppColors.whiteColor,
+                  fontSize: 14,
                 ),
-              ),
-            ),
-          ),
-
-          
-        ),
-        SizedBox(height: 16),
-         SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () {
-              controller.cancelCurrentPatrol();
-              controller.currentStep.value = 0; 
-              controller.isManualPatrol.value =
-                  false; // Reset manual patrol flag
-              controller.currentPatrolLocation.value =
-                  null; // Clear current location
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              'Back',
-              style: AppTextStyles.subtitle.copyWith(
-                color: AppColors.whiteColor,
               ),
             ),
           ),
@@ -1059,16 +972,16 @@ void goToFirstInnerTab() {
   Widget _buildPhotoCard() {
     return Obx(() {
       return Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withOpacity(0.08),
               spreadRadius: 0,
-              blurRadius: 15,
-              offset: const Offset(0, 5),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -1076,16 +989,16 @@ void goToFirstInnerTab() {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header
+            // Compact Header
             Row(
               children: [
-                Icon(Icons.camera_alt, color: AppColors.primary, size: 18),
-                const SizedBox(width: 8),
+                Icon(Icons.camera_alt, color: AppColors.primary, size: 16),
+                const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     'Photo',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),
@@ -1093,10 +1006,10 @@ void goToFirstInnerTab() {
                 ),
                 if (controller.capturedImage.value != null)
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       '✓',
@@ -1109,26 +1022,26 @@ void goToFirstInnerTab() {
                   ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-            // Photo area
+            // Compact Photo area
             GestureDetector(
               onTap: () => controller.takePicture(),
               child: Container(
                 width: double.infinity,
-                height: 180,
+                height: 140, // Reduced from 180
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color:
                         controller.capturedImage.value != null
                             ? Colors.green
                             : Colors.grey.shade300,
-                    width: 2,
+                    width: 1.5,
                   ),
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(6),
                   child:
                       controller.capturedImage.value != null
                           ? Stack(
@@ -1140,10 +1053,10 @@ void goToFirstInnerTab() {
                                 height: double.infinity,
                               ),
                               Positioned(
-                                top: 8,
-                                right: 8,
+                                top: 6,
+                                right: 6,
                                 child: Container(
-                                  padding: EdgeInsets.all(4),
+                                  padding: EdgeInsets.all(3),
                                   decoration: BoxDecoration(
                                     color: Colors.green,
                                     shape: BoxShape.circle,
@@ -1151,7 +1064,7 @@ void goToFirstInnerTab() {
                                   child: Icon(
                                     Icons.check,
                                     color: Colors.white,
-                                    size: 14,
+                                    size: 12,
                                   ),
                                 ),
                               ),
@@ -1163,33 +1076,33 @@ void goToFirstInnerTab() {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Container(
-                                  padding: EdgeInsets.all(16),
+                                  padding: EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     color: AppColors.primary.withOpacity(0.1),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
                                     Icons.camera_alt,
-                                    size: 32,
+                                    size: 24,
                                     color: AppColors.primary,
                                   ),
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 8),
                                 Text(
                                   'Tap to capture photo',
                                   style: TextStyle(
                                     color: Colors.grey[600],
-                                    fontSize: 14,
+                                    fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 2),
                                 Text(
                                   'Required for patrol documentation',
                                   style: TextStyle(
                                     color: Colors.grey[400],
-                                    fontSize: 12,
+                                    fontSize: 10,
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
@@ -1200,87 +1113,31 @@ void goToFirstInnerTab() {
               ),
             ),
 
-            // // Camera controls (only show when no image is captured)
-            // if (controller.capturedImage.value == null) ...[
-            //   const SizedBox(height: 16),
-            //   Row(
-            //     mainAxisAlignment: MainAxisAlignment.center,
-            //     children: [
-            //       // Flash toggle
-            //       Container(
-            //         decoration: BoxDecoration(
-            //           color: Colors.grey[100],
-            //           borderRadius: BorderRadius.circular(8),
-            //         ),
-            //         child: IconButton(
-            //           icon: Icon(
-            //             controller.isFlashOn.value ? Icons.flash_on : Icons.flash_off,
-            //             color: controller.isFlashOn.value
-            //                 ? AppColors.primary
-            //                 : Colors.grey[600],
-            //             size: 20,
-            //           ),
-            //           onPressed: () => controller.toggleFlash(),
-            //         ),
-            //       ),
-            //       const SizedBox(width: 16),
-
-            //       // Main camera button
-            //       GestureDetector(
-            //         onTap: () => controller.takePicture(),
-            //         child: Container(
-            //           width: 60,
-            //           height: 60,
-            //           decoration: BoxDecoration(
-            //             color: AppColors.primary,
-            //             shape: BoxShape.circle,
-            //             boxShadow: [
-            //               BoxShadow(
-            //                 color: AppColors.primary.withOpacity(0.3),
-            //                 spreadRadius: 0,
-            //                 blurRadius: 8,
-            //                 offset: const Offset(0, 2),
-            //               ),
-            //             ],
-            //           ),
-            //           child: const Icon(
-            //             Icons.camera_alt,
-            //             color: Colors.white,
-            //             size: 28,
-            //           ),
-            //         ),
-            //       ),
-            //     ],
-            //   ),
-            // ],
-
-            // Retake option (only show when image is captured)
+            // Compact Retake option
             if (controller.capturedImage.value != null) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Center(
                 child: TextButton.icon(
                   onPressed: () => controller.retakePhoto(),
-                  icon: Icon(Icons.refresh, color: AppColors.primary, size: 18),
+                  icon: Icon(Icons.refresh, color: AppColors.primary, size: 16),
                   label: Text(
                     'Retake Photo',
                     style: TextStyle(
                       color: AppColors.primary,
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   style: TextButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     backgroundColor: AppColors.primary.withOpacity(0.1),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                   ),
                 ),
               ),
             ],
-
-         
           ],
         ),
       );

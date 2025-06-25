@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:security_guard/core/api/api_service.dart';
+import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -61,7 +62,16 @@ class IssueDetailController extends GetxController {
 
       final status = await Permission.location.request();
       if (!status.isGranted) {
-        throw Exception('Location permission denied');
+        Get.snackbar(
+          "Location Service Disabled",
+          "Please enable location services to continue",
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          icon: const Icon(Icons.location_off, color: Colors.white),
+          duration: const Duration(seconds: 3),
+        );
+        await Geolocator.openLocationSettings();
+        return;
       }
 
       final position = await Geolocator.getCurrentPosition(
@@ -71,7 +81,14 @@ class IssueDetailController extends GetxController {
       currentPosition.value = position;
     } catch (e) {
       errorMessage.value = 'Failed to get location: ${e.toString()}';
-      Get.snackbar('Error', errorMessage.value);
+     Get.snackbar(
+          "Location Service Disabled",
+          "Please enable location services to continue",
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          icon: const Icon(Icons.location_off, color: Colors.white),
+          duration: const Duration(seconds: 3),
+        );
     } finally {
       isLoadingLocation.value = false;
     }
@@ -81,6 +98,16 @@ class IssueDetailController extends GetxController {
     try {
       if (currentIssue.value == null || currentPosition.value == null) {
         throw Exception('Missing required data');
+      }
+      if (selectedImages.isEmpty) {
+         Get.snackbar(
+        'No Images Selected',
+        'Please select at least one image to resolve the issue.',
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+      );
+        return false;
+    
       }
 
       isLoading.value = true;

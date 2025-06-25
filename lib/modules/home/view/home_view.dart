@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:security_guard/modules/attandance/AttendanceScreen/GuardAttendanceScreen.dart';
 
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
+import 'package:security_guard/modules/issue/issue_list/issue_view/issue_screen.dart';
 import 'package:security_guard/modules/notification/notification_screen.dart';
 import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
 
@@ -437,7 +438,11 @@ Widget _buildOverviewCards(bottomNavController) {
         
         // Resolved Issues Card
         InkWell(
-          onTap: () => bottomNavController.changeTab(3),
+          onTap: () => {
+            
+  
+             Get.to(() => IssuesScreen(initialTabIndex: 1))
+          },
           child: Container(
             width: double.infinity,
             padding: EdgeInsets.all(16),

@@ -9,7 +9,8 @@ import 'package:security_guard/modules/issue/IssueResolution/issue_details_Scree
 import 'package:security_guard/modules/issue/report_issue/report_incident_screen.dart';
 
 class IssuesScreen extends StatelessWidget {
-  const IssuesScreen({super.key});
+  final int initialTabIndex;
+  const IssuesScreen({super.key, this.initialTabIndex = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -17,10 +18,14 @@ class IssuesScreen extends StatelessWidget {
 
     return DefaultTabController(
       length: 2,
+      initialIndex: initialTabIndex,
       child: Scaffold(
         appBar: AppBar(
           iconTheme: const IconThemeData(color: Colors.white),
-          title: const Text('Issues', style: TextStyle(color: Colors.white)),
+          title: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: const Text('Issues', style: TextStyle(color: Colors.white)),
+          ),
           actions: [
             // IconButton(
             //   icon: const Icon(Icons.search, color: Colors.white),
@@ -28,10 +33,10 @@ class IssuesScreen extends StatelessWidget {
             //     // Implement search functionality
             //   },
             // ),
-            IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.white),
-              onPressed: () => controller.refreshIssues(),
-            ),
+            // IconButton(
+            //   icon: const Icon(Icons.refresh, color: Colors.white),
+            //   onPressed: () => controller.refreshIssues(),
+            // ),
           ],
         ),
         body: Column(
@@ -163,7 +168,7 @@ class IssuesScreen extends StatelessWidget {
       return RefreshIndicator(
         onRefresh: () => controller.refreshIssues(),
         child: ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(24),
           itemCount: filteredIssues.length,
           itemBuilder: (context, index) {
             return IssueCard(

@@ -23,12 +23,12 @@ class AttendanceHistoryScreen extends StatelessWidget {
           iconTheme: const IconThemeData(
       color: Colors.white, // Set back button (and other icons) color here
     ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: () => controller.refreshData(),
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.refresh, color: Colors.white),
+        //     onPressed: () => controller.refreshData(),
+        //   ),
+        // ],
       ),
       body: Column(
         children: [
@@ -517,18 +517,21 @@ class AttendanceHistoryScreen extends StatelessWidget {
     }
   }
 
-  void _selectFromDate() async {
-    final selectedDate = await showDatePicker(
-      context: Get.context!,
-      initialDate: controller.fromDate.value,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-    );
-    
-    if (selectedDate != null) {
-      controller.setDateRange(selectedDate, controller.toDate.value);
-    }
+void _selectFromDate() async {
+  final now = DateTime.now();
+  final sixMonthsAgo = DateTime(now.year, now.month - 6, now.day);
+
+  final selectedDate = await showDatePicker(
+    context: Get.context!,
+    initialDate: controller.fromDate.value,
+    firstDate: sixMonthsAgo,
+    lastDate: now,
+  );
+
+  if (selectedDate != null) {
+    controller.setDateRange(selectedDate, controller.toDate.value);
   }
+}
 
   void _selectToDate() async {
     final selectedDate = await showDatePicker(

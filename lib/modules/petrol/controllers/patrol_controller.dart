@@ -11,7 +11,9 @@ import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
+import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
 
 class PatrolLocation {
   final String locationId;
@@ -19,6 +21,7 @@ class PatrolLocation {
   final double latitude;
   final double longitude;
   final String barcodeUrl;
+  final double radius;
   final bool status;
 
   PatrolLocation({
@@ -28,6 +31,8 @@ class PatrolLocation {
     required this.longitude,
     required this.barcodeUrl,
     required this.status,
+    this.radius = 50.0, // Default radius in meters
+ 
   });
 
   factory PatrolLocation.fromJson(Map<String, dynamic> json) {
@@ -37,6 +42,7 @@ class PatrolLocation {
       latitude: double.tryParse(json['latitude'].toString()) ?? 0.0,
       longitude: double.tryParse(json['longitude'].toString()) ?? 0.0,
       barcodeUrl: json['barcodeUrl'] ?? '',
+      radius: double.tryParse(json['radius'].toString()) ?? 50.0,
       status: json['status'] ?? false,
     );
   }
@@ -49,6 +55,7 @@ class PatrolLocation {
       'longitude': longitude,
       'barcodeUrl': barcodeUrl,
       'status': status,
+      'radius': radius,
     };
   }
 }
@@ -76,6 +83,9 @@ class PatrolCheckInController extends GetxController {
   RxBool isQRScanned = false.obs;
 
   ProfileController profileController = Get.find<ProfileController>();
+  final HomeController homeController = Get.find<HomeController>();
+  final BottomNavController bottomNavController =
+      Get.find<BottomNavController>();
 
   // Location verification
   final isLocationVerified = false.obs;
@@ -83,6 +93,7 @@ class PatrolCheckInController extends GetxController {
 
   // API loading state
   final isLoadingLocations = false.obs;
+  final isVerifyingLocation = false.obs;
 
   // API endpoint
   static const String _apiUrl =
@@ -248,7 +259,16 @@ class PatrolCheckInController extends GetxController {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('OK')),
+          TextButton(
+            onPressed: () {
+              lastPatrolStatus.value = '';
+              fetchPatrolLocationsFromAPI(isRefresh: true);
+              Get.back();
+              homeController.fetchDashboardData();
+              bottomNavController.changeTab(0);
+            },
+            child: const Text('OK'),
+          ),
         ],
       ),
     );
@@ -261,8 +281,8 @@ class PatrolCheckInController extends GetxController {
     fetchPatrolLocationsFromAPI();
   }
 
-// New method to fetch patrol locations from API
-  Future<void> fetchPatrolLocationsFromAPI() async {
+  // New method to fetch patrol locations from API
+  Future<void> fetchPatrolLocationsFromAPI({isRefresh = false}) async {
     try {
       isLoadingLocations.value = true;
 
@@ -282,8 +302,9 @@ class PatrolCheckInController extends GetxController {
       final logId = profileController.userModel.value!.logId;
       http.Response response;
 
-      if (logId != null && logId.isNotEmpty) {
-        final url = 'https://official.solarvision-cairo.com/patrol/history/$logId';
+      if (logId != null && logId.isNotEmpty && !isRefresh) {
+        final url =
+            'https://official.solarvision-cairo.com/patrol/history?logId=$logId';
         response = await http
             .get(
               Uri.parse(url),
@@ -297,7 +318,9 @@ class PatrolCheckInController extends GetxController {
         // Otherwise, fetch all patrol locations
         response = await http
             .get(
-              Uri.parse(_apiUrl),
+              Uri.parse(
+                "https://official.solarvision-cairo.com/patrol/history",
+              ),
               headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
@@ -314,20 +337,20 @@ class PatrolCheckInController extends GetxController {
         patrolLocations.clear();
         patrolLocations.addAll(locations);
 
-          completedPatrols.clear();
+        completedPatrols.clear();
         for (final loc in locations) {
           if (loc.status) {
             completedPatrols.add(loc.locationId);
           }
         }
 
-        Get.snackbar(
-          'Success',
-          'Patrol locations loaded successfully',
-          backgroundColor: AppColors.greenColor,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 2),
-        );
+        // Get.snackbar(
+        //   'Success',
+        //   'Patrol locations loaded successfully',
+        //   backgroundColor: AppColors.greenColor,
+        //   colorText: Colors.white,
+        //   duration: const Duration(seconds: 2),
+        // );
       } else {
         throw Exception(
           'Failed to load patrol locations: ${response.statusCode}',
@@ -474,12 +497,61 @@ class PatrolCheckInController extends GetxController {
   }
 
   void goToNextStep() {
-    if (currentStep.value < (isManualPatrol.value ? 4 : 5)) {
+    if (currentStep.value < 5) {
       currentStep.value++;
     }
   }
 
   Future<void> verifyLocation() async {
+    isVerifyingLocation.value = true;
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      Get.snackbar(
+        "Location Service Disabled",
+        "Please enable location services to continue",
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        icon: const Icon(Icons.location_off, color: Colors.white),
+        duration: const Duration(seconds: 3),
+      );
+      await Geolocator.openLocationSettings();
+      isVerifyingLocation.value = false;
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      Get.snackbar(
+        "Permission Denied Forever",
+        "Please enable location permission from app settings",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        icon: const Icon(Icons.error, color: Colors.white),
+        duration: const Duration(seconds: 4),
+      );
+      await Geolocator.openAppSettings();
+      isVerifyingLocation.value = false;
+      return;
+    }
+
+    if (permission != LocationPermission.whileInUse &&
+        permission != LocationPermission.always) {
+      Get.snackbar(
+        "Permission Required",
+        "Location permission is required for attendance",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        icon: const Icon(Icons.error, color: Colors.white),
+        duration: const Duration(seconds: 3),
+      );
+      isVerifyingLocation.value = false;
+      return;
+    }
+
     if (currentLatLng.value == null) {
       Get.snackbar(
         'Error',
@@ -487,10 +559,11 @@ class PatrolCheckInController extends GetxController {
         backgroundColor: AppColors.error,
         colorText: Colors.white,
       );
+      isVerifyingLocation.value = false;
       return;
     }
 
-    isVerifying.value = true;
+    isVerifyingLocation.value = true;
 
     // Simulate verification process
     await Future.delayed(Duration(seconds: 2));
@@ -503,7 +576,7 @@ class PatrolCheckInController extends GetxController {
         currentPatrolLocation.value!.longitude,
       );
 
-      if (distance <= 50) {
+      if (distance <= currentPatrolLocation.value!.radius) {
         isLocationVerified.value = true;
         Get.snackbar(
           'Verified',
@@ -511,9 +584,11 @@ class PatrolCheckInController extends GetxController {
           backgroundColor: AppColors.greenColor,
           colorText: Colors.white,
         );
+        isVerifyingLocation.value = false;
         goToNextStep();
       } else {
         isLocationVerified.value = false;
+        isVerifyingLocation.value = false;
         Get.snackbar(
           'Verification Failed',
           'You are not within the checkpoint area (${distance.toStringAsFixed(0)}m away)',
@@ -529,6 +604,7 @@ class PatrolCheckInController extends GetxController {
         backgroundColor: AppColors.greenColor,
         colorText: Colors.white,
       );
+      isVerifyingLocation.value = false;
       goToNextStep();
     }
 
@@ -596,18 +672,18 @@ class PatrolCheckInController extends GetxController {
 
               print('QR Code Scanned: ${scanData.code}');
               Get.back();
-              Get.snackbar(
-                'Success',
-                'QR Code Scanned',
-                backgroundColor: AppColors.greenColor,
-                colorText: Colors.white,
-              );
+              // Get.snackbar(
+              //   'Success',
+              //   'QR Code Scanned',
+              //   backgroundColor: AppColors.greenColor,
+              //   colorText: Colors.white,
+              // );
               if (isQRMatched.value) {
                 // Check if patrol already completed for this location
                 final locationId = matchedLocation?.locationId;
                 if (locationId != null &&
                     !completedPatrols.contains(locationId)) {
-                  goToNextStep();
+                  // goToNextStep();
 
                   if (onSuccess != null) onSuccess();
                 }
@@ -620,93 +696,99 @@ class PatrolCheckInController extends GetxController {
   }
 
   // Update submitPatrolReport to call the check-in API
-Future<void> submitPatrolReport() async {
-  if (capturedImage.value != null) {
-    final locationId =
-        isManualPatrol.value
-            ? 'manual'
-            : (matchedLocation?.locationId ??
-                currentPatrolLocation.value?.locationId ??
-                '');
-    final latitude =
-        isManualPatrol.value
-            ? (currentLatLng.value?.latitude ?? 0.0).toString()
-            : (matchedLocation?.latitude.toString() ??
-                currentPatrolLocation.value?.latitude.toString() ??
-                '');
-    final longitude =
-        isManualPatrol.value
-            ? (currentLatLng.value?.longitude ?? 0.0).toString()
-            : (matchedLocation?.longitude.toString() ??
-                currentPatrolLocation.value?.longitude.toString() ??
-                '');
-    final note = notes.value;
-    final imageFile = capturedImage.value;
+  Future<void> submitPatrolReport() async {
+    if (capturedImage.value != null) {
+      final locationId =
+          isManualPatrol.value
+              ? 'manual'
+              : (matchedLocation?.locationId ??
+                  currentPatrolLocation.value?.locationId ??
+                  '');
+      final latitude =
+          isManualPatrol.value
+              ? (currentLatLng.value?.latitude ?? 0.0).toString()
+              : (matchedLocation?.latitude.toString() ??
+                  currentPatrolLocation.value?.latitude.toString() ??
+                  '');
+      final longitude =
+          isManualPatrol.value
+              ? (currentLatLng.value?.longitude ?? 0.0).toString()
+              : (matchedLocation?.longitude.toString() ??
+                  currentPatrolLocation.value?.longitude.toString() ??
+                  '');
+      final note = notes.value;
+      final imageFile = capturedImage.value;
 
-    // Determine if this is the last patrol
-    int completedCount = completedPatrols.length;
-    String? submittingLocationId = currentPatrolLocation.value?.locationId;
-    bool isAlreadyCompleted = submittingLocationId != null && completedPatrols.contains(submittingLocationId);
-    int totalLocations = patrolLocations.length;
-    bool isLastPatrol = !isAlreadyCompleted && (completedCount + 1) >= totalLocations;
+      // Determine if this is the last patrol
+      int completedCount = completedPatrols.length;
+      String? submittingLocationId = currentPatrolLocation.value?.locationId;
+      bool isAlreadyCompleted =
+          submittingLocationId != null &&
+          completedPatrols.contains(submittingLocationId);
+      int totalLocations = patrolLocations.length;
+      bool isLastPatrol =
+          !isAlreadyCompleted && (completedCount + 1) >= totalLocations;
 
-    final url = Uri.parse(
-      'https://official.solarvision-cairo.com/patrol/checkin',
-    );
-    try {
-      final request =
-          http.MultipartRequest('POST', url)
-            ..fields['UserID'] = profileController.userModel.value!.userId
-            ..fields['Log_Id'] = profileController.userModel.value!.logId ?? ""
-            ..fields['LocationId'] = locationId
-            ..fields['Latitude'] = latitude
-            ..fields['Longitude'] = longitude
-            ..fields['Note'] = note
-            ..fields['ActivePatrol'] = isLastPatrol ? 'false' : 'true';
-      if (imageFile != null) {
-        request.files.add(
-          await http.MultipartFile.fromPath('Selfie', imageFile.path),
-        );
-      }
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-      if (response.statusCode == 200) {
-        final respJson = json.decode(response.body);
-        Get.snackbar(
-          'Success',
-          respJson['message'] ?? 'Patrol report submitted successfully',
-          backgroundColor: AppColors.greenColor,
-          colorText: Colors.white,
-        );
-        if (currentPatrolLocation.value != null) {
-          completedPatrols.add(currentPatrolLocation.value!.locationId);
+      final url = Uri.parse(
+        'https://official.solarvision-cairo.com/patrol/checkin',
+      );
+      try {
+        final request =
+            http.MultipartRequest('POST', url)
+              ..fields['UserID'] = profileController.userModel.value!.userId
+              ..fields['Log_Id'] =
+                  profileController.userModel.value!.logId ?? ""
+              ..fields['LocationId'] = locationId
+              ..fields['Latitude'] = latitude
+              ..fields['Longitude'] = longitude
+              ..fields['Note'] = note
+              ..fields['ActivePatrol'] = isLastPatrol ? 'false' : 'true';
+        if (imageFile != null) {
+          request.files.add(
+            await http.MultipartFile.fromPath('Selfie', imageFile.path),
+          );
         }
-        resetCurrentPatrol();
-      } else {
+        final streamedResponse = await request.send();
+        final response = await http.Response.fromStream(streamedResponse);
+        if (response.statusCode == 200) {
+          final respJson = json.decode(response.body);
+          profileController.userModel.value!.logId =
+              respJson['checkInId'] ?? profileController.userModel.value!.logId;
+          Get.snackbar(
+            'Success',
+            respJson['message'] ?? 'Patrol report submitted successfully',
+            backgroundColor: AppColors.greenColor,
+            colorText: Colors.white,
+          );
+          if (currentPatrolLocation.value != null) {
+            completedPatrols.add(currentPatrolLocation.value!.locationId);
+          }
+          resetCurrentPatrol();
+        } else {
+          Get.snackbar(
+            'Error',
+            'Failed to submit patrol report: ${response.body}',
+            backgroundColor: AppColors.error,
+            colorText: Colors.white,
+          );
+        }
+      } catch (e) {
         Get.snackbar(
           'Error',
-          'Failed to submit patrol report: ${response.body}',
+          'Failed to submit patrol report: $e',
           backgroundColor: AppColors.error,
           colorText: Colors.white,
         );
       }
-    } catch (e) {
+    } else {
       Get.snackbar(
         'Error',
-        'Failed to submit patrol report: $e',
+        'Please complete all steps (QR scan and photo required)',
         backgroundColor: AppColors.error,
         colorText: Colors.white,
       );
     }
-  } else {
-    Get.snackbar(
-      'Error',
-      'Please complete all steps (QR scan and photo required)',
-      backgroundColor: AppColors.error,
-      colorText: Colors.white,
-    );
   }
-}
 
   // Add Manual Patrol API
   Future<void> addManualPatrolApi({
@@ -719,34 +801,54 @@ Future<void> submitPatrolReport() async {
   }) async {
     isLoading.value = true;
     try {
-      final url = Uri.parse('https://official.solarvision-cairo.com/patrol/unknown-checkin');
+      final url = Uri.parse(
+        'https://official.solarvision-cairo.com/patrol/unknown-checkin',
+      );
       final userId = profileController.userModel.value?.userId ?? '';
-      final request = http.MultipartRequest('POST', url)
-        ..fields['UserID'] = userId
-        ..fields['ManualLocationName'] = manualLocationName
-        ..fields['ManualLatitude'] = manualLatitude.toString()
-        ..fields['ManualLongitude'] = manualLongitude.toString()
-        ..fields['Log_Id'] = profileController.userModel.value!.logId!
-        ..fields['Note'] = note
-        ..fields['ActivePatrol'] = 'true'
-        ..fields['LocationId'] = '';
-      request.files.add(await http.MultipartFile.fromPath(
-        'Selfie',
-        selfie.path,
-        contentType: MediaType('image', 'png'),
-      ));
+      final request =
+          http.MultipartRequest('POST', url)
+            ..fields['UserID'] = userId
+            ..fields['ManualLocationName'] = manualLocationName
+            ..fields['ManualLatitude'] = manualLatitude.toString()
+            ..fields['ManualLongitude'] = manualLongitude.toString()
+            ..fields['Log_Id'] = profileController.userModel.value!.logId!
+            ..fields['Note'] = note
+            ..fields['ActivePatrol'] = 'true'
+            ..fields['LocationId'] = '';
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'Selfie',
+          selfie.path,
+          contentType: MediaType('image', 'png'),
+        ),
+      );
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
       if (response.statusCode == 200) {
         final respJson = json.decode(response.body);
-        Get.snackbar('Success', respJson['message'] ?? 'Manual patrol added successfully.', backgroundColor: AppColors.greenColor, colorText: Colors.white);
+        Get.snackbar(
+          'Success',
+          respJson['message'] ?? 'Manual patrol added successfully.',
+          backgroundColor: AppColors.greenColor,
+          colorText: Colors.white,
+        );
         // Optionally reset state or update UI
         resetCurrentPatrol();
       } else {
-        Get.snackbar('Error', 'Failed to add manual patrol: ${response.body}', backgroundColor: AppColors.error, colorText: Colors.white);
+        Get.snackbar(
+          'Error',
+          'Failed to add manual patrol: ${response.body}',
+          backgroundColor: AppColors.error,
+          colorText: Colors.white,
+        );
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to add manual patrol: $e', backgroundColor: AppColors.error, colorText: Colors.white);
+      Get.snackbar(
+        'Error',
+        'Failed to add manual patrol: $e',
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+      );
     } finally {
       isLoading.value = false;
     }
@@ -836,7 +938,8 @@ class QRScannerView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Scan QR Code'),
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('Scan QR Code', style: TextStyle(color: Colors.white)),
         backgroundColor: AppColors.primary,
       ),
       body: Column(

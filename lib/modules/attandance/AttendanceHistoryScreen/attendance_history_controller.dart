@@ -237,22 +237,20 @@ class AttendanceHistoryController extends GetxController {
 
   // Change month
   void changeMonth(bool isNext) {
-    if (isNext) {
-      currentMonth.value = DateTime(
-        currentMonth.value.year,
-        currentMonth.value.month + 1,
-        1,
-      );
-    } else {
-      currentMonth.value = DateTime(
-        currentMonth.value.year,
-        currentMonth.value.month - 1,
-        1,
-      );
+  final now = DateTime.now();
+  final current = currentMonth.value;
+
+  if (isNext) {
+    // Prevent moving to future months beyond the current real month
+    if (current.year < now.year || (current.year == now.year && current.month < now.month)) {
+      currentMonth.value = DateTime(current.year, current.month + 1, 1);
     }
-    fetchAttendanceHistory();
+  } else {
+    currentMonth.value = DateTime(current.year, current.month - 1, 1);
   }
 
+  fetchAttendanceHistory();
+}
   // Change tab
   void changeTab(int index) {
     selectedTab.value = index;

@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 
 
 class PatrolHistoryItem {
@@ -102,9 +103,10 @@ class PatrolHistoryController extends GetxController {
   final RxBool isLoadingDetails = false.obs;
   final Rx<DateTime> startDate = DateTime.now().subtract(const Duration(days: 30)).obs;
   final Rx<DateTime> endDate = DateTime.now().obs;
+  final ProfileController profileController = Get.find<ProfileController>();
   
   // Replace with actual user logic
-  final String userId = '202408056';
+  // final String userId = '202408056';
   
   static const String _baseUrl = 'https://official.solarvision-cairo.com/patrol';
 
@@ -121,6 +123,8 @@ class PatrolHistoryController extends GetxController {
       final startDateStr = '${startDate.value.year}%2F${startDate.value.month.toString().padLeft(2, '0')}%2F${startDate.value.day.toString().padLeft(2, '0')}';
       final endDateStr = '${endDate.value.year}%2F${endDate.value.month.toString().padLeft(2, '0')}%2F${endDate.value.day.toString().padLeft(2, '0')}';
       
+       
+      final userId = profileController.userModel.value?.userId ?? '';
       final url = '$_baseUrl/Userhistory?start=$startDateStr&end=$endDateStr&UserId=$userId';
       
       final response = await http.get(
@@ -170,7 +174,7 @@ class PatrolHistoryController extends GetxController {
     try {
       isLoadingDetails.value = true;
       
-      final url = '$_baseUrl/history/$logID';
+      final url = '$_baseUrl/history?logId=$logID';
       
       final response = await http.get(
         Uri.parse(url),

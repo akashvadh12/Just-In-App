@@ -134,6 +134,7 @@ class GuardAttendanceController extends GetxController {
       final office = officeList[0];
       final officeLat = double.tryParse(office['latitude'].toString());
       final officeLng = double.tryParse(office['longitude'].toString());
+      final officeRadius = double.tryParse(office['radius'].toString()) ?? 50.0;
       if (officeLat == null || officeLng == null) {
         Get.snackbar(
           "Office Location Error",
@@ -208,7 +209,7 @@ class GuardAttendanceController extends GetxController {
         officeLng,
       );
       print('Distance to office: [32m${distance.toStringAsFixed(2)} meters[0m');
-      if (distance <= 200) {
+      if (distance <= officeRadius!) {
         isLocationVerified.value = true;
         Get.snackbar(
           "Location Verified",

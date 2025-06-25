@@ -20,7 +20,7 @@ class UserModel {
   final String? todayPatrolStatus;
   final String? attendanceStatus;
   final Map<String, dynamic>? issuesCount;
-  final String? logId;
+   String? logId;
 
   UserModel({
     required this.userId,
