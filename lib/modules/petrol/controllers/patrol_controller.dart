@@ -11,6 +11,7 @@ import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
@@ -32,7 +33,6 @@ class PatrolLocation {
     required this.barcodeUrl,
     required this.status,
     this.radius = 50.0, // Default radius in meters
- 
   });
 
   factory PatrolLocation.fromJson(Map<String, dynamic> json) {
@@ -129,6 +129,13 @@ class PatrolCheckInController extends GetxController {
   }
 
   Future<void> stopPatrol() async {
+    final connectivityController = Get.find<ConnectivityController>();
+
+    if (connectivityController.isOffline.value) {
+      connectivityController.showNoInternetSnackbar();
+      return;
+    }
+
     try {
       isLoading.value = true;
       lastPatrolStatus.value = '';
@@ -799,6 +806,12 @@ class PatrolCheckInController extends GetxController {
     required String note,
     // required String logId,
   }) async {
+    final connectivityController = Get.find<ConnectivityController>();
+
+    if (connectivityController.isOffline.value) {
+      connectivityController.showNoInternetSnackbar();
+      return;
+    }
     isLoading.value = true;
     try {
       final url = Uri.parse(

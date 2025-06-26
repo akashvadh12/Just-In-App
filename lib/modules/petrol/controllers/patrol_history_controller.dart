@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 
 
@@ -117,6 +118,12 @@ class PatrolHistoryController extends GetxController {
   }
 
   Future<void> fetchPatrolHistory() async {
+        final connectivityController = Get.find<ConnectivityController>();
+
+    if (connectivityController.isOffline.value) {
+      connectivityController.showNoInternetSnackbar();
+      return ;
+    }
     try {
       isLoadingHistory.value = true;
       

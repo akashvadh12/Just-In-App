@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -132,6 +133,12 @@ class HomeController extends GetxController {
   final LocalStorageService _storage = LocalStorageService.instance;
 
   Future<void> fetchDashboardData() async {
+        final connectivityController = Get.find<ConnectivityController>();
+
+    if (connectivityController.isOffline.value) {
+      connectivityController.showNoInternetSnackbar();
+      return ;
+    }
     dashboardLoading.value = true;
     try {
       // Get userId from LocalStorageService

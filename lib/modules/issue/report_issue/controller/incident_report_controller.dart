@@ -13,6 +13,7 @@ import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as path;
+import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/controller/issue_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_view/issue_screen.dart';
@@ -157,6 +158,12 @@ class IncidentReportController extends GetxController {
 
   // Updated method name to match UI call
   Future<void> submitIncidentReport() async {
+        final connectivityController = Get.find<ConnectivityController>();
+
+    if (connectivityController.isOffline.value) {
+      connectivityController.showNoInternetSnackbar();
+      return ;
+    }
     final description = descriptionController.text.trim();
     final position = currentPosition.value;
 

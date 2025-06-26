@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -56,6 +57,14 @@ class IssuesController extends GetxController with SingleGetTickerProviderMixin 
 
   // Fetch issues from API
   Future<void> fetchIssues({String status = 'all'}) async {
+
+        final connectivityController = Get.find<ConnectivityController>();
+
+    if (connectivityController.isOffline.value) {
+      connectivityController.showNoInternetSnackbar();
+      return ;
+    }
+
     try {
       isLoading.value = true;
       errorMessage.value = '';
@@ -96,6 +105,12 @@ class IssuesController extends GetxController with SingleGetTickerProviderMixin 
 
   // Upsert incident report
   Future<void> upsertIncidentReport(Map<String, dynamic> data) async {
+        final connectivityController = Get.find<ConnectivityController>();
+
+    if (connectivityController.isOffline.value) {
+      connectivityController.showNoInternetSnackbar();
+      return ;
+    }
     try {
       isLoading.value = true;
       

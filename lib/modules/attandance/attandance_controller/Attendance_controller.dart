@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -31,7 +32,9 @@ class GuardAttendanceController extends GetxController {
     super.onInit();
     isClockedIn.value = profileController.userModel.value?.clockStatus ?? false;
     print('GuardAttendanceController initialized');
-    print('Clocked In: ${isClockedIn.value} - User In: ${profileController.userModel.value?.clockStatus}');
+    print(
+      'Clocked In: ${isClockedIn.value} - User In: ${profileController.userModel.value?.clockStatus}',
+    );
   }
 
   Future<void> capturePhoto() async {
@@ -96,13 +99,21 @@ class GuardAttendanceController extends GetxController {
 
   Future<void> getCurrentLocation() async {
     if (isLoadingLocation.value) return;
+    final connectivityController = Get.find<ConnectivityController>();
+
+    if (connectivityController.isOffline.value) {
+      connectivityController.showNoInternetSnackbar();
+      return;
+    }
 
     isLoadingLocation.value = true;
 
     try {
       // 1. Fetch office location from API
       final officeResponse = await http.get(
-        Uri.parse('https://official.solarvision-cairo.com/GetOfficeLoc?CompanyId=1'),
+        Uri.parse(
+          'https://official.solarvision-cairo.com/GetOfficeLoc?CompanyId=1',
+        ),
       );
       if (officeResponse.statusCode != 200) {
         Get.snackbar(
@@ -208,7 +219,9 @@ class GuardAttendanceController extends GetxController {
         officeLat,
         officeLng,
       );
-      print('Distance to office: [32m${distance.toStringAsFixed(2)} meters[0m');
+      print(
+        'Distance to office: [32m${distance.toStringAsFixed(2)} meters[0m',
+      );
       if (distance <= officeRadius!) {
         isLocationVerified.value = true;
         Get.snackbar(
@@ -231,7 +244,9 @@ class GuardAttendanceController extends GetxController {
         );
       }
 
-      print('Location obtained: [34m${position.latitude}, ${position.longitude}[0m');
+      print(
+        'Location obtained: [34m${position.latitude}, ${position.longitude}[0m',
+      );
     } catch (e) {
       print('Location error: $e');
       isLocationVerified.value = false;
@@ -334,6 +349,12 @@ class GuardAttendanceController extends GetxController {
   }
 
   Future<bool> markAttendance(String type) async {
+    final connectivityController = Get.find<ConnectivityController>();
+
+    if (connectivityController.isOffline.value) {
+      connectivityController.showNoInternetSnackbar();
+      return false;
+    }
     if (isProcessingAttendance.value) {
       print('Already processing attendance request');
       return false;
@@ -416,7 +437,6 @@ class GuardAttendanceController extends GetxController {
       if (type == 'out') {
         print('Exit Timestamp: ${request.fields['ExitTimestamp']}');
       }
-
 
       // Send request
       final streamedResponse = await request.send().timeout(
@@ -504,10 +524,10 @@ class GuardAttendanceController extends GetxController {
     final success = await markAttendance('in');
 
     if (success) {
-
       isClockedIn.value = true;
       profileController.userModel.value?.clockStatus = true;
-      dashboardController.fetchDashboardData(); // Update dashboard data after clock in
+      dashboardController
+          .fetchDashboardData(); // Update dashboard data after clock in
       clockInTime = DateTime.now();
       lastAction.value = "Clocked IN at ${formatTime(clockInTime!)}";
 

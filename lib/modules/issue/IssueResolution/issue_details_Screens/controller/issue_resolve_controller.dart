@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:security_guard/core/api/api_service.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
+import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -95,6 +96,12 @@ class IssueDetailController extends GetxController {
   }
 
   Future<bool> resolveIssue(String resolutionNote) async {
+        final connectivityController = Get.find<ConnectivityController>();
+
+    if (connectivityController.isOffline.value) {
+      connectivityController.showNoInternetSnackbar();
+      return false;
+    }
     try {
       if (currentIssue.value == null || currentPosition.value == null) {
         throw Exception('Missing required data');
