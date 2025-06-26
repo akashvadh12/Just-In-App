@@ -13,6 +13,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
+import 'package:security_guard/modules/petrol/views/qr_scanner_view.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
 
@@ -939,49 +940,5 @@ class PatrolCheckInController extends GetxController {
   // Retake photo (clear current image)
   void retakePhoto() {
     capturedImage.value = null;
-  }
-}
-
-// Move QRScannerView class to a separate file or import it properly if needed.
-// For now, let's forward declare it here to fix the error.
-class QRScannerView extends StatelessWidget {
-  final Function(QRViewController) onQRViewCreated;
-  const QRScannerView({required this.onQRViewCreated});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: Text('Scan QR Code', style: TextStyle(color: Colors.white)),
-        backgroundColor: AppColors.primary,
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            flex: 5,
-            child: QRView(
-              key: GlobalKey(debugLabel: 'QR'),
-              onQRViewCreated: onQRViewCreated,
-              overlay: QrScannerOverlayShape(
-                borderColor: AppColors.primary,
-                borderRadius: 10,
-                borderLength: 30,
-                borderWidth: 10,
-                cutOutSize: 300,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 1,
-            child: Center(
-              child: Text(
-                'Scan the QR code at the checkpoint',
-                style: TextStyle(fontSize: 16),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

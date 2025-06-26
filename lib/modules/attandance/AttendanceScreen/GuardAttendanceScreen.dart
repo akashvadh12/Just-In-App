@@ -178,7 +178,7 @@ class GuardAttendanceScreen extends StatelessWidget {
           Expanded(flex: 1, child: _buildLocationVerificationCard()),
           const SizedBox(width: 12),
           // Photo Section (Right side)
-          Expanded(flex: 1, child: _buildPhotoCard()),
+          Expanded(flex: 1, child: _buildPhotoCard(Get.context!)),
         ],
       ),
     );
@@ -354,7 +354,7 @@ class GuardAttendanceScreen extends StatelessWidget {
     });
   }
 
-  Widget _buildPhotoCard() {
+  Widget _buildPhotoCard(BuildContext context) {
     return Obx(() {
       return Container(
         padding: const EdgeInsets.all(20),
@@ -411,7 +411,7 @@ class GuardAttendanceScreen extends StatelessWidget {
 
             // Photo area
             GestureDetector(
-              onTap: controller.capturePhoto,
+              onTap: () => controller.capturePhoto(context),
               child: Container(
                 width: double.infinity,
                 height: 120,

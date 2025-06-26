@@ -5,10 +5,12 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
+import 'package:security_guard/modules/attandance/AttendanceScreen/capture_image.dart';
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:camera/camera.dart';
 
 class GuardAttendanceController extends GetxController {
   var capturedImage = Rx<File?>(null);
@@ -23,6 +25,10 @@ class GuardAttendanceController extends GetxController {
   final ProfileController profileController = Get.find<ProfileController>();
   final HomeController dashboardController = Get.put(HomeController());
 
+  late CameraController _cameraController;
+  late List<CameraDescription> _cameras;
+  bool _isCameraInitialized = false;
+
   // API endpoint
   static const String attendanceApiUrl =
       'https://official.solarvision-cairo.com/api/AttendanceRecord/attendance/mark';
@@ -35,67 +41,59 @@ class GuardAttendanceController extends GetxController {
     print(
       'Clocked In: ${isClockedIn.value} - User In: ${profileController.userModel.value?.clockStatus}',
     );
+
+    initializeCamera();
   }
 
-  Future<void> capturePhoto() async {
-    try {
-      final pickedFile = await ImagePicker().pickImage(
-        source: ImageSource.camera,
-        imageQuality: 60,
-        preferredCameraDevice: CameraDevice.front,
-        // maxWidth: 1024,
-        // maxHeight: 768,
-      );
+  @override
+  void dispose() {
+    _cameraController.dispose();
+    super.dispose();
+  }
 
-      if (pickedFile != null) {
-        final file = File(pickedFile.path);
+  Future<void> initializeCamera() async {
+    _cameras = await availableCameras();
+    final frontCamera = _cameras.firstWhere(
+      (camera) => camera.lensDirection == CameraLensDirection.front,
+    );
 
-        // Check if file exists and is valid
-        if (!await file.exists()) {
-          throw Exception('Captured image file not found');
-        }
+    _cameraController = CameraController(frontCamera, ResolutionPreset.medium);
+    await _cameraController.initialize();
+    _isCameraInitialized = true;
+  }
 
-        final fileSize = await file.length();
-        print(
-          'Captured image size: ${(fileSize / 1024).toStringAsFixed(2)} KB',
-        );
+Future<void> capturePhoto(BuildContext context) async {
+  try {
+    final cameras = await availableCameras();
+    final frontCamera = cameras.firstWhere(
+      (cam) => cam.lensDirection == CameraLensDirection.front,
+    );
 
-        if (fileSize > 3 * 1024 * 1024) {
-          // 3MB limit
-          Get.snackbar(
-            "Image Too Large",
-            "Please capture a smaller image or reduce quality",
-            backgroundColor: Colors.orange,
-            colorText: Colors.white,
-            icon: const Icon(Icons.warning, color: Colors.white),
-            duration: const Duration(seconds: 3),
-          );
-          return;
-        }
+    final File? image = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CameraScreen(camera: frontCamera),
+      ),
+    );
 
-        capturedImage.value = file;
+    if (image != null) {
+      final fileSize = await image.length();
 
-        Get.snackbar(
-          "Photo Captured",
-          "Verification photo taken successfully",
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          icon: const Icon(Icons.check_circle, color: Colors.white),
-          duration: const Duration(seconds: 2),
-        );
+      if (fileSize > 3 * 1024 * 1024) {
+        Get.snackbar("Image Too Large", "Please use a smaller one");
+        return;
       }
-    } catch (e) {
-      print('Error capturing photo: $e');
-      Get.snackbar(
-        "Camera Error",
-        "Failed to capture photo: Please try again",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        icon: const Icon(Icons.camera_alt, color: Colors.white),
-        duration: const Duration(seconds: 3),
-      );
+
+      capturedImage.value = image;
+
+      Get.snackbar("Photo Captured", "Successfully captured photo");
     }
+  } catch (e) {
+    Get.snackbar("Error", "Could not capture photo");
+    print(e);
   }
+}
+
 
   Future<void> getCurrentLocation() async {
     if (isLoadingLocation.value) return;
@@ -413,7 +411,9 @@ class GuardAttendanceController extends GetxController {
       request.fields['Latitude'] = currentPosition.value!.latitude.toString();
       request.fields['Longitude'] = currentPosition.value!.longitude.toString();
       request.fields['SelfieBase64'] = imageBase64;
-      request.fields['EntryTimestamp'] = DateTime.now().toIso8601String();
+      if (type == 'in') {
+        request.fields['EntryTimestamp'] = DateTime.now().toIso8601String();
+      }
       if (type == 'out') {
         request.fields['ExitTimestamp'] = DateTime.now().toIso8601String();
       }
