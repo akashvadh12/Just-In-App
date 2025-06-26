@@ -153,31 +153,31 @@ class LoginPage extends StatelessWidget {
                               color: Colors.grey.shade700,
                             ),
                           ),
-                          Obx(
-                            () => TextButton(
-                              onPressed:
-                                  authController.isSendingOTP.value
-                                      ? null
-                                      : () => authController.sendOTP(),
-                              child:
-                                  authController.isSendingOTP.value
-                                      ? SizedBox(
-                                        height: 16,
-                                        width: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: AppColors.greenColor,
-                                        ),
-                                      )
-                                      : Text(
-                                        'Send OTP',
-                                        style: TextStyle(
-                                          color: AppColors.greenColor,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                            ),
-                          ),
+                          // Obx(
+                          //   () => TextButton(
+                          //     onPressed:
+                          //         authController.isSendingOTP.value
+                          //             ? null
+                          //             : () => authController.sendOTP(),
+                          //     child:
+                          //         authController.isSendingOTP.value
+                          //             ? SizedBox(
+                          //               height: 16,
+                          //               width: 16,
+                          //               child: CircularProgressIndicator(
+                          //                 strokeWidth: 2,
+                          //                 color: AppColors.greenColor,
+                          //               ),
+                          //             )
+                          //             : Text(
+                          //               'Send OTP',
+                          //               style: TextStyle(
+                          //                 color: AppColors.greenColor,
+                          //                 fontWeight: FontWeight.w500,
+                          //               ),
+                          //             ),
+                          //   ),
+                          // ),
                         ],
                       ),
                       SizedBox(height: 8),

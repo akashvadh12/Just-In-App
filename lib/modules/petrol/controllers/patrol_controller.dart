@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -12,6 +13,7 @@ import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
+import 'package:security_guard/modules/attandance/AttendanceScreen/capture_image.dart';
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/petrol/views/qr_scanner_view.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
@@ -67,6 +69,10 @@ class PatrolCheckInController extends GetxController {
   final mapController = MapController();
   final isMapReady = false.obs;
   final notes = ''.obs;
+
+   late CameraController _cameraController;
+  late List<CameraDescription> _cameras;
+  bool _isCameraInitialized = false;
 
   // Camera functionality
   final ImagePicker _picker = ImagePicker();
@@ -907,35 +913,46 @@ class PatrolCheckInController extends GetxController {
   }
 
   // Take a picture using the camera
-  Future<void> takePicture() async {
-    final cameraPermission = await Permission.camera.request();
-    if (!cameraPermission.isGranted) {
-      Get.snackbar(
-        'Permission Denied',
-        'Camera permission is required for taking photos',
-        backgroundColor: AppColors.error,
-        colorText: Colors.white,
-      );
-      return;
-    }
-    try {
-      final XFile? photo = await _picker.pickImage(
-        source: ImageSource.camera,
-        preferredCameraDevice: CameraDevice.rear,
-        imageQuality: 80,
-      );
-      if (photo != null) {
-        capturedImage.value = File(photo.path);
-      }
-    } catch (e) {
-      Get.snackbar(
-        'Camera Error',
-        'Failed to capture image: $e',
-        backgroundColor: AppColors.error,
-        colorText: Colors.white,
-      );
-    }
+Future<void> takePicture(BuildContext context) async {
+  final cameraPermission = await Permission.camera.request();
+
+  if (!cameraPermission.isGranted) {
+    Get.snackbar(
+      'Permission Denied',
+      'Camera permission is required for taking photos',
+      backgroundColor: AppColors.error,
+      colorText: Colors.white,
+    );
+    return;
   }
+
+  try {
+    // Get all cameras and select rear
+    final cameras = await availableCameras();
+    final rearCamera = cameras.firstWhere(
+      (cam) => cam.lensDirection == CameraLensDirection.front,
+    );
+
+    final File? image = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CameraScreen(camera: rearCamera),
+      ),
+    );
+
+    if (image != null) {
+      capturedImage.value = image;
+    }
+  } catch (e) {
+    Get.snackbar(
+      'Camera Error',
+      'Failed to capture image: $e',
+      backgroundColor: AppColors.error,
+      colorText: Colors.white,
+    );
+  }
+}
+
 
   // Retake photo (clear current image)
   void retakePhoto() {

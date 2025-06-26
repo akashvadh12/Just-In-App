@@ -506,48 +506,48 @@ class PatrolHistoryDetailScreen extends StatelessWidget {
               ],
 
               // Selfie
-              if (detail.selfie != null && detail.selfie!.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(
-                  'Selfie:',
-                  style: AppTextStyles.subtitle.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: CachedNetworkImage(
-                    imageUrl: detail.selfie!,
-                    height: 150,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    placeholder:
-                        (context, url) => Container(
-                          height: 150,
-                          color: AppColors.greyColor.withOpacity(0.3),
-                          child: const Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        ),
-                    errorWidget:
-                        (context, url, error) => Container(
-                          height: 150,
-                          color: AppColors.greyColor.withOpacity(0.3),
-                          child: const Center(
-                            child: Icon(Icons.error, color: AppColors.error),
-                          ),
-                        ),
-                  ),
-                ),
-              ],
+              // if (detail.selfie != null && detail.selfie!.isNotEmpty) ...[
+              //   const SizedBox(height: 12),
+              //   Text(
+              //     'Selfie:',
+              //     style: AppTextStyles.subtitle.copyWith(
+              //       fontWeight: FontWeight.w600,
+              //       fontSize: 14,
+              //     ),
+              //   ),
+              //   const SizedBox(height: 8),
+              //   ClipRRect(
+              //     borderRadius: BorderRadius.circular(8),
+              //     child: CachedNetworkImage(
+              //       imageUrl: detail.selfie!,
+              //       height: 150,
+              //       width: double.infinity,
+              //       fit: BoxFit.cover,
+              //       placeholder:
+              //           (context, url) => Container(
+              //             height: 150,
+              //             color: AppColors.greyColor.withOpacity(0.3),
+              //             child: const Center(
+              //               child: CircularProgressIndicator(),
+              //             ),
+              //           ),
+              //       errorWidget:
+              //           (context, url, error) => Container(
+              //             height: 150,
+              //             color: AppColors.greyColor.withOpacity(0.3),
+              //             child: const Center(
+              //               child: Icon(Icons.error, color: AppColors.error),
+              //             ),
+              //           ),
+              //     ),
+              //   ),
+              // ],
 
               // Additional images
               if (detail.images.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Text(
-                  'Additional Images:',
+                  'Selfie',
                   style: AppTextStyles.subtitle.copyWith(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,

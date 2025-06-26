@@ -63,6 +63,7 @@ class HomeController extends GetxController {
   // Dashboard data
   final attendanceStatus = ''.obs;
   final clockInTime = ''.obs;
+  final clockOutTime = ''.obs;
   final todayPatrolStatus = ''.obs;
   final issuesNew = 0.obs;
   final issuesPending = 0.obs;
@@ -163,6 +164,7 @@ class HomeController extends GetxController {
         issuesPending.value = data['issuesCount']?['pending'] ?? 0;
         issuesResolved.value = data['issuesCount']?['resolved'] ?? 0;
         clockInTime.value = data['clockIn']?.toString() ?? '';
+        clockOutTime.value = data['clockOut']?.toString() ?? '';
 
         print('Dashboard data fetched successfully: $data');
         // Update user info/photo if present in dashboard response

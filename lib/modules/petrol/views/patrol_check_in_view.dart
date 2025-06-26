@@ -628,74 +628,193 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen>
         const SizedBox(height: 16),
 
         // Buttons Row - Side by side to save vertical space
-        Row(
+        Column(
           children: [
-            // Back Button - Smaller
-            Expanded(
-              flex: 1,
-              child: ElevatedButton(
+            // Verify/Continue Button - Primary Action
+            Obx(
+              () =>
+                  controller.isVerifyingLocation.value
+                      ? Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.primary.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            const CircularProgressIndicator(),
+                            // const SizedBox(height: 8),
+                            // Text(
+                            //   'Verifying your location...',
+                            //   style: AppTextStyles.subtitle.copyWith(
+                            //     color: AppColors.primary,
+                            //     fontSize: 14,
+                            //   ),
+                            // ),
+                          ],
+                        ),
+                      )
+                      : SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed:
+                              controller.isLocationVerified.value
+                                  ? () => controller.goToNextStep()
+                                  : () => controller.verifyLocation(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                controller.isLocationVerified.value
+                                    ? AppColors.greenColor
+                                    : AppColors.primary,
+                            foregroundColor: AppColors.whiteColor,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation:
+                                controller.isLocationVerified.value ? 2 : 4,
+                          ),
+                          icon: Icon(
+                            controller.isLocationVerified.value
+                                ? Icons.arrow_forward_rounded
+                                : Icons.location_searching_rounded,
+                            size: 20,
+                          ),
+                          label: Text(
+                            controller.isLocationVerified.value
+                                ? 'Continue to Next Step'
+                                : 'Verify My Location',
+                            style: AppTextStyles.subtitle.copyWith(
+                              color: AppColors.whiteColor,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Status Message (Optional feedback)
+            Obx(
+              () =>
+                  controller.isLocationVerified.value
+                      ? Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.greenColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle_rounded,
+                              color: AppColors.greenColor,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Location verified successfully!',
+                                style: AppTextStyles.body.copyWith(
+                                  color: AppColors.greenColor,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      : const SizedBox.shrink(),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Back Button - Secondary Action
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
                 onPressed: () {
-                  controller.cancelCurrentPatrol();
-                  controller.currentStep.value = 0;
-                  controller.isManualPatrol.value = false;
-                  controller.currentPatrolLocation.value = null;
+                  // Show confirmation dialog for better UX
+                  _showCancelConfirmation();
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary.withOpacity(0.8),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: BorderSide(color: AppColors.primary, width: 1.5),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: Text(
-                  'Back',
+                icon: const Icon(Icons.arrow_back_rounded, size: 20),
+                label: Text(
+                  'Cancel Patrol',
                   style: AppTextStyles.subtitle.copyWith(
-                    color: AppColors.whiteColor,
-                    fontSize: 14,
+                    color: AppColors.primary,
+                    fontSize: 16,
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            // Continue/Verify Button - Larger
-           
-           Obx(
-             ()=> controller.isVerifyingLocation.value ? Expanded(child: Center(child: const CircularProgressIndicator())) : Expanded(
-                flex: 2,
-                child:   ElevatedButton(
-                    onPressed:
-                        controller.isLocationVerified.value
-                            ? () => controller.goToNextStep()
-                            : () => controller.verifyLocation(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          controller.isLocationVerified.value
-                              ? AppColors.greenColor
-                              : AppColors.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                    child: Text(
-                      controller.isLocationVerified.value
-                          ? 'Continue'
-                          : 'Verify Location',
-                      style: AppTextStyles.subtitle.copyWith(
-                        color: AppColors.whiteColor,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-              
-           ),
           ],
         ),
       ],
     );
   }
 
+  // Add this method to your controller or widget
+  void _showCancelConfirmation() {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 24),
+            const SizedBox(width: 8),
+            Text(
+              'Cancel Patrol?',
+              style: AppTextStyles.heading.copyWith(fontSize: 18),
+            ),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to cancel the current patrol? All progress will be lost.',
+          style: AppTextStyles.body.copyWith(fontSize: 14),
+        ),
+        actionsPadding: const EdgeInsets.all(16),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'Keep Patrol',
+              style: AppTextStyles.subtitle.copyWith(color: AppColors.primary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Get.back();
+              controller.cancelCurrentPatrol();
+              controller.currentStep.value = 0;
+              controller.isManualPatrol.value = false;
+              controller.currentPatrolLocation.value = null;
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Cancel Patrol'),
+          ),
+        ],
+      ),
+    );
+  }
   // Widget _buildQRScanStep() {
   //   return Column(
   //     crossAxisAlignment: CrossAxisAlignment.start,
@@ -770,22 +889,21 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen>
 
   Widget _buildQRScan() {
     return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Center(
-              child: Text('Scan QR Code', style: AppTextStyles.heading),
-            ),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Center(
+            child: Text('Scan QR Code', style: AppTextStyles.heading),
           ),
-          const SizedBox(height: 24),
-          QRScannerWidget(
-            onTap: () => controller.openQRScanner(onSuccess: goToFirstInnerTab),
-            controller: controller,
-          ),
-        ],
-      );
-   
+        ),
+        const SizedBox(height: 24),
+        QRScannerWidget(
+          onTap: () => controller.openQRScanner(onSuccess: goToFirstInnerTab),
+          controller: controller,
+        ),
+      ],
+    );
   }
 
   Widget _buildNotesStep() {
@@ -1026,7 +1144,7 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen>
 
             // Compact Photo area
             GestureDetector(
-              onTap: () => controller.takePicture(),
+              onTap: () => controller.takePicture(context),
               child: Container(
                 width: double.infinity,
                 height: 140, // Reduced from 180
@@ -1048,7 +1166,7 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen>
                             children: [
                               Image.file(
                                 controller.capturedImage.value!,
-                                fit: BoxFit.cover,
+                                fit: BoxFit.contain,
                                 width: double.infinity,
                                 height: double.infinity,
                               ),

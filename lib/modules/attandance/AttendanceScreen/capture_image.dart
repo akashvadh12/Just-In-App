@@ -18,7 +18,7 @@ class _CameraScreenState extends State<CameraScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = CameraController(widget.camera, ResolutionPreset.medium);
+    _controller = CameraController(widget.camera, ResolutionPreset.high);
     _controller.initialize().then((_) {
       if (mounted) setState(() => _isInitialized = true);
     });

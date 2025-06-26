@@ -168,7 +168,7 @@ class _AddManualPatrolScreenState extends State<AddManualPatrolScreen> {
                       ],
                     )
                   : GestureDetector(
-                      onTap: () => controller.takePicture(),
+                      onTap: () => controller.takePicture(context),
                       child: Container(
                         width: double.infinity,
                         height: 180,
