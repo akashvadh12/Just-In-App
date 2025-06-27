@@ -699,6 +699,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       });
                     },
                   ),
+                  Divider(height: 1),
+
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Icon(
+                        Icons.lock,
+                        color: AppColors.whiteColor,
+                        size: 20,
+                      ),
+                    ),
+                    title: const Text('Add New Location'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      
+                     
+                    },
+                  ),
 
                   // Password Change Section
                   if (_showPasswordSection)

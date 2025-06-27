@@ -5,24 +5,21 @@ import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
 import 'package:security_guard/modules/attandance/AttendanceHistoryScreen/attendance_history_controller.dart';
 
-
 class AttendanceHistoryScreen extends StatelessWidget {
-  final AttendanceHistoryController controller = Get.put(AttendanceHistoryController());
+  final AttendanceHistoryController controller = Get.put(
+    AttendanceHistoryController(),
+  );
 
   AttendanceHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
       appBar: AppBar(
-        title: const Text(
-          'Attendance',
-          style: TextStyle(color: Colors.white),
+        title: const Text('Attendance', style: TextStyle(color: Colors.white)),
+        iconTheme: const IconThemeData(
+          color: Colors.white, // Set back button (and other icons) color here
         ),
-          iconTheme: const IconThemeData(
-      color: Colors.white, // Set back button (and other icons) color here
-    ),
         // actions: [
         //   IconButton(
         //     icon: const Icon(Icons.refresh, color: Colors.white),
@@ -59,19 +56,15 @@ class AttendanceHistoryScreen extends StatelessWidget {
   Widget _buildTabBar() {
     return Container(
       color: AppColors.whiteColor,
-      child: Obx(() => Row(
-        children: [
-          Expanded(
-            child: _buildTabButton(0, 'History', Icons.history),
-          ),
-          Expanded(
-            child: _buildTabButton(1, 'Today', Icons.today),
-          ),
-          Expanded(
-            child: _buildTabButton(2, 'Report', Icons.analytics),
-          ),
-        ],
-      )),
+      child: Obx(
+        () => Row(
+          children: [
+            Expanded(child: _buildTabButton(0, 'History', Icons.history)),
+            Expanded(child: _buildTabButton(1, 'Today', Icons.today)),
+            Expanded(child: _buildTabButton(2, 'Report', Icons.analytics)),
+          ],
+        ),
+      ),
     );
   }
 
@@ -94,7 +87,7 @@ class AttendanceHistoryScreen extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.primary: AppColors.greyColor,
+              color: isSelected ? AppColors.primary : AppColors.greyColor,
             ),
             const SizedBox(height: 4),
             Text(
@@ -117,18 +110,21 @@ class AttendanceHistoryScreen extends StatelessWidget {
         Expanded(
           child: Obx(() {
             if (controller.attendanceRecords.isEmpty) {
-              return const Center(
-                child: Text('No attendance records found'),
-              );
+              return const Center(child: Text('No attendance records found'));
             }
 
-            return RefreshIndicator(
-              onRefresh: () => controller.fetchAttendanceHistory(),
-              child: ListView.builder(
-                itemCount: controller.attendanceRecords.length,
-                itemBuilder: (context, index) {
-                  return _buildAttendanceCard(controller.attendanceRecords[index]);
-                },
+            return Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: RefreshIndicator(
+                onRefresh: () => controller.fetchAttendanceHistory(),
+                child: ListView.builder(
+                  itemCount: controller.attendanceRecords.length,
+                  itemBuilder: (context, index) {
+                    return _buildAttendanceCardHistory(
+                      controller.attendanceRecords[index],
+                    );
+                  },
+                ),
               ),
             );
           }),
@@ -137,39 +133,301 @@ class AttendanceHistoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTodayView() {
-    return Obx(() {
-      final todayData = controller.todayAttendance.value;
-      
-      if (todayData == null) {
-        return const Center(
-          child: Text('No attendance data for today'),
-        );
-      }
 
-      return RefreshIndicator(
-        onRefresh: () => controller.fetchTodayAttendance(),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildTodayTimeCard(todayData),
-              const SizedBox(height: 16),
-              if (todayData.records.isNotEmpty) ...[
-                Text(
-                  'Attendance Records',
-                  style: AppTextStyles.heading,
-                ),
-                const SizedBox(height: 8),
-                ...todayData.records.map((record) => _buildRecordDetailCard(record)),
-              ],
+// Updated UI Components
+Widget _buildTodayView() {
+  return Obx(() {
+    final todayData = controller.todayAttendance.value;
+
+    if (todayData == null) {
+      return const Center(child: Text('No attendance data for today'));
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => controller.fetchTodayAttendance(),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildTodayStatusCard(todayData),
+            const SizedBox(height: 16),
+            _buildTodayTimeCard(todayData),
+            const SizedBox(height: 16),
+            if (todayData.records.isNotEmpty) ...[
+              Text('Attendance Sessions', style: AppTextStyles.heading),
+              const SizedBox(height: 8),
+              ...todayData.records.asMap().entries.map(
+                (entry) => _buildSessionCard(entry.value, entry.key + 1),
+              ),
             ],
-          ),
+          ],
         ),
-      );
-    });
-  }
+      ),
+    );
+  });
+}
+
+Widget _buildTodayStatusCard(TodayAttendance todayData) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: todayData.status == 'Present' ? AppColors.greenColor.withOpacity(0.1) : AppColors.error.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: todayData.status == 'Present' ? AppColors.greenColor : AppColors.error,
+        width: 1,
+      ),
+    ),
+    child: Row(
+      children: [
+        Icon(
+          todayData.status == 'Present' ? Icons.check_circle : Icons.cancel,
+          color: todayData.status == 'Present' ? AppColors.greenColor : AppColors.error,
+          size: 24,
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Today\'s Status', style: AppTextStyles.body),
+            Text(
+              todayData.status,
+              style: AppTextStyles.subtitle.copyWith(
+                color: todayData.status == 'Present' ? AppColors.greenColor : AppColors.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const Spacer(),
+        if (todayData.isCurrentlyCheckedIn)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.greenColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              'Checked In',
+              style: AppTextStyles.body.copyWith(
+                color: Colors.white,
+                fontSize: 12,
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
+}
+
+Widget _buildTodayTimeCard(TodayAttendance todayData) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: AppColors.whiteColor,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.1),
+          spreadRadius: 1,
+          blurRadius: 3,
+          offset: const Offset(0, 1),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Today\'s Summary', style: AppTextStyles.heading),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('First Check In', style: AppTextStyles.body),
+                  Text(
+                    todayData.firstCheckInTime ?? '--:--',
+                    style: AppTextStyles.subtitle,
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Last Check Out', style: AppTextStyles.body),
+                  Text(
+                    todayData.lastCheckOutTime ?? '--:--',
+                    style: AppTextStyles.subtitle,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Total Sessions', style: AppTextStyles.body),
+                  Text(
+                    '${todayData.records.length}',
+                    style: AppTextStyles.subtitle,
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Date', style: AppTextStyles.body),
+                  Text(
+                    DateFormat('dd/MM/yyyy').format(DateTime.parse(todayData.date)),
+                    style: AppTextStyles.subtitle,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildSessionCard(AttendanceRecordTwo record, int sessionNumber) {
+  return Container(
+    margin: const EdgeInsets.only(bottom: 12),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: AppColors.whiteColor,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: AppColors.greyColor.withOpacity(0.2)),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.05),
+          spreadRadius: 1,
+          blurRadius: 2,
+          offset: const Offset(0, 1),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Session $sessionNumber',
+              style: AppTextStyles.subtitle.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const Spacer(),
+            if (record.outTime == null || record.outTime!.isEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.greenColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Active',
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.greenColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        
+        // Check In Section
+        _buildTimeSection(
+          'Check In',
+          record.inTime,
+          record.inPhoto,
+          record.entryLocation,
+          AppColors.greenColor,
+        ),
+        
+        if (record.outTime != null && record.outTime!.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _buildTimeSection(
+            'Check Out',
+            record.outTime!,
+            record.outPhoto,
+            record.exitLocation,
+            AppColors.error,
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
+Widget _buildTimeSection(String title, String time, String photoUrl, LocationData? location, Color color) {
+  return Row(
+    children: [
+      // Photo
+      Container(
+        width: 50,
+        height: 50,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withOpacity(0.3)),
+          image: photoUrl.isNotEmpty
+              ? DecorationImage(
+                  image: NetworkImage(photoUrl),
+                  fit: BoxFit.cover,
+                )
+              : null,
+        ),
+        child: photoUrl.isEmpty
+            ? Icon(Icons.person, color: color.withOpacity(0.5))
+            : null,
+      ),
+      const SizedBox(width: 12),
+      
+      // Details
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: AppTextStyles.body.copyWith(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              time,
+              style: AppTextStyles.subtitle,
+            ),
+            if (location != null)
+              Text(
+                'Lat: ${location.lat}, Lng: ${location.lng}',
+                style: AppTextStyles.body.copyWith(
+                  fontSize: 12,
+                  color: AppColors.greyColor,
+                ),
+              ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
 
   Widget _buildReportView() {
     return Column(
@@ -179,7 +437,9 @@ class AttendanceHistoryScreen extends StatelessWidget {
           child: Obx(() {
             if (controller.reportRecords.isEmpty) {
               return const Center(
-                child: Text('No attendance records found for selected date range'),
+                child: Text(
+                  'No attendance records found for selected date range',
+                ),
               );
             }
 
@@ -202,23 +462,25 @@ class AttendanceHistoryScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
       color: AppColors.whiteColor,
-      child: Obx(() => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left),
-            onPressed: () => controller.changeMonth(false),
-          ),
-          Text(
-            DateFormat('MMMM yyyy').format(controller.currentMonth.value),
-            style: AppTextStyles.heading,
-          ),
-          IconButton(
-            icon: const Icon(Icons.chevron_right),
-            onPressed: () => controller.changeMonth(true),
-          ),
-        ],
-      )),
+      child: Obx(
+        () => Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.chevron_left),
+              onPressed: () => controller.changeMonth(false),
+            ),
+            Text(
+              DateFormat('MMMM yyyy').format(controller.currentMonth.value),
+              style: AppTextStyles.heading,
+            ),
+            IconButton(
+              icon: const Icon(Icons.chevron_right),
+              onPressed: () => controller.changeMonth(true),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -226,274 +488,304 @@ class AttendanceHistoryScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       color: AppColors.whiteColor,
-      child: Obx(() => Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () => _selectFromDate(),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.greyColor),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('From', style: AppTextStyles.body),
-                    Text(
-                      DateFormat('dd/MM/yyyy').format(controller.fromDate.value),
-                      style: AppTextStyles.body,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => _selectToDate(),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.greyColor),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('To', style: AppTextStyles.body),
-                    Text(
-                      DateFormat('dd/MM/yyyy').format(controller.toDate.value),
-                      style: AppTextStyles.body,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      )),
-    );
-  }
-
-  Widget _buildAttendanceCard(AttendanceRecord record) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-      decoration: BoxDecoration(
-        color: AppColors.whiteColor,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: Obx(() {
+        final fromDate = controller.fromDate.value;
+        final toDate = controller.toDate.value;
+        return Row(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  _formatDate(record.date),
-                  style: AppTextStyles.subtitle,
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => _selectFromDate(),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: _getStatusColor(record.status).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.greyColor),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
-                    record.status,
-                    style: TextStyle(
-                      color: _getStatusColor(record.status),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('From', style: AppTextStyles.body),
+                      Text(
+                        DateFormat('dd/MM/yyyy').format(fromDate),
+                        style: AppTextStyles.body,
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-            const SizedBox(height: 8),
-            if (record.inTime != null || record.outTime != null) ...[
-              Row(
-                children: [
-                  Icon(Icons.schedule, size: 16, color: AppColors.greyColor),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${record.inTime ?? '--:--'} - ${record.outTime ?? '--:--'}',
-                    style: AppTextStyles.body,
+            const SizedBox(width: 16),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => _selectToDate(),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.greyColor),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  if (record.duration != null) ...[
-                    const Spacer(),
-                    Text(
-                      record.duration!,
-                      style: AppTextStyles.body.copyWith(
-                        fontWeight: FontWeight.bold,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('To', style: AppTextStyles.body),
+                      Text(
+                        DateFormat('dd/MM/yyyy').format(toDate),
+                        style: AppTextStyles.body,
                       ),
-                    ),
-                  ],
-                ],
+                    ],
+                  ),
+                ),
               ),
-            ],
-            if (record.inPhoto != null || record.outPhoto != null) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  if (record.inPhoto != null) ...[
-                    GestureDetector(
-                      onTap: () => _showPhotoDialog(record.inPhoto!, 'Check In Photo'),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          image: DecorationImage(
-                            image: NetworkImage(record.inPhoto!),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  if (record.outPhoto != null) ...[
-                    GestureDetector(
-                      onTap: () => _showPhotoDialog(record.outPhoto!, 'Check Out Photo'),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          image: DecorationImage(
-                            image: NetworkImage(record.outPhoto!),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ],
+            ),
           ],
-        ),
-      ),
+        );
+      }),
     );
   }
 
-  Widget _buildTodayTimeCard(TodayAttendance todayData) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.whiteColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
+ 
+// Updated _buildAttendanceCard with minimal changes
+Widget _buildAttendanceCardHistory(AttendanceRecord record) {
+  return Container(
+    margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+    decoration: BoxDecoration(
+      color: AppColors.whiteColor,
+      borderRadius: BorderRadius.circular(8),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.1),
+          spreadRadius: 1,
+          blurRadius: 3,
+          offset: const Offset(0, 1),
+        ),
+      ],
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Today\'s Attendance',
-            style: AppTextStyles.heading,
-          ),
-          const SizedBox(height: 16),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Check In', style: AppTextStyles.body),
-                    Text(
-                      todayData.checkInTime ?? '--:--',
-                      style: AppTextStyles.subtitle,
-                    ),
-                  ],
+              Text(_formatDate(record.date), style: AppTextStyles.subtitle),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
                 ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Check Out', style: AppTextStyles.body),
-                    Text(
-                      todayData.checkOutTime ?? '--:--',
-                      style: AppTextStyles.subtitle,
-                    ),
-                  ],
+                decoration: BoxDecoration(
+                  color: _getStatusColor(record.status).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  record.status,
+                  style: TextStyle(
+                    color: _getStatusColor(record.status),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecordDetailCard(AttendanceRecordDetail record) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.whiteColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.greyColor.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              image: DecorationImage(
-                image: NetworkImage(record.selfieUrl),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 8),
+          if (record.inTime != null || record.outTime != null) ...[
+            Row(
               children: [
+                Icon(Icons.schedule, size: 16, color: AppColors.greyColor),
+                const SizedBox(width: 8),
                 Text(
-                  record.type.toUpperCase(),
-                  style: AppTextStyles.subtitle.copyWith(
-                    color: record.type == 'in' ? AppColors.greenColor : AppColors.error,
+                  '${record.inTime ?? '--:--'} - ${record.outTime ?? '--:--'}',
+                  style: AppTextStyles.body,
+                ),
+                if (record.duration != null) ...[
+                  const Spacer(),
+                  Text(
+                    record.duration!,
+                    style: AppTextStyles.body.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                Text(
-                  DateFormat('dd/MM/yyyy hh:mm a').format(DateTime.parse(record.timestamp)),
-                  style: AppTextStyles.body,
-                ),
-                Text(
-                  'Lat: ${record.latitude}, Lng: ${record.longitude}',
-                  style: AppTextStyles.body,
-                ),
+                ],
               ],
             ),
-          ),
+          ],
+          if (record.inPhoto != null || record.outPhoto != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                if (record.inPhoto != null) ...[
+                  GestureDetector(
+                    onTap: () => _showPhotoDialog(
+                      record.inPhoto!,
+                      'Check In Photo',
+                    ),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        image: DecorationImage(
+                          image: NetworkImage(record.inPhoto!),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                if (record.outPhoto != null) ...[
+                  GestureDetector(
+                    onTap: () => _showPhotoDialog(
+                      record.outPhoto!,
+                      'Check Out Photo',
+                    ),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        image: DecorationImage(
+                          image: NetworkImage(record.outPhoto!),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+Widget _buildAttendanceCard(AttendanceRecordThree record) {
+  return Container(
+    margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+    decoration: BoxDecoration(
+      color: AppColors.whiteColor,
+      borderRadius: BorderRadius.circular(8),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.1),
+          spreadRadius: 1,
+          blurRadius: 3,
+          offset: const Offset(0, 1),
+        ),
+      ],
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(_formatDate(record.date), style: AppTextStyles.subtitle),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: _getStatusColor(record.status).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  record.status,
+                  style: TextStyle(
+                    color: _getStatusColor(record.status),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (record.inTime != null || record.outTime != null) ...[
+            Row(
+              children: [
+                Icon(Icons.schedule, size: 16, color: AppColors.greyColor),
+                const SizedBox(width: 8),
+                Text(
+                  '${record.inTime ?? '--:--'} - ${record.outTime ?? '--:--'}',
+                  style: AppTextStyles.body,
+                ),
+                if (record.duration != null) ...[
+                  const Spacer(),
+                  Text(
+                    record.duration!,
+                    style: AppTextStyles.body.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+          if (record.inPhoto != null || record.outPhoto != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                if (record.inPhoto != null) ...[
+                  GestureDetector(
+                    onTap: () => _showPhotoDialog(
+                      record.inPhoto!,
+                      'Check In Photo',
+                    ),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        image: DecorationImage(
+                          image: NetworkImage(record.inPhoto!),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                if (record.outPhoto != null) ...[
+                  GestureDetector(
+                    onTap: () => _showPhotoDialog(
+                      record.outPhoto!,
+                      'Check Out Photo',
+                    ),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        image: DecorationImage(
+                          image: NetworkImage(record.outPhoto!),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
+}
+
+// Helper methods (add these to your widget class)
+
+
+
+
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
@@ -517,21 +809,21 @@ class AttendanceHistoryScreen extends StatelessWidget {
     }
   }
 
-void _selectFromDate() async {
-  final now = DateTime.now();
-  final sixMonthsAgo = DateTime(now.year, now.month - 6, now.day);
+  void _selectFromDate() async {
+    final now = DateTime.now();
+    final sixMonthsAgo = DateTime(now.year, now.month - 6, now.day);
 
-  final selectedDate = await showDatePicker(
-    context: Get.context!,
-    initialDate: controller.fromDate.value,
-    firstDate: sixMonthsAgo,
-    lastDate: now,
-  );
+    final selectedDate = await showDatePicker(
+      context: Get.context!,
+      initialDate: controller.fromDate.value,
+      firstDate: sixMonthsAgo,
+      lastDate: now,
+    );
 
-  if (selectedDate != null) {
-    controller.setDateRange(selectedDate, controller.toDate.value);
+    if (selectedDate != null) {
+      controller.setDateRange(selectedDate, controller.toDate.value);
+    }
   }
-}
 
   void _selectToDate() async {
     final selectedDate = await showDatePicker(
@@ -540,7 +832,7 @@ void _selectFromDate() async {
       firstDate: controller.fromDate.value,
       lastDate: DateTime.now(),
     );
-    
+
     if (selectedDate != null) {
       controller.setDateRange(controller.fromDate.value, selectedDate);
     }
@@ -567,17 +859,12 @@ void _selectFromDate() async {
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
                     height: 200,
-                    child: const Center(
-                      child: Text('Failed to load image'),
-                    ),
+                    child: const Center(child: Text('Failed to load image')),
                   );
                 },
               ),
             ),
-            TextButton(
-              onPressed: () => Get.back(),
-              child: const Text('Close'),
-            ),
+            TextButton(onPressed: () => Get.back(), child: const Text('Close')),
           ],
         ),
       ),

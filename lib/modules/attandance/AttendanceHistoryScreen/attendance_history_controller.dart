@@ -13,7 +13,7 @@ class AttendanceHistoryController extends GetxController {
   var currentMonth = DateTime.now().obs;
   var selectedTab = 0.obs; // 0: History, 1: Today, 2: Report
   var todayAttendance = Rx<TodayAttendance?>(null);
-  var reportRecords = <AttendanceRecord>[].obs;
+  var reportRecords = <AttendanceRecordThree>[].obs;
   var fromDate = DateTime.now().obs;
   var toDate = DateTime.now().obs;
   final ProfileController profileController = Get.find<ProfileController>();
@@ -147,45 +147,41 @@ class AttendanceHistoryController extends GetxController {
   }
 
   // Fetch today's attendance
-  Future<void> fetchTodayAttendance() async {
-    try {
-      isLoading.value = true;
 
-      final userId = profileController.userModel.value?.userId;
-      final authToken = await getAuthToken();
+Future<void> fetchTodayAttendance() async {
+  try {
+    isLoading.value = true;
 
-      if (userId == null || userId.isEmpty) {
-        // _showError(
-        //   "Authentication Error",
-        //   "User ID not found. Please login again",
-        // );
-        return;
-      }
+    final userId = profileController.userModel.value?.userId;
+    final authToken = await getAuthToken();
 
-      final url = '$baseUrl/attendance/today/$userId';
-
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          if (authToken != null) 'Authorization': 'Bearer $authToken',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        todayAttendance.value = TodayAttendance.fromJson(data);
-        // _showSuccess("Success", "Today's attendance loaded successfully");
-      } else {
-        _showError("Error", "Failed to load today's attendance");
-      }
-    } catch (e) {
-      _showError("Network Error", "Please check your internet connection");
-      print('Error fetching today attendance: $e');
-    } finally {
-      isLoading.value = false;
+    if (userId == null || userId.isEmpty) {
+      return;
     }
+
+    final url = '$baseUrl/attendance/today/$userId';
+
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        if (authToken != null) 'Authorization': 'Bearer $authToken',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      todayAttendance.value = TodayAttendance.fromJson(data);
+    } else {
+      _showError("Error", "Failed to load today's attendance");
+    }
+  } catch (e) {
+    _showError("Network Error", "Please check your internet connection");
+    print('Error fetching today attendance: $e');
+  } finally {
+    isLoading.value = false;
   }
+}
 
   // Fetch attendance report
   Future<void> fetchAttendanceReport() async {
@@ -221,7 +217,7 @@ class AttendanceHistoryController extends GetxController {
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         reportRecords.value =
-            data.map((json) => AttendanceRecord.fromJson(json)).toList();
+            data.map((json) => AttendanceRecordThree.fromJson(json)).toList();
 
         _showSuccess("Success", "Attendance report loaded successfully");
       } else {
@@ -290,7 +286,6 @@ class AttendanceHistoryController extends GetxController {
   }
 }
 
-// Data Models
 class AttendanceRecord {
   final String date;
   final String? inTime;
@@ -335,54 +330,160 @@ class AttendanceRecord {
   }
 }
 
-class TodayAttendance {
-  final String? checkInTime;
-  final String? checkOutTime;
-  final List<AttendanceRecordDetail> records;
+// Data Models
+class AttendanceRecordThree {
+  final String date;
+  final List<AttendanceSession> records;
+  final String? totalDuration;
+  final String status;
 
-  TodayAttendance({this.checkInTime, this.checkOutTime, required this.records});
+  AttendanceRecordThree({
+    required this.date,
+    required this.records,
+    this.totalDuration,
+    required this.status,
+  });
+
+  factory AttendanceRecordThree.fromJson(Map<String, dynamic> json) {
+    return AttendanceRecordThree(
+      date: json['date'] ?? '',
+      records: (json['records'] as List<dynamic>?)
+          ?.map((record) => AttendanceSession.fromJson(record))
+          .toList() ?? [],
+      totalDuration: json['totalDuration'],
+      status: json['status'] ?? 'Absent',
+    );
+  }
+
+  // Helper getters for backward compatibility
+  String? get inTime => records.isNotEmpty ? records.first.inTime : null;
+  String? get outTime => records.isNotEmpty ? records.first.outTime : null;
+  String? get inPhoto => records.isNotEmpty ? records.first.inPhoto : null;
+  String? get outPhoto => records.isNotEmpty ? records.first.outPhoto : null;
+  String? get duration => totalDuration;
+}
+
+class AttendanceSession {
+  final String inTime;
+  final String? outTime;
+  final String? inPhoto;
+  final String? outPhoto;
+  final LocationData entryLocation;
+  final LocationData? exitLocation;
+
+  AttendanceSession({
+    required this.inTime,
+    this.outTime,
+    this.inPhoto,
+    this.outPhoto,
+    required this.entryLocation,
+    this.exitLocation,
+  });
+
+  factory AttendanceSession.fromJson(Map<String, dynamic> json) {
+    return AttendanceSession(
+      inTime: json['inTime'] ?? '',
+      outTime: json['outTime'],
+      inPhoto: json['inPhoto'],
+      outPhoto: json['outPhoto'],
+      entryLocation: LocationData.fromJson(json['entryLocation'] ?? {}),
+      exitLocation: json['exitLocation'] != null && 
+                   json['exitLocation']['lat'] != null &&
+                   json['exitLocation']['lng'] != null
+          ? LocationData.fromJson(json['exitLocation'])
+          : null,
+    );
+  }
+}
+class TodayAttendance {
+  final String date;
+  final List<AttendanceRecordTwo> records;
+  final String status;
+
+  TodayAttendance({
+    required this.date,
+    required this.records,
+    required this.status,
+  });
 
   factory TodayAttendance.fromJson(Map<String, dynamic> json) {
     return TodayAttendance(
-      checkInTime: json['checkInTime'],
-      checkOutTime: json['checkOutTime'],
-      records:
-          (json['records'] as List<dynamic>?)
-              ?.map((record) => AttendanceRecordDetail.fromJson(record))
-              .toList() ??
-          [],
+      date: json['date'] ?? '',
+      records: (json['records'] as List<dynamic>?)
+          ?.map((record) => AttendanceRecordTwo.fromJson(record))
+          .toList() ?? [],
+      status: json['status'] ?? '',
+    );
+  }
+
+  // Helper methods to get first and last times
+  String? get firstCheckInTime {
+    if (records.isEmpty) return null;
+    return records.first.inTime;
+  }
+
+  String? get lastCheckOutTime {
+    if (records.isEmpty) return null;
+    // Find the last record with outTime
+    for (int i = records.length - 1; i >= 0; i--) {
+      if (records[i].outTime != null && records[i].outTime!.isNotEmpty) {
+        return records[i].outTime;
+      }
+    }
+    return null;
+  }
+
+  // Check if user is currently checked in (last record has no outTime)
+  bool get isCurrentlyCheckedIn {
+    if (records.isEmpty) return false;
+    final lastRecord = records.last;
+    return lastRecord.outTime == null || lastRecord.outTime!.isEmpty;
+  }
+}
+
+class AttendanceRecordTwo {
+  final String inTime;
+  final String? outTime;
+  final String inPhoto;
+  final String outPhoto;
+  final LocationData entryLocation;
+  final LocationData? exitLocation;
+
+  AttendanceRecordTwo({
+    required this.inTime,
+    this.outTime,
+    required this.inPhoto,
+    required this.outPhoto,
+    required this.entryLocation,
+    this.exitLocation,
+  });
+
+  factory AttendanceRecordTwo.fromJson(Map<String, dynamic> json) {
+    return AttendanceRecordTwo(
+      inTime: json['inTime'] ?? '',
+      outTime: json['outTime'],
+      inPhoto: json['inPhoto'] ?? '',
+      outPhoto: json['outPhoto'] ?? '',
+      entryLocation: LocationData.fromJson(json['entryLocation'] ?? {}),
+      exitLocation: json['exitLocation'] != null && 
+                   json['exitLocation']['lat'] != null &&
+                   json['exitLocation']['lng'] != null
+          ? LocationData.fromJson(json['exitLocation'])
+          : null,
     );
   }
 }
 
-class AttendanceRecordDetail {
-  final int id;
-  final String userId;
-  final String type;
-  final String latitude;
-  final String longitude;
-  final String selfieUrl;
-  final String timestamp;
+class LocationData {
+  final String lat;
+  final String lng;
 
-  AttendanceRecordDetail({
-    required this.id,
-    required this.userId,
-    required this.type,
-    required this.latitude,
-    required this.longitude,
-    required this.selfieUrl,
-    required this.timestamp,
-  });
+  LocationData({required this.lat, required this.lng});
 
-  factory AttendanceRecordDetail.fromJson(Map<String, dynamic> json) {
-    return AttendanceRecordDetail(
-      id: json['id'] ?? 0,
-      userId: json['userId'] ?? '',
-      type: json['type'] ?? '',
-      latitude: json['latitude'] ?? '',
-      longitude: json['longitude'] ?? '',
-      selfieUrl: json['selfieUrl'] ?? '',
-      timestamp: json['timestamp'] ?? '',
+  factory LocationData.fromJson(Map<String, dynamic> json) {
+    return LocationData(
+      lat: json['lat']?.toString() ?? '',
+      lng: json['lng']?.toString() ?? '',
     );
   }
 }

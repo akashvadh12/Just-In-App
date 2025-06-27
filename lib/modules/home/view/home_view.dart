@@ -1,6 +1,7 @@
 // File: lib/modules/home/views/home_view.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:security_guard/modules/addLoacation/location_list_screen.dart';
 import 'package:security_guard/modules/attandance/AttendanceScreen/GuardAttendanceScreen.dart';
 
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
@@ -338,7 +339,16 @@ class HomeView extends GetView<HomeController> {
           color: Color(0xFF4285F4),
           onTap: () => bottomNavController.changeTab(1),
         ),
+     
+        controller.profileController.userModel.value?.isAdmin == true?
         _buildActionButton(
+          icon: Icons.add_location,
+          label: 'Add\nLocation',
+          color: Color.fromARGB(255, 30, 107, 231),
+          onTap: () => Get.to(LocationsListScreen()),
+        ) 
+        :   
+         _buildActionButton(
           icon: Icons.directions_walk,
           label: 'Start\nPatrol',
           color: Color.fromARGB(255, 30, 107, 231),

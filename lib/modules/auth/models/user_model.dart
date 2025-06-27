@@ -21,6 +21,7 @@ class UserModel {
   final String? attendanceStatus;
   final Map<String, dynamic>? issuesCount;
    String? logId;
+   var isAdmin;
 
   UserModel({
     required this.userId,
@@ -42,6 +43,7 @@ class UserModel {
     this.attendanceStatus,
     this.issuesCount,
     this.logId,
+    this.isAdmin = false, // Default value for isAdmin
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -67,6 +69,7 @@ class UserModel {
       attendanceStatus: json['attendanceStatus']?.toString(),
       issuesCount: json['issuesCount'] != null ? Map<String, dynamic>.from(json['issuesCount']) : null,
       logId: json['logID']?.toString() ?? json['logId']?.toString() ?? '',
+      isAdmin: json['isadmin'] == true || json['isadmin']?.toString().toLowerCase() == 'true',
     );
   }
 
@@ -100,6 +103,7 @@ UserModel updateWith(Map<String, dynamic> json) {
         ? Map<String, dynamic>.from(json['issuesCount']) 
         : this.issuesCount,
     logId: json['logID']?.toString() ?? json['logId']?.toString() ?? this.logId,
+    isAdmin: json['isadmin'] == true || json['isadmin']?.toString().toLowerCase() == 'true' || this.isAdmin,
   );
 }
 
@@ -123,6 +127,8 @@ UserModel updateWith(Map<String, dynamic> json) {
       'todayPatrolStatus': todayPatrolStatus,
       'attendanceStatus': attendanceStatus,
       'issuesCount': issuesCount,
+      'logID': logId,
+      'isAdmin': isAdmin,
     };
   }
 
@@ -160,6 +166,7 @@ UserModel copyWith({
   String? attendanceStatus,
   Map<String, dynamic>? issuesCount,
   String? logId, // Added missing logId
+  bool? isAdmin, // Added missing isAdmin
 }) {
   return UserModel(
     userId: userId ?? this.userId,
@@ -181,6 +188,7 @@ UserModel copyWith({
     attendanceStatus: attendanceStatus ?? this.attendanceStatus,
     issuesCount: issuesCount ?? this.issuesCount,
     logId: logId ?? this.logId, // Added missing logId
+    isAdmin: isAdmin ?? this.isAdmin, // Added missing isAdmin
   );
 }
 
