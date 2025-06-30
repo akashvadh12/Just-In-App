@@ -23,18 +23,18 @@ class ForgotPasswordController extends GetxController {
       return;
     }
 
-    // Validate email format (basic validation)
-    if (!phoneOrEmployeeId.value.contains('@') && 
-        !phoneOrEmployeeId.value.contains('.')) {
-      Get.snackbar(
-        'Error',
-        'Please enter a valid email address',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return;
-    }
+    // // Validate email format (basic validation)
+    // if (!phoneOrEmployeeId.value.contains('@') && 
+    //     !phoneOrEmployeeId.value.contains('.')) {
+    //   Get.snackbar(
+    //     'Error',
+    //     'Please enter a valid email address',
+    //     snackPosition: SnackPosition.TOP,
+    //     backgroundColor: Colors.red,
+    //     colorText: Colors.white,
+    //   );
+    //   return;
+    // }
 
     try {
       isLoading.value = true;
@@ -61,7 +61,7 @@ class ForgotPasswordController extends GetxController {
         
         Get.snackbar(
           'Success',
-          message.isNotEmpty ? message : 'Password has been sent to your email address.',
+          message.isNotEmpty ? message : 'Password has been sent to your registered employee ID or email address.',
           snackPosition: SnackPosition.TOP,
           backgroundColor: Colors.green,
           colorText: Colors.white,
@@ -74,7 +74,7 @@ class ForgotPasswordController extends GetxController {
       } else if (response.statusCode == 404) {
         Get.snackbar(
           'Error',
-          'Email not found. Please check your email address.',
+          'Email or employee ID not found. Please check your email address.',
           snackPosition: SnackPosition.TOP,
           backgroundColor: Colors.red,
           colorText: Colors.white,
@@ -82,7 +82,7 @@ class ForgotPasswordController extends GetxController {
       } else if (response.statusCode == 400) {
         Get.snackbar(
           'Error',
-          'Invalid email format.',
+          'Invalid email or employee ID format.',
           snackPosition: SnackPosition.TOP,
           backgroundColor: Colors.red,
           colorText: Colors.white,

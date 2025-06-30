@@ -150,6 +150,7 @@ class AuthController extends GetxController {
         }
 
         setLoggedIn(true);
+        clearFields();
         log('✅ Login successful for user: $name');
         _showSuccessSnackbar('Welcome, $name!');
         Get.offAllNamed(Routes.BOTTOM_NAV);

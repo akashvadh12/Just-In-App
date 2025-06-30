@@ -70,12 +70,7 @@ class PatrolCheckInController extends GetxController {
   final isMapReady = false.obs;
   final notes = ''.obs;
 
-   late CameraController _cameraController;
-  late List<CameraDescription> _cameras;
-  bool _isCameraInitialized = false;
 
-  // Camera functionality
-  final ImagePicker _picker = ImagePicker();
   final Rxn<File> capturedImage = Rxn<File>();
   final isFlashOn = false.obs;
 
@@ -588,6 +583,14 @@ class PatrolCheckInController extends GetxController {
         currentLatLng.value!.longitude,
         currentPatrolLocation.value!.latitude,
         currentPatrolLocation.value!.longitude,
+      );
+      print(
+        'Distance to patrol location: ${distance.toStringAsFixed(0)} meters',
+      );
+      print(" location radius: ${currentPatrolLocation.value!.radius} meters");
+      print(" current location: ${currentLatLng.value}");
+      print(
+        " patrol location: ${currentPatrolLocation.value!.latitude}, ${currentPatrolLocation.value!.longitude}",
       );
 
       if (distance <= currentPatrolLocation.value!.radius) {

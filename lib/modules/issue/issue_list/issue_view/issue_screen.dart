@@ -171,6 +171,7 @@ class IssuesScreen extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           itemCount: filteredIssues.length,
           itemBuilder: (context, index) {
+            print("Issue:🔴🔴🔴 ${filteredIssues[index].title}");
             return IssueCard(
               issue: filteredIssues[index],
               onIssueUpdated:

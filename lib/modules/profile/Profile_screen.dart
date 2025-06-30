@@ -149,6 +149,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     Get.put(LocalStorageService());
+    final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile', style: TextStyle(color: Colors.white)),
@@ -344,338 +346,497 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                   ),
                   // Edit Profile Section
+                  // Add this at the top of your class (with other variables)
+
+                  // Replace your edit profile section with this validated version:
                   if (_showEditProfileSection)
                     Container(
                       color: AppColors.whiteColor,
                       margin: const EdgeInsets.only(top: 8),
                       padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Edit Profile',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          // Name
-                          const Text(
-                            'Full Name',
-                            style: TextStyle(fontSize: 14, color: Colors.grey),
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: _nameController,
-                            decoration: InputDecoration(
-                              hintText: 'Enter your full name',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  color: Colors.grey[300]!,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  color: Colors.grey[300]!,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Edit Profile',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          // Email
-                          const Text(
-                            'Email Address',
-                            style: TextStyle(fontSize: 14, color: Colors.grey),
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            enabled: false,
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: InputDecoration(
-                              hintText: 'Enter your email address',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  color: Colors.grey[300]!,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  color: Colors.grey[300]!,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          // Phone
-                          const Text(
-                            'Phone Number',
-                            style: TextStyle(fontSize: 14, color: Colors.grey),
-                          ),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _phoneController,
-                            keyboardType: TextInputType.phone,
-                            maxLength: 10,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(10),
-                            ],
-                            decoration: InputDecoration(
-                              hintText: 'Enter your phone number',
-                              counterText: '', // hides the character counter
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  color: Colors.grey[300]!,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  color: Colors.grey[300]!,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Phone number is required';
-                              } else if (value.length != 10) {
-                                return 'Phone number must be 10 digits';
-                              }
-                              return null;
-                            },
-                          ),
+                            const SizedBox(height: 16),
 
-                          const SizedBox(height: 16),
-                          // Update Button
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                controller.updateProfile(
-                                  userId: controller.userModel.value!.userId,
-                                  name: _nameController.text,
-                                  email: _emailController.text,
-                                  phone: _phoneController.text,
-                                );
-                                setState(() {
-                                  _showEditProfileSection = false;
-                                });
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
+                            // Full Name Field
+                            const Text(
+                              'Full Name',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _nameController,
+                              decoration: InputDecoration(
+                                hintText: 'Enter your full name',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey[300]!,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey[300]!,
+                                  ),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: Colors.red,
+                                  ),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: Colors.red,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
                                   vertical: 12,
                                 ),
-                                shape: RoundedRectangleBorder(
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Full name is required';
+                                }
+                                if (value.trim().length < 2) {
+                                  return 'Name must be at least 2 characters long';
+                                }
+                                if (value.trim().length > 50) {
+                                  return 'Name must not exceed 50 characters';
+                                }
+                                // Check if name contains only letters and spaces
+                                if (!RegExp(
+                                  r'^[a-zA-Z\s]+$',
+                                ).hasMatch(value.trim())) {
+                                  return 'Name can only contain letters and spaces';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Email Field (disabled but with validation for completeness)
+                            const Text(
+                              'Email Address',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              enabled: false,
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: InputDecoration(
+                                hintText: 'Enter your email address',
+                                border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey[300]!,
+                                  ),
+                                ),
+                                disabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey[300]!,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
                                 ),
                               ),
-                              child: const Text('Update Profile'),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Email address is required';
+                                }
+                                // Email regex pattern
+                                if (!RegExp(
+                                  r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                                ).hasMatch(value.trim())) {
+                                  return 'Please enter a valid email address';
+                                }
+                                return null;
+                              },
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 16),
+
+                            // Phone Number Field
+                            const Text(
+                              'Phone Number',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _phoneController,
+                              keyboardType: TextInputType.phone,
+                              maxLength: 10,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(10),
+                              ],
+                              decoration: InputDecoration(
+                                hintText: 'Enter your phone number',
+                                counterText: '', // hides the character counter
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey[300]!,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey[300]!,
+                                  ),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: Colors.red,
+                                  ),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: Colors.red,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Phone number is required';
+                                }
+                                if (value.length != 10) {
+                                  return 'Phone number must be exactly 10 digits';
+                                }
+                                // Check for valid Indian mobile number (starts with 6,7,8,9)
+                                if (!RegExp(
+                                  r'^[6-9][0-9]{9}$',
+                                ).hasMatch(value)) {
+                                  return 'Please enter a valid phone number';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Update Button
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  // Validate form before proceeding
+                                  if (_formKey.currentState!.validate()) {
+                                    // Show loading indicator (optional)
+                                    showDialog(
+                                      context: context,
+                                      barrierDismissible: false,
+                                      builder: (BuildContext context) {
+                                        return const Center(
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      },
+                                    );
+
+                                    // Call your update method
+                                    controller
+                                        .updateProfile(
+                                          userId:
+                                              controller
+                                                  .userModel
+                                                  .value!
+                                                  .userId,
+                                          name: _nameController.text.trim(),
+                                          email: _emailController.text.trim(),
+                                          phone: _phoneController.text.trim(),
+                                        )
+                                        .then((_) {
+                                          // Close loading dialog
+                                          Navigator.of(context).pop();
+
+                                          // Close the edit section
+                                          setState(() {
+                                            _showEditProfileSection = false;
+                                          });
+                                        })
+                                        .catchError((error) {
+                                          // Close loading dialog
+                                          Navigator.of(context).pop();
+
+                                          // Show error message
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Error updating profile: $error',
+                                              ),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                        });
+                                  } 
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: const Text('Update Profile'),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   const Divider(height: 1),
+
                   // Edit Profile Picture
-                ListTile(
-  leading: Container(
-    padding: const EdgeInsets.all(6),
-    decoration: BoxDecoration(
-      color: Colors.blue,
-      borderRadius: BorderRadius.circular(4),
-    ),
-    child: const Icon(
-      Icons.camera_alt,
-      color: AppColors.whiteColor,
-      size: 20,
-    ),
-  ),
-  title: const Text('Edit Profile Picture'),
-  trailing: const Icon(Icons.chevron_right),
-  onTap: () async {
-    final user = controller.userModel.value;
-    if (user == null) return;
-    
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(
-      source: ImageSource.gallery, 
-      imageQuality: 80
-    );
-    
-    if (pickedFile != null) {
-      final imageFile = File(pickedFile.path);
-      
-      // Show dialog with image preview and save button
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Preview Profile Picture',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.close),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Image Preview
-                  Container(
-                    width: 200,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(100),
-                      border: Border.all(color: Colors.grey.shade300, width: 2),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(98),
-                      child: Image.file(
-                        imageFile,
-                        width: 200,
-                        height: 200,
-                        fit: BoxFit.cover,
+                      child: const Icon(
+                        Icons.camera_alt,
+                        color: AppColors.whiteColor,
+                        size: 20,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // Action Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // Cancel Button
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ),
-                      
-                      // Save Button
-                      ElevatedButton(
-                        onPressed: () async {
-                          // // Show loading indicator
-                          // Navigator.of(context).pop(); // Close dialog first
-                          
-                          // // Show loading dialog
-                          // showDialog(
-                          //   context: context,
-                          //   barrierDismissible: false,
-                          //   builder: (BuildContext context) {
-                          //     return const Dialog(
-                          //       child: Padding(
-                          //         padding: EdgeInsets.all(20),
-                          //         child: Row(
-                          //           mainAxisSize: MainAxisSize.min,
-                          //           children: [
-                          //             CircularProgressIndicator(),
-                          //             SizedBox(width: 20),
-                          //             Text('Updating profile picture...'),
-                          //           ],
-                          //         ),
-                          //       ),
-                          //     );
-                          //   },
-                          // );
-                          
-                          try {
-                            // Update profile picture
-                            await controller.updateProfilePicture(
-                              userId: user.userId, 
-                              imageFile: imageFile
-                            );
-                            
-                            // Close loading dialog
-                            Navigator.of(context).pop();
-                            
-                            // Refresh UI
-                        
-                            
-                            // Show success message
-                            // ScaffoldMessenger.of(context).showSnackBar(
-                            //   const SnackBar(
-                            //     content: Text('Profile picture updated successfully!'),
-                            //     backgroundColor: Colors.green,
-                            //   ),
-                            // );
-                          } catch (e) {
-                            // Close loading dialog
-                            Navigator.of(context).pop();
-                            
-                            // Show error message
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Failed to update profile picture: $e'),
-                                backgroundColor: Colors.red,
+                    title: const Text('Edit Profile Picture'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      final user = controller.userModel.value;
+                      if (user == null) return;
+
+                      final picker = ImagePicker();
+                      final pickedFile = await picker.pickImage(
+                        source: ImageSource.gallery,
+                        imageQuality: 80,
+                      );
+
+                      if (pickedFile != null) {
+                        final imageFile = File(pickedFile.path);
+
+                        // Show dialog with image preview and save button
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return Dialog(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Header
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text(
+                                          'Preview Profile Picture',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          onPressed:
+                                              () => Navigator.of(context).pop(),
+                                          icon: const Icon(Icons.close),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    // Image Preview
+                                    Container(
+                                      width: 200,
+                                      height: 200,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(
+                                          100,
+                                        ),
+                                        border: Border.all(
+                                          color: Colors.grey.shade300,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(98),
+                                        child: Image.file(
+                                          imageFile,
+                                          width: 200,
+                                          height: 200,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+
+                                    // Action Buttons
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        // Cancel Button
+                                        TextButton(
+                                          onPressed:
+                                              () => Navigator.of(context).pop(),
+                                          child: const Text(
+                                            'Cancel',
+                                            style: TextStyle(
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ),
+
+                                        // Save Button
+                                        ElevatedButton(
+                                          onPressed: () async {
+                                            // // Show loading indicator
+                                            // Navigator.of(context).pop(); // Close dialog first
+
+                                            // // Show loading dialog
+                                            // showDialog(
+                                            //   context: context,
+                                            //   barrierDismissible: false,
+                                            //   builder: (BuildContext context) {
+                                            //     return const Dialog(
+                                            //       child: Padding(
+                                            //         padding: EdgeInsets.all(20),
+                                            //         child: Row(
+                                            //           mainAxisSize: MainAxisSize.min,
+                                            //           children: [
+                                            //             CircularProgressIndicator(),
+                                            //             SizedBox(width: 20),
+                                            //             Text('Updating profile picture...'),
+                                            //           ],
+                                            //         ),
+                                            //       ),
+                                            //     );
+                                            //   },
+                                            // );
+
+                                            try {
+                                              // Update profile picture
+                                              await controller
+                                                  .updateProfilePicture(
+                                                    userId: user.userId,
+                                                    imageFile: imageFile,
+                                                  );
+
+                                              // Close loading dialog
+                                              Navigator.of(context).pop();
+
+                                              // Refresh UI
+
+                                              // Show success message
+                                              // ScaffoldMessenger.of(context).showSnackBar(
+                                              //   const SnackBar(
+                                              //     content: Text('Profile picture updated successfully!'),
+                                              //     backgroundColor: Colors.green,
+                                              //   ),
+                                              // );
+                                            } catch (e) {
+                                              // Close loading dialog
+                                              Navigator.of(context).pop();
+
+                                              // Show error message
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    'Failed to update profile picture: $e',
+                                                  ),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.blue,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 24,
+                                              vertical: 12,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                          child: const Text('Save'),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                             );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24, 
-                            vertical: 12
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text('Save'),
-                      ),
-                    ],
+                          },
+                        );
+                      }
+                    },
                   ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-    }
-  },
-),
                   const Divider(height: 1),
+
+                    if(controller.userModel.value!.isAdmin == true)
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Icon(
+                        Icons.lock,
+                        color: AppColors.whiteColor,
+                        size: 20,
+                      ),
+                    ),
+                    title: const Text('Add New Location'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {},
+                  ),
+                  const Divider(height: 1),
+
                   // Change Password
                   ListTile(
                     leading: Container(
@@ -700,28 +861,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                   ),
                   Divider(height: 1),
-
-                  ListTile(
-                    leading: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Icon(
-                        Icons.lock,
-                        color: AppColors.whiteColor,
-                        size: 20,
-                      ),
-                    ),
-                    title: const Text('Add New Location'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      
-                     
-                    },
-                  ),
-
+               
                   // Password Change Section
                   if (_showPasswordSection)
                     Container(
@@ -957,7 +1097,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                     ),
-                  Divider(height: 1),
                   // Support and Legal Section
                   Container(
                     color: AppColors.whiteColor,

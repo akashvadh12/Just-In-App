@@ -203,6 +203,7 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen>
                 child: OutlinedButton(
                   onPressed: () {
                     controller.remarksController.clear();
+                    goToFirstInnerTab();
                   },
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -885,6 +886,8 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen>
 
   void goToFirstInnerTab() {
     _innerTabController.index = 0;
+    _innerTabController.animateTo(0);
+    controller.isQRMatched.value = false;
   }
 
   Widget _buildQRScan() {

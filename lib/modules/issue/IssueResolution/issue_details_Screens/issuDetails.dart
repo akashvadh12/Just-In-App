@@ -76,9 +76,9 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                 _buildCurrentLocationDisplay(),
                 _buildResolutionSection(),
                 _buildPhotosSection(),
-                controller.currentIssue.value?.status ==
-                                  IssueStatus.resolved ?
-                _buildResolvedPhotosSection() : SizedBox.shrink(),
+                controller.currentIssue.value?.status == IssueStatus.resolved
+                    ? _buildResolvedPhotosSection()
+                    : SizedBox.shrink(),
 
                 _buildUpdatedPhotosSection(),
                 _buildActionButtons(),
@@ -116,15 +116,27 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            _currentIssue.title,
+            _currentIssue.description,
             style: AppTextStyles.heading.copyWith(
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
+            overflow: TextOverflow.visible,
+            softWrap: true,
           ),
           const SizedBox(height: 8),
           Text(
             'Reported: ${_currentIssue.time}',
+            style: AppTextStyles.hint.copyWith(color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Creator: ${_currentIssue.creatorName}',
+            style: AppTextStyles.hint.copyWith(color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Resolver: ${_currentIssue.resolverName}',
             style: AppTextStyles.hint.copyWith(color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
@@ -236,125 +248,128 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     );
   }
 
-void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
-  final controller = PhotoViewController();
-  final scaleStateController = PhotoViewScaleStateController();
-  
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) {
-      return Dialog(
-        backgroundColor: Colors.black,
-        insetPadding: const EdgeInsets.all(16),
-        child: Stack(
-          children: [
-            AspectRatio(
-              aspectRatio: 1,
-              child: PhotoView(
-                imageProvider: imageProvider,
-                backgroundDecoration: const BoxDecoration(color: Colors.black),
-                minScale: PhotoViewComputedScale.contained,
-                maxScale: PhotoViewComputedScale.covered * 2.0,
-                controller: controller,
-                scaleStateController: scaleStateController,
-              ),
-            ),
-            // Close button
-            Positioned(
-              top: 8,
-              right: 8,
-              child: GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
-                    shape: BoxShape.circle,
+  void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
+    final controller = PhotoViewController();
+    final scaleStateController = PhotoViewScaleStateController();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.black,
+          insetPadding: const EdgeInsets.all(16),
+          child: Stack(
+            children: [
+              AspectRatio(
+                aspectRatio: 1,
+                child: PhotoView(
+                  imageProvider: imageProvider,
+                  backgroundDecoration: const BoxDecoration(
+                    color: Colors.black,
                   ),
-                  padding: const EdgeInsets.all(8),
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 28,
+                  minScale: PhotoViewComputedScale.contained,
+                  maxScale: PhotoViewComputedScale.covered * 2.0,
+                  controller: controller,
+                  scaleStateController: scaleStateController,
+                ),
+              ),
+              // Close button
+              Positioned(
+                top: 8,
+                right: 8,
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                   ),
                 ),
               ),
-            ),
-            // Zoom controls
-            Positioned(
-              bottom: 16,
-              right: 16,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Zoom in button
-                  GestureDetector(
-                    onTap: () {
-                      final currentScale = controller.scale ?? 1.0;
-                      controller.scale = (currentScale * 1.1).clamp(0.2, 2.0);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      child: const Icon(
-                        Icons.zoom_in,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Zoom out button
-                  GestureDetector(
-                    onTap: () {
-                      final currentScale = controller.scale ?? 1.0;
-                      controller.scale = (currentScale / 1.5).clamp(0.2, 2.0);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      child: const Icon(
-                        Icons.zoom_out,
-                        color: Colors.white,
-                        size: 24,
+              // Zoom controls
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Zoom in button
+                    GestureDetector(
+                      onTap: () {
+                        final currentScale = controller.scale ?? 1.0;
+                        controller.scale = (currentScale * 1.1).clamp(0.2, 2.0);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: const Icon(
+                          Icons.zoom_in,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Reset zoom button
-                  GestureDetector(
-                    onTap: () {
-                      controller.scale = 1.0;
-                      scaleStateController.scaleState = PhotoViewScaleState.initial;
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      child: const Icon(
-                        Icons.center_focus_strong,
-                        color: Colors.white,
-                        size: 24,
+                    const SizedBox(height: 8),
+                    // Zoom out button
+                    GestureDetector(
+                      onTap: () {
+                        final currentScale = controller.scale ?? 1.0;
+                        controller.scale = (currentScale / 1.5).clamp(0.2, 2.0);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: const Icon(
+                          Icons.zoom_out,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    // Reset zoom button
+                    GestureDetector(
+                      onTap: () {
+                        controller.scale = 1.0;
+                        scaleStateController.scaleState =
+                            PhotoViewScaleState.initial;
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: const Icon(
+                          Icons.center_focus_strong,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   Widget _buildPhotosSection() {
     return Container(
@@ -390,10 +405,11 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
               itemCount: _currentIssue.issuePhotos.length,
               itemBuilder: (context, index) {
                 return GestureDetector(
-                  onTap: () => _showZoomableImage(
-                    context,
-                    NetworkImage(_currentIssue.issuePhotos[index]),
-                  ),
+                  onTap:
+                      () => _showZoomableImage(
+                        context,
+                        NetworkImage(_currentIssue.issuePhotos[index]),
+                      ),
                   child: Container(
                     width: 100,
                     height: 100,
@@ -428,6 +444,7 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
       ),
     );
   }
+
   Widget _buildResolvedPhotosSection() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -462,10 +479,11 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
               itemCount: _currentIssue.resolvePhotos.length,
               itemBuilder: (context, index) {
                 return GestureDetector(
-                  onTap: () => _showZoomableImage(
-                    context,
-                    NetworkImage(_currentIssue.resolvePhotos[index]),
-                  ),
+                  onTap:
+                      () => _showZoomableImage(
+                        context,
+                        NetworkImage(_currentIssue.resolvePhotos[index]),
+                      ),
                   child: Container(
                     width: 100,
                     height: 100,
@@ -543,10 +561,11 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
                     return Stack(
                       children: [
                         GestureDetector(
-                          onTap: () => _showZoomableImage(
-                            context,
-                            FileImage(controller.selectedImages[index]),
-                          ),
+                          onTap:
+                              () => _showZoomableImage(
+                                context,
+                                FileImage(controller.selectedImages[index]),
+                              ),
                           child: Container(
                             width: 100,
                             height: 100,
@@ -671,26 +690,28 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-           Row(
-             children: [
-               Text(
-                 'Resolution Details',
-                 style: TextStyle(
-                   fontSize: 16,
-                   fontWeight: FontWeight.w600,
-                   color: Colors.black87,
-                 ),
-               ),
-                 const Text(
-           ' *',
-           style: TextStyle(color: Colors.red, fontSize: 16),
-                           ),
-             ],
-           ),
+          Row(
+            children: [
+              Text(
+                'Resolution Details',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              const Text(
+                ' *',
+                style: TextStyle(color: Colors.red, fontSize: 16),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           TextField(
-            enabled:(controller.currentIssue.value?.status ==
-                                  IssueStatus.resolved) ? false : true ,
+            enabled:
+                (controller.currentIssue.value?.status == IssueStatus.resolved)
+                    ? false
+                    : true,
             controller: _resolutionController,
             maxLines: 5,
             decoration: InputDecoration(
@@ -725,27 +746,32 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
           child: Column(
             children: [
               // Add Updated Photos Button
-           (controller.currentIssue.value?.status ==
-                                  IssueStatus.resolved) ? SizedBox.shrink() : SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: OutlinedButton.icon(
-                  onPressed: controller.isLoading.value
-                      ? null
-                      : () => _showImagePickerOptions(context),
-                  icon: const Icon(Icons.camera_alt, color: AppColors.primary),
-                  label: const Text(
-                    'Add Updated Photos',
-                    style: TextStyle(color: AppColors.primary),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.primary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              (controller.currentIssue.value?.status == IssueStatus.resolved)
+                  ? SizedBox.shrink()
+                  : SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: OutlinedButton.icon(
+                      onPressed:
+                          controller.isLoading.value
+                              ? null
+                              : () => _showImagePickerOptions(context),
+                      icon: const Icon(
+                        Icons.camera_alt,
+                        color: AppColors.primary,
+                      ),
+                      label: const Text(
+                        'Add Updated Photos',
+                        style: TextStyle(color: AppColors.primary),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.primary),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ) ,
 
               const SizedBox(height: 20),
               // Mark as Resolved Button
@@ -753,43 +779,46 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: (controller.currentIssue.value?.status ==
-                              IssueStatus.resolved ||
-                          controller.isLoading.value)
-                      ? null
-                      : () => _markAsResolved(),
+                  onPressed:
+                      (controller.currentIssue.value?.status ==
+                                  IssueStatus.resolved ||
+                              controller.isLoading.value)
+                          ? null
+                          : () => _markAsResolved(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: (controller.currentIssue.value?.status ==
-                                IssueStatus.resolved ||
-                            controller.isLoading.value)
-                        ? Colors.grey
-                        : AppColors.primary,
+                    backgroundColor:
+                        (controller.currentIssue.value?.status ==
+                                    IssueStatus.resolved ||
+                                controller.isLoading.value)
+                            ? Colors.grey
+                            : AppColors.primary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: controller.isLoading.value
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
+                  child:
+                      controller.isLoading.value
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                          : Text(
+                            (controller.currentIssue.value?.status ==
+                                    IssueStatus.resolved)
+                                ? 'Already Resolved'
+                                : 'Mark as Resolved',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                        )
-                      : Text(
-                          (controller.currentIssue.value?.status ==
-                                  IssueStatus.resolved)
-                              ? 'Already Resolved'
-                              : 'Mark as Resolved',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
                 ),
               ),
             ],
@@ -879,7 +908,7 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
                     onTap: () {
                       Navigator.of(context).pop();
                       // controller.pickImage();
-                       controller.pickImages(ImageSource.camera);
+                      controller.pickImages(ImageSource.camera);
                     },
                   ),
                   const SizedBox(height: 12),
@@ -891,8 +920,7 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
                     onTap: () {
                       Navigator.of(context).pop();
                       // controller.pickMultipleImages();
-                   controller.pickImages(ImageSource.gallery);
-
+                      controller.pickImages(ImageSource.gallery);
                     },
                   ),
                   const SizedBox(height: 20),
@@ -905,7 +933,6 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
     );
   }
 
-  
   Widget _buildImageOption({
     required IconData icon,
     required String title,
@@ -962,7 +989,6 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
     );
   }
 
-
   void _markAsResolved() async {
     if (_resolutionController.text.trim().isEmpty) {
       CustomSnackbar.showError(
@@ -979,7 +1005,6 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
       );
       return;
     }
-  
 
     bool success = await controller.resolveIssue(
       _resolutionController.text.trim(),

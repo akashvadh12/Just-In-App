@@ -25,10 +25,6 @@ class GuardAttendanceController extends GetxController {
   final ProfileController profileController = Get.find<ProfileController>();
   final HomeController dashboardController = Get.put(HomeController());
 
-  late CameraController _cameraController;
-  late List<CameraDescription> _cameras;
-  bool _isCameraInitialized = false;
-
   // API endpoint
   static const String attendanceApiUrl =
       'https://official.solarvision-cairo.com/api/AttendanceRecord/attendance/mark';
@@ -47,11 +43,14 @@ class GuardAttendanceController extends GetxController {
 
   @override
   void dispose() {
-    _cameraController.dispose();
+    // _cameraController.dispose();
     super.dispose();
   }
 
   Future<void> initializeCamera() async {
+    late CameraController _cameraController;
+    late List<CameraDescription> _cameras;
+    bool _isCameraInitialized = false;
     _cameras = await availableCameras();
     final frontCamera = _cameras.firstWhere(
       (camera) => camera.lensDirection == CameraLensDirection.front,
@@ -62,38 +61,35 @@ class GuardAttendanceController extends GetxController {
     _isCameraInitialized = true;
   }
 
-Future<void> capturePhoto(BuildContext context) async {
-  try {
-    final cameras = await availableCameras();
-    final frontCamera = cameras.firstWhere(
-      (cam) => cam.lensDirection == CameraLensDirection.front,
-    );
+  Future<void> capturePhoto(BuildContext context) async {
+    try {
+      final cameras = await availableCameras();
+      final frontCamera = cameras.firstWhere(
+        (cam) => cam.lensDirection == CameraLensDirection.front,
+      );
 
-    final File? image = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CameraScreen(camera: frontCamera),
-      ),
-    );
+      final File? image = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => CameraScreen(camera: frontCamera)),
+      );
 
-    if (image != null) {
-      final fileSize = await image.length();
+      if (image != null) {
+        final fileSize = await image.length();
 
-      if (fileSize > 3 * 1024 * 1024) {
-        Get.snackbar("Image Too Large", "Please use a smaller one");
-        return;
+        if (fileSize > 3 * 1024 * 1024) {
+          Get.snackbar("Image Too Large", "Please use a smaller one");
+          return;
+        }
+
+        capturedImage.value = image;
+
+        Get.snackbar("Photo Captured", "Successfully captured photo");
       }
-
-      capturedImage.value = image;
-
-      Get.snackbar("Photo Captured", "Successfully captured photo");
+    } catch (e) {
+      Get.snackbar("Error", "Could not capture photo");
+      print(e);
     }
-  } catch (e) {
-    Get.snackbar("Error", "Could not capture photo");
-    print(e);
   }
-}
-
 
   Future<void> getCurrentLocation() async {
     if (isLoadingLocation.value) return;
@@ -219,6 +215,13 @@ Future<void> capturePhoto(BuildContext context) async {
       );
       print(
         'Distance to office: [32m${distance.toStringAsFixed(2)} meters[0m',
+      );
+      print("Office Coordinates: [34m$officeLat, $officeLng[0m");
+      print(
+        "Current Coordinates: [34m${position.latitude}, ${position.longitude}[0m",
+      );
+      print(
+        'Office Radius: [33m${officeRadius.toStringAsFixed(2)} meters[0m',
       );
       if (distance <= officeRadius!) {
         isLocationVerified.value = true;

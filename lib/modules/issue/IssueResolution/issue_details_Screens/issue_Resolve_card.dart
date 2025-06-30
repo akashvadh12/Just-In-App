@@ -46,6 +46,8 @@ class IssueCard extends StatelessWidget {
     final mainImage = issue.issuePhotos.isNotEmpty
         ? issue.issuePhotos.first
         : (issue.images.isNotEmpty ? issue.images.first : '');
+
+        print('Issue title: ${issue.title}');
     return Card(
       margin: const EdgeInsets.only(bottom: 16 ),
       color: Colors.white,
@@ -56,6 +58,7 @@ class IssueCard extends StatelessWidget {
     
           print('User ID retrieved: $userId');
           print('Issue ID saved: [38;5;2m${issue.id}[0m');
+          print('Issue title: ${issue.title}');
     
           final updatedIssue = await Navigator.push<Issue>(
             context,

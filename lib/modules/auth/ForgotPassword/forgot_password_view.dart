@@ -65,16 +65,14 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: TextField(
-                    onChanged: (value) => controller.phoneOrEmployeeId.value = value,
+                    onChanged:
+                        (value) => controller.phoneOrEmployeeId.value = value,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: 'Email or Employee ID',
                       hintStyle: AppTextStyles.hint,
-                      prefixIcon: Icon(
-                        Icons.email,
-                        color: AppColors.greyColor,
-                      ),
+                      prefixIcon: Icon(Icons.email, color: AppColors.greyColor),
                     ),
                   ),
                 ),
@@ -82,50 +80,58 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
               const SizedBox(height: 24),
 
               // Send Reset Code button with loading state
-              Obx(() => SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: controller.isLoading.value ? null : controller.sendResetCode,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              Obx(
+                () => SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed:
+                        controller.isLoading.value
+                            ? null
+                            : controller.sendResetCode,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
-                  ),
-                  child: controller.isLoading.value
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              'Sending...',
+                    child:
+                        controller.isLoading.value
+                            ? Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Sending...',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            )
+                            : Text(
+                              'Get Your Password',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ],
-                        )
-                      : Text(
-                          'Get Your Password',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                  ),
                 ),
-              )),
+              ),
               const SizedBox(height: 12),
 
               // Success message and resend option
@@ -146,11 +152,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                     ),
                     child: Column(
                       children: [
-                        Icon(
-                          Icons.check_circle,
-                          color: Colors.green,
-                          size: 50,
-                        ),
+                        Icon(Icons.check_circle, color: Colors.green, size: 50),
                         const SizedBox(height: 12),
                         Text(
                           'Password Sent Successfully!',
@@ -162,7 +164,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Your password has been sent to your email address. Please check your inbox and spam folder.',
+                          'Your password has been sent to your ${controller.phoneOrEmployeeId.value} ${controller.phoneOrEmployeeId.value.contains('mail') ? 'email address' : 'employee ID'}. Please check your inbox and spam folder.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
@@ -170,10 +172,13 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        
+
                         // Resend button
                         TextButton.icon(
-                          onPressed: controller.isLoading.value ? null : controller.resendPassword,
+                          onPressed:
+                              controller.isLoading.value
+                                  ? null
+                                  : controller.resendPassword,
                           icon: Icon(
                             Icons.refresh,
                             color: AppColors.primary,
@@ -187,7 +192,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                             ),
                           ),
                         ),
-                        
+
                         const SizedBox(height: 8),
                         Text(
                           'Didn\'t receive the email?',
