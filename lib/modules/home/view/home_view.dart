@@ -2,10 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:security_guard/modules/addLoacation/location_list_screen.dart';
-import 'package:security_guard/modules/attandance/AttendanceScreen/GuardAttendanceScreen.dart';
 
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_view/issue_screen.dart';
+import 'package:security_guard/modules/issue/report_issue/report_incident_screen.dart';
 import 'package:security_guard/modules/notification/notification_screen.dart';
 import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
 
@@ -251,66 +251,69 @@ class HomeView extends GetView<HomeController> {
               ],
             ),
             SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-             controller.attendanceStatus.value == 'In' ?   Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Clock In',
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      controller
-                          .clockInTime
-                          .value, // You can bind actual clock in time if available from API
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+               controller.attendanceStatus.value == 'In' ?   Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Clock In',
+                        style: TextStyle(color: Colors.grey, fontSize: 14),
                       ),
-                    ),
-                  ],
-                ) :  Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Clock Out',
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      controller
-                          .clockOutTime
-                          .value, // You can bind actual clock in time if available from API
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                      SizedBox(height: 4),
+                      Text(
+                        controller
+                            .clockInTime
+                            .value, // You can bind actual clock in time if available from API
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Today Patrol',
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      controller.todayPatrolStatus.value.isNotEmpty
-                          ? controller.todayPatrolStatus.value
-                          : '-',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                    ],
+                  ) :  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Clock Out',
+                        style: TextStyle(color: Colors.grey, fontSize: 14),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      SizedBox(height: 4),
+                      Text(
+                        controller
+                            .clockOutTime
+                            .value, // You can bind actual clock in time if available from API
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Today Patrol',
+                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        controller.todayPatrolStatus.value.isNotEmpty
+                            ? controller.todayPatrolStatus.value
+                            : '-',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -340,25 +343,27 @@ class HomeView extends GetView<HomeController> {
           onTap: () => bottomNavController.changeTab(1),
         ),
      
-        controller.profileController.userModel.value?.isAdmin == true?
-        _buildActionButton(
-          icon: Icons.add_location,
-          label: 'Add\nLocation',
-          color: Color.fromARGB(255, 30, 107, 231),
-          onTap: () => Get.to(LocationsListScreen()),
-        ) 
-        :   
-         _buildActionButton(
-          icon: Icons.directions_walk,
-          label: 'Start\nPatrol',
-          color: Color.fromARGB(255, 30, 107, 231),
-          onTap: () => bottomNavController.changeTab(2),
+        Obx(
+          () => controller.profileController.userModel.value?.isAdmin == true?
+          _buildActionButton(
+            icon: Icons.add_location,
+            label: 'Add\nLocation',
+            color: Color.fromARGB(255, 30, 107, 231),
+            onTap: () => Get.to(LocationsListScreen()),
+          ) 
+          :   
+           _buildActionButton(
+            icon: Icons.directions_walk,
+            label: 'Start\nPatrol',
+            color: Color.fromARGB(255, 30, 107, 231),
+            onTap: () => bottomNavController.changeTab(2),
+          ),
         ),
         _buildActionButton(
           icon: Icons.warning,
           label: 'Raise\nIssue',
           color: Color(0xFF4285F4),
-          onTap: () => bottomNavController.changeTab(3),
+          onTap: () => Get.to(IncidentReportScreen()),
         ),
       ],
     );

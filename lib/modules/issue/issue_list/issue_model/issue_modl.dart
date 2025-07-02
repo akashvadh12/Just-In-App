@@ -1,5 +1,4 @@
 // Enhanced Issue Model
-import 'package:flutter/material.dart';
 
 enum IssueStatus { new_issue, pending, resolved }
 

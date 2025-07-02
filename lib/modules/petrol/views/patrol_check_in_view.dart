@@ -8,6 +8,7 @@ import 'package:security_guard/modules/petrol/controllers/patrol_controller.dart
 import 'package:security_guard/modules/petrol/views/animated_qr_scanner.dart';
 import 'package:security_guard/modules/petrol/views/patrol_history_view.dart';
 import 'package:security_guard/modules/petrol/views/add_manual_patrol_screen.dart';
+import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 
 class PatrolCheckInScreen extends StatefulWidget {
   const PatrolCheckInScreen({Key? key}) : super(key: key);
@@ -21,6 +22,7 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen>
   late final TabController _outerTabController;
   late final TabController _innerTabController;
   final controller = Get.put(PatrolCheckInController());
+  ProfileController profileController = Get.find<ProfileController>();
 
   @override
   void initState() {
@@ -303,6 +305,28 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen>
           child: ElevatedButton.icon(
             onPressed: () {
               // Navigate to the new AddManualPatrolScreen
+              if (profileController.userModel.value == null) return;
+              if (profileController.userModel.value!.logId == null) {
+                Get.snackbar(
+                  "No Patrol Log",
+                  "Please start a patrol first.",
+                  backgroundColor: Colors.orange.shade600,
+                  colorText: Colors.white,
+                  snackPosition: SnackPosition.TOP,
+                  margin: const EdgeInsets.all(12),
+                  borderRadius: 10,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  icon: const Icon(Icons.warning, color: Colors.white),
+                  shouldIconPulse: false,
+                  duration: const Duration(seconds: 2),
+                  barBlur: 10,
+                  overlayBlur: 2,
+                );
+                return;
+              }
               Get.to(() => const AddManualPatrolScreen());
             },
             style: ElevatedButton.styleFrom(

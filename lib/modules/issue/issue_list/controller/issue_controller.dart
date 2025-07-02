@@ -84,7 +84,7 @@ class IssuesController extends GetxController with SingleGetTickerProviderMixin 
         errorMessage.value = 'Failed to load issues. Status: ${response.statusCode}';
       }
     } catch (e) {
-      errorMessage.value = 'Network error: $e';
+      errorMessage.value = 'Server error please try again later';
     } finally {
       isLoading.value = false;
     }

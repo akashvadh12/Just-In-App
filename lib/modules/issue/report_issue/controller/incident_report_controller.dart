@@ -264,10 +264,10 @@ class IncidentReportController extends GetxController {
 
         debugPrint("✅ Report submitted! Issue ID saved: $issueId");
 
-        CustomSnackbar.showSuccess(
-          '✅ Success',
-          'Report submitted successfully!',
-        );
+        // CustomSnackbar.showSuccess(
+        //   '✅ Success',
+        //   'Report submitted successfully!',
+        // );
         _resetForm();
 
         // Show success dialog

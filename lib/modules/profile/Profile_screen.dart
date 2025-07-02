@@ -151,6 +151,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Get.put(LocalStorageService());
     final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
+    if (controller.userModel.value == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile', style: TextStyle(color: Colors.white)),
@@ -817,25 +821,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const Divider(height: 1),
 
-                    if(controller.userModel.value!.isAdmin == true)
-                  ListTile(
-                    leading: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Icon(
-                        Icons.lock,
-                        color: AppColors.whiteColor,
-                        size: 20,
-                      ),
-                    ),
-                    title: const Text('Add New Location'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {},
-                  ),
-                  const Divider(height: 1),
+                  //   if(controller.userModel.value!.isAdmin == true)
+                  // ListTile(
+                  //   leading: Container(
+                  //     padding: const EdgeInsets.all(6),
+                  //     decoration: BoxDecoration(
+                  //       color: Colors.blue,
+                  //       borderRadius: BorderRadius.circular(4),
+                  //     ),
+                  //     child: const Icon(
+                  //       Icons.lock,
+                  //       color: AppColors.whiteColor,
+                  //       size: 20,
+                  //     ),
+                  //   ),
+                  //   title: const Text('Add New Location'),
+                  //   trailing: const Icon(Icons.chevron_right),
+                  //   onTap: () {},
+                  // ),
+                  // const Divider(height: 1),
 
                   // Change Password
                   ListTile(

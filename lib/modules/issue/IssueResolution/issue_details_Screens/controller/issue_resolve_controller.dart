@@ -10,7 +10,6 @@ import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class IssueDetailController extends GetxController {
   final Rx<Issue?> currentIssue = Rx<Issue?>(null);

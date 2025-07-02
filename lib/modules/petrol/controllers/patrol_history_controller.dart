@@ -38,23 +38,23 @@ class PatrolHistoryItem {
     required this.visitedPoll,
     required this.datetime,
   });
+factory PatrolHistoryItem.fromJson(Map<String, dynamic> json) {
+  return PatrolHistoryItem(
+    logID: json['logID'] ?? '',
+    userID: json['userID'] ?? '',
+    startLocationId: json['startLocation_Id'] ?? '',
+    startTime: json['startTime'] != null ? DateTime.parse(json['startTime']) : DateTime.now(),
+    endLocationId: json['endLocation_Id'] ?? '',
+    endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : DateTime.now(),
+    status: json['status'] ?? false,
+    deviceId: json['deviceId']?.toString(),
+    remarks: json['remarks'] ?? '',
+    totalPoll: json['totalPoll']?.toString(),
+    visitedPoll: json['visitedPoll']?.toString() ?? '0',
+    datetime: json['datetime'] != null ? DateTime.parse(json['datetime']) : DateTime.now(),
+  );
+}
 
-  factory PatrolHistoryItem.fromJson(Map<String, dynamic> json) {
-    return PatrolHistoryItem(
-      logID: json['logID'] ?? '',
-      userID: json['userID'] ?? '',
-      startLocationId: json['startLocation_Id'] ?? '',
-      startTime: DateTime.parse(json['startTime']),
-      endLocationId: json['endLocation_Id'] ?? '',
-      endTime: DateTime.parse(json['endTime']),
-      status: json['status'] ?? false,
-      deviceId: json['deviceId'],
-      remarks: json['remarks'] ?? '',
-      totalPoll: json['totalPoll'],
-      visitedPoll: json['visitedPoll'] ?? '0',
-      datetime: DateTime.parse(json['datetime']),
-    );
-  }
 }
 
 class PatrolHistoryDetail {
@@ -82,20 +82,21 @@ class PatrolHistoryDetail {
     required this.images,
   });
 
-  factory PatrolHistoryDetail.fromJson(Map<String, dynamic> json) {
-    return PatrolHistoryDetail(
-      serial: json['serial'] ?? 0,
-      locationId: json['locationId'] ?? '',
-      locationName: json['locationName'] ?? '',
-      latitude: double.tryParse(json['latitude'].toString()) ?? 0.0,
-      longitude: double.tryParse(json['longitude'].toString()) ?? 0.0,
-      selfie: json['selfie'],
-      notes: json['notes'],
-      status: json['status'] ?? false,
-      visitTime: json['visitTime'],
-      images: List<String>.from(json['images'] ?? []),
-    );
-  }
+factory PatrolHistoryDetail.fromJson(Map<String, dynamic> json) {
+  return PatrolHistoryDetail(
+    serial: json['serial'] ?? 0,
+    locationId: json['locationId'] ?? '',
+    locationName: json['locationName'] ?? '',
+    latitude: double.tryParse('${json['latitude']}') ?? 0.0,
+    longitude: double.tryParse('${json['longitude']}') ?? 0.0,
+    selfie: json['selfie']?.toString(),
+    notes: json['notes']?.toString(),
+    status: json['status'] ?? false,
+    visitTime: json['visitTime']?.toString(),
+    images: (json['images'] as List?)?.map((e) => e.toString()).toList() ?? [],
+  );
+}
+
 }
 class PatrolHistoryController extends GetxController {
   final RxList<PatrolHistoryItem> historyList = <PatrolHistoryItem>[].obs;
