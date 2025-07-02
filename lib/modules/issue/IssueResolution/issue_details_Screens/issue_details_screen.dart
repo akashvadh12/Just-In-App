@@ -10,37 +10,38 @@ import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/issue/IssueResolution/issue_details_Screens/controller/issue_resolve_controller.dart';
+import 'package:security_guard/modules/issue/IssueResolution/issue_details_Screens/issue_resolved_screen.dart';
 import 'package:security_guard/modules/issue/issue_list/controller/issue_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
 import 'package:security_guard/shared/widgets/Custom_Snackbar/Custom_Snackbar.dart';
 import 'package:photo_view/photo_view.dart';
 
-class IssueScreen extends StatefulWidget {
+class IssueDetailScreen extends StatefulWidget {
   final Issue issue;
   final String userId;
 
-  const IssueScreen({
+  const IssueDetailScreen({
     super.key,
     required this.issue,
     required this.userId,
   });
 
   @override
-  State<IssueScreen> createState() => _IssueDetailScreenState();
+  State<IssueDetailScreen> createState() => _IssueDetailScreenState();
 }
 
-class _IssueDetailScreenState extends State<IssueScreen> {
+class _IssueDetailScreenState extends State<IssueDetailScreen> {
   final TextEditingController _resolutionController = TextEditingController();
   late IssueDetailController controller;
   late Issue _currentIssue;
 
   final IssuesController issuesController = Get.find<IssuesController>();
   final HomeController homeController = Get.find<HomeController>();
+
   @override
   void initState() {
     super.initState();
     _currentIssue = widget.issue;
-    // Set an initial value for the resolution notes.
     _resolutionController.text = widget.issue.resolutionNote ?? '';
     controller = Get.put(IssueDetailController());
     controller.initializeIssue(widget.issue, widget.userId);
@@ -60,7 +61,7 @@ class _IssueDetailScreenState extends State<IssueScreen> {
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
-          'Resolve Issue ',
+          'Resolve Issue',
           style: TextStyle(color: Colors.white),
         ),
         elevation: 0,
@@ -76,10 +77,6 @@ class _IssueDetailScreenState extends State<IssueScreen> {
                 _buildCurrentLocationDisplay(),
                 _buildResolutionSection(),
                 _buildPhotosSection(),
-                controller.currentIssue.value?.status == IssueStatus.resolved
-                    ? _buildResolvedPhotosSection()
-                    : SizedBox.shrink(),
-
                 _buildUpdatedPhotosSection(),
                 _buildActionButtons(),
                 const SizedBox(height: 20),
@@ -156,15 +153,13 @@ class _IssueDetailScreenState extends State<IssueScreen> {
     if (issue == null) return const SizedBox.shrink();
 
     final issueLatLng = LatLng(issue.latitude ?? 0.0, issue.longitude ?? 0.0);
-    final userLatLng =
-        userPosition != null
-            ? LatLng(userPosition.latitude, userPosition.longitude)
-            : null;
+    final userLatLng = userPosition != null
+        ? LatLng(userPosition.latitude, userPosition.longitude)
+        : null;
 
-    final distance =
-        userLatLng != null
-            ? const Distance().as(LengthUnit.Meter, issueLatLng, userLatLng)
-            : null;
+    final distance = userLatLng != null
+        ? const Distance().as(LengthUnit.Meter, issueLatLng, userLatLng)
+        : null;
 
     final isWithinRange = distance != null && distance <= 50;
 
@@ -245,372 +240,6 @@ class _IssueDetailScreenState extends State<IssueScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
-    final controller = PhotoViewController();
-    final scaleStateController = PhotoViewScaleStateController();
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.black,
-          insetPadding: const EdgeInsets.all(16),
-          child: Stack(
-            children: [
-              AspectRatio(
-                aspectRatio: 1,
-                child: PhotoView(
-                  imageProvider: imageProvider,
-                  backgroundDecoration: const BoxDecoration(
-                    color: Colors.black,
-                  ),
-                  minScale: PhotoViewComputedScale.contained,
-                  maxScale: PhotoViewComputedScale.covered * 2.0,
-                  controller: controller,
-                  scaleStateController: scaleStateController,
-                ),
-              ),
-              // Close button
-              Positioned(
-                top: 8,
-                right: 8,
-                child: GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                      shape: BoxShape.circle,
-                    ),
-                    padding: const EdgeInsets.all(8),
-                    child: const Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                ),
-              ),
-              // Zoom controls
-              Positioned(
-                bottom: 16,
-                right: 16,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Zoom in button
-                    GestureDetector(
-                      onTap: () {
-                        final currentScale = controller.scale ?? 1.0;
-                        controller.scale = (currentScale * 1.1).clamp(0.2, 2.0);
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
-                          shape: BoxShape.circle,
-                        ),
-                        padding: const EdgeInsets.all(12),
-                        child: const Icon(
-                          Icons.zoom_in,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Zoom out button
-                    GestureDetector(
-                      onTap: () {
-                        final currentScale = controller.scale ?? 1.0;
-                        controller.scale = (currentScale / 1.5).clamp(0.2, 2.0);
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
-                          shape: BoxShape.circle,
-                        ),
-                        padding: const EdgeInsets.all(12),
-                        child: const Icon(
-                          Icons.zoom_out,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Reset zoom button
-                    GestureDetector(
-                      onTap: () {
-                        controller.scale = 1.0;
-                        scaleStateController.scaleState =
-                            PhotoViewScaleState.initial;
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
-                          shape: BoxShape.circle,
-                        ),
-                        padding: const EdgeInsets.all(12),
-                        child: const Icon(
-                          Icons.center_focus_strong,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildPhotosSection() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Original Photos',
-            style: AppTextStyles.heading.copyWith(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 100,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _currentIssue.issuePhotos.length,
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap:
-                      () => _showZoomableImage(
-                        context,
-                        NetworkImage(_currentIssue.issuePhotos[index]),
-                      ),
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    margin: const EdgeInsets.only(right: 12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      color: Colors.grey[200],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        _currentIssue.issuePhotos[index],
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[200],
-                            child: const Icon(
-                              Icons.camera_alt,
-                              color: Colors.grey,
-                              size: 40,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildResolvedPhotosSection() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Resolved Photos',
-            style: AppTextStyles.heading.copyWith(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 100,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _currentIssue.resolvePhotos.length,
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap:
-                      () => _showZoomableImage(
-                        context,
-                        NetworkImage(_currentIssue.resolvePhotos[index]),
-                      ),
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    margin: const EdgeInsets.only(right: 12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      color: Colors.grey[200],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        _currentIssue.resolvePhotos[index],
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[200],
-                            child: const Icon(
-                              Icons.camera_alt,
-                              color: Colors.grey,
-                              size: 40,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUpdatedPhotosSection() {
-    return GetX<IssueDetailController>(
-      builder: (controller) {
-        if (controller.selectedImages.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 1,
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Updated Photos',
-                style: AppTextStyles.heading.copyWith(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 100,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: controller.selectedImages.length,
-                  itemBuilder: (context, index) {
-                    return Stack(
-                      children: [
-                        GestureDetector(
-                          onTap:
-                              () => _showZoomableImage(
-                                context,
-                                FileImage(controller.selectedImages[index]),
-                              ),
-                          child: Container(
-                            width: 100,
-                            height: 100,
-                            margin: const EdgeInsets.only(right: 12),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              color: Colors.grey[200],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.file(
-                                controller.selectedImages[index],
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 4,
-                          right: 16,
-                          child: GestureDetector(
-                            onTap: () => controller.removeImage(index),
-                            child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: const BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 
@@ -708,10 +337,6 @@ class _IssueDetailScreenState extends State<IssueScreen> {
           ),
           const SizedBox(height: 12),
           TextField(
-            enabled:
-                (controller.currentIssue.value?.status == IssueStatus.resolved)
-                    ? false
-                    : true,
             controller: _resolutionController,
             maxLines: 5,
             decoration: InputDecoration(
@@ -738,6 +363,173 @@ class _IssueDetailScreenState extends State<IssueScreen> {
     );
   }
 
+  Widget _buildPhotosSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Original Photos',
+            style: AppTextStyles.heading.copyWith(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 100,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _currentIssue.issuePhotos.length,
+              itemBuilder: (context, index) {
+                return GestureDetector(
+                  onTap: () => _showZoomableImage(
+                    context,
+                    NetworkImage(_currentIssue.issuePhotos[index]),
+                  ),
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    margin: const EdgeInsets.only(right: 12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.grey[200],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        _currentIssue.issuePhotos[index],
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[200],
+                            child: const Icon(
+                              Icons.camera_alt,
+                              color: Colors.grey,
+                              size: 40,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpdatedPhotosSection() {
+    return GetX<IssueDetailController>(
+      builder: (controller) {
+        if (controller.selectedImages.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 1,
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Updated Photos',
+                style: AppTextStyles.heading.copyWith(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 100,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: controller.selectedImages.length,
+                  itemBuilder: (context, index) {
+                    return Stack(
+                      children: [
+                        GestureDetector(
+                          onTap: () => _showZoomableImage(
+                            context,
+                            FileImage(controller.selectedImages[index]),
+                          ),
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: Colors.grey[200],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(
+                                controller.selectedImages[index],
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 16,
+                          child: GestureDetector(
+                            onTap: () => controller.removeImage(index),
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildActionButtons() {
     return GetX<IssueDetailController>(
       builder: (controller) {
@@ -745,80 +537,64 @@ class _IssueDetailScreenState extends State<IssueScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              // Add Updated Photos Button
-              (controller.currentIssue.value?.status == IssueStatus.resolved)
-                  ? SizedBox.shrink()
-                  : SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: OutlinedButton.icon(
-                      onPressed:
-                          controller.isLoading.value
-                              ? null
-                              : () => _showImagePickerOptions(context),
-                      icon: const Icon(
-                        Icons.camera_alt,
-                        color: AppColors.primary,
-                      ),
-                      label: const Text(
-                        'Add Updated Photos',
-                        style: TextStyle(color: AppColors.primary),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.primary),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-
-              const SizedBox(height: 20),
-              // Mark as Resolved Button
               SizedBox(
                 width: double.infinity,
                 height: 50,
-                child: ElevatedButton(
-                  onPressed:
-                      (controller.currentIssue.value?.status ==
-                                  IssueStatus.resolved ||
-                              controller.isLoading.value)
-                          ? null
-                          : () => _markAsResolved(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        (controller.currentIssue.value?.status ==
-                                    IssueStatus.resolved ||
-                                controller.isLoading.value)
-                            ? Colors.grey
-                            : AppColors.primary,
+                child: OutlinedButton.icon(
+                  onPressed: controller.isLoading.value
+                      ? null
+                      : () => _showImagePickerOptions(context),
+                  icon: const Icon(
+                    Icons.camera_alt,
+                    color: AppColors.primary,
+                  ),
+                  label: const Text(
+                    'Add Updated Photos',
+                    style: TextStyle(color: AppColors.primary),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.primary),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child:
-                      controller.isLoading.value
-                          ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          )
-                          : Text(
-                            (controller.currentIssue.value?.status ==
-                                    IssueStatus.resolved)
-                                ? 'Already Resolved'
-                                : 'Mark as Resolved',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: controller.isLoading.value
+                      ? null
+                      : () => _markAsResolved(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: controller.isLoading.value
+                        ? Colors.grey
+                        : AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: controller.isLoading.value
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
                             ),
                           ),
+                        )
+                      : const Text(
+                          'Mark as Resolved',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -864,10 +640,7 @@ class _IssueDetailScreenState extends State<IssueScreen> {
     );
   }
 
-  void _showImagePickerOptions(
-    BuildContext context,
-    // IncidentReportController controller,
-  ) {
+  void _showImagePickerOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -897,7 +670,8 @@ class _IssueDetailScreenState extends State<IssueScreen> {
                   const SizedBox(height: 20),
                   const Text(
                     'Add Photo',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 20),
                   _buildImageOption(
@@ -907,7 +681,6 @@ class _IssueDetailScreenState extends State<IssueScreen> {
                     color: Colors.blue,
                     onTap: () {
                       Navigator.of(context).pop();
-                      // controller.pickImage();
                       controller.pickImages(ImageSource.camera);
                     },
                   ),
@@ -919,7 +692,6 @@ class _IssueDetailScreenState extends State<IssueScreen> {
                     color: Colors.green,
                     onTap: () {
                       Navigator.of(context).pop();
-                      // controller.pickMultipleImages();
                       controller.pickImages(ImageSource.gallery);
                     },
                   ),
@@ -973,7 +745,8 @@ class _IssueDetailScreenState extends State<IssueScreen> {
                   ),
                   Text(
                     subtitle,
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    style: TextStyle(
+                        fontSize: 12, color: Colors.grey.shade600),
                   ),
                 ],
               ),
@@ -986,6 +759,124 @@ class _IssueDetailScreenState extends State<IssueScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
+    final controller = PhotoViewController();
+    final scaleStateController = PhotoViewScaleStateController();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.black,
+          insetPadding: const EdgeInsets.all(16),
+          child: Stack(
+            children: [
+              AspectRatio(
+                aspectRatio: 1,
+                child: PhotoView(
+                  imageProvider: imageProvider,
+                  backgroundDecoration: const BoxDecoration(
+                    color: Colors.black,
+                  ),
+                  minScale: PhotoViewComputedScale.contained,
+                  maxScale: PhotoViewComputedScale.covered * 2.0,
+                  controller: controller,
+                  scaleStateController: scaleStateController,
+                ),
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        final currentScale = controller.scale ?? 1.0;
+                        controller.scale = (currentScale * 1.1).clamp(0.2, 2.0);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: const Icon(
+                          Icons.zoom_in,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () {
+                        final currentScale = controller.scale ?? 1.0;
+                        controller.scale = (currentScale / 1.5).clamp(0.2, 2.0);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: const Icon(
+                          Icons.zoom_out,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () {
+                        controller.scale = 1.0;
+                        scaleStateController.scaleState =
+                            PhotoViewScaleState.initial;
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: const Icon(
+                          Icons.center_focus_strong,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1006,6 +897,32 @@ class _IssueDetailScreenState extends State<IssueScreen> {
       return;
     }
 
+          final issue = controller.currentIssue.value;
+    final userPosition = controller.currentPosition.value;
+
+    if (issue == null) return;
+
+    final issueLatLng = LatLng(issue.latitude ?? 0.0, issue.longitude ?? 0.0);
+    final userLatLng = userPosition != null
+        ? LatLng(userPosition.latitude, userPosition.longitude)
+        : null;
+
+    final distance = userLatLng != null
+        ? const Distance().as(LengthUnit.Meter, issueLatLng, userLatLng)
+        : null;
+
+    final isWithinRange = distance != null && distance <= 50;
+    print('Distance: $distance, Is within range: $isWithinRange');
+    if (!isWithinRange) {
+      CustomSnackbar.showError(
+        'Location Error',
+        'You are too far from the issue location to mark it as resolved.',
+      );
+      return;
+    }
+
+    
+
     bool success = await controller.resolveIssue(
       _resolutionController.text.trim(),
     );
@@ -1015,15 +932,15 @@ class _IssueDetailScreenState extends State<IssueScreen> {
         'Issue Resolved',
         'Issue marked as resolved successfully!',
       );
-
-      // Navigate back after a short delay
-      Future.delayed(const Duration(seconds: 1), () {
+       Future.delayed(const Duration(seconds: 1), () {
         if (mounted) {
           issuesController.refreshIssues();
           homeController.fetchDashboardData();
           Navigator.pop(context, controller.currentIssue.value);
         }
       });
+
+     
     }
   }
 }

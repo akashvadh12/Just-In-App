@@ -147,7 +147,7 @@ class IssueDetailController extends GetxController {
           status: IssueStatus.resolved,
           resolutionNote: resolutionNote,
           resolverName: 'Current User', // You can replace with actual name
-          resolvedAt: DateTime.now(),
+          resolvedAt: DateTime.now().toIso8601String(),
         );
         return true;
       } else {

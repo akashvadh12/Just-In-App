@@ -219,7 +219,7 @@ Future<void> fetchTodayAttendance() async {
         reportRecords.value =
             data.map((json) => AttendanceRecordThree.fromJson(json)).toList();
 
-        _showSuccess("Success", "Attendance report loaded successfully");
+        // _showSuccess("Success", "Attendance report loaded successfully");
       } else {
         _showError("Error", "Failed to load attendance report");
       }

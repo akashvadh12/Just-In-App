@@ -20,7 +20,7 @@ class Issue {
   final double? longitude;
   final String? resolutionNote;
   final DateTime? createdAt;
-  final DateTime? resolvedAt;
+  final String? resolvedAt;
 
   Issue({
     required this.id,
@@ -89,7 +89,7 @@ class Issue {
       longitude: _parseDouble(json['longitude']),
       resolutionNote: json['resolutionNote']?.toString(),
       createdAt: _parseDateTime(json['createdAt']),
-      resolvedAt: _parseDateTime(json['resolvedAt']),
+      resolvedAt: _formatDateTime(json['resolvedAt']?.toString()),
     );
   }
 
@@ -201,7 +201,7 @@ class Issue {
     double? longitude,
     String? resolutionNote,
     DateTime? createdAt,
-    DateTime? resolvedAt,
+    String? resolvedAt,
   }) {
     return Issue(
       id: id ?? this.id,
@@ -242,7 +242,7 @@ class Issue {
       'longitude': longitude,
       'resolutionNote': resolutionNote,
       'createdAt': createdAt?.toIso8601String(),
-      'resolvedAt': resolvedAt?.toIso8601String(),
+      'resolvedAt': resolvedAt,
     };
   }
 

@@ -247,7 +247,7 @@ Widget _buildTodayTimeCard(TodayAttendance todayData) {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('First Check In', style: AppTextStyles.body),
+                  Text('First Clock In', style: AppTextStyles.body),
                   Text(
                     todayData.firstCheckInTime ?? '--:--',
                     style: AppTextStyles.subtitle,
@@ -259,7 +259,7 @@ Widget _buildTodayTimeCard(TodayAttendance todayData) {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Last Check Out', style: AppTextStyles.body),
+                  Text('Last Clock Out', style: AppTextStyles.body),
                   Text(
                     todayData.lastCheckOutTime ?? '--:--',
                     style: AppTextStyles.subtitle,

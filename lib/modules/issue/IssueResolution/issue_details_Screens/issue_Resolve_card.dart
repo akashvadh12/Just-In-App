@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
-import 'package:security_guard/modules/issue/IssueResolution/issue_details_Screens/issuDetails.dart';
+import 'package:security_guard/modules/issue/IssueResolution/issue_details_Screens/issue_details_screen.dart';
+// import 'package:security_guard/modules/issue/IssueResolution/issue_details_Screens/issuDetails.dart';
+import 'package:security_guard/modules/issue/IssueResolution/issue_details_Screens/issue_resolved_screen.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -43,34 +45,45 @@ class IssueCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Use the first issue photo as the main image, fallback to images
-    final mainImage = issue.issuePhotos.isNotEmpty
-        ? issue.issuePhotos.first
-        : (issue.images.isNotEmpty ? issue.images.first : '');
+    final mainImage =
+        issue.issuePhotos.isNotEmpty
+            ? issue.issuePhotos.first
+            : (issue.images.isNotEmpty ? issue.images.first : '');
 
-        print('Issue title: ${issue.title}');
+    print('Issue title: ${issue.title}');
     return Card(
-      margin: const EdgeInsets.only(bottom: 16 ),
+      margin: const EdgeInsets.only(bottom: 16),
       color: Colors.white,
       child: InkWell(
         onTap: () async {
           final userId = await SharedPrefHelper.getStoredUserId();
           await SharedPrefHelper.saveIssueId(issue.id); // Save issue ID
-    
+
           print('User ID retrieved: $userId');
           print('Issue ID saved: [38;5;2m${issue.id}[0m');
           print('Issue title: ${issue.title}');
-    
-          final updatedIssue = await Navigator.push<Issue>(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) =>
-                      IssueDetailScreen(issue: issue, userId: issue.id),
-            ),
-          );
-    
-          if (updatedIssue != null && onIssueUpdated != null) {
+
+          if (issue.status == IssueStatus.resolved) {
+            print('Issue is resolved, navigating to issue details screen');
+            final updatedIssue = await Navigator.push<Issue>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ResolvedIssueScreen(issue: issue),
+              ),
+            );
+          } else {
+            final updatedIssue = await Navigator.push<Issue>(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) =>
+                        IssueDetailScreen(issue: issue, userId: issue.id),
+              ),
+            );
+               if (updatedIssue != null && onIssueUpdated != null) {
             onIssueUpdated!(updatedIssue);
+          }
+            print('Issue is not resolved, navigating to issue details screen');
           }
         },
         child: Padding(
@@ -83,42 +96,43 @@ class IssueCard extends StatelessWidget {
                 child: SizedBox(
                   width: 80,
                   height: 80,
-                  child: mainImage.isNotEmpty
-                      ? Image.network(
-                          mainImage,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: 80,
-                              height: 80,
-                              color: AppColors.lightGrey,
-                              child: const Icon(
-                                Icons.image_not_supported,
-                                color: AppColors.greyColor,
-                              ),
-                            );
-                          },
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              width: 80,
-                              height: 80,
-                              color: AppColors.lightGrey,
-                              child: const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                            );
-                          },
-                        )
-                      : Container(
-                          width: 80,
-                          height: 80,
-                          color: AppColors.lightGrey,
-                          child: const Icon(
-                            Icons.image_not_supported,
-                            color: AppColors.greyColor,
+                  child:
+                      mainImage.isNotEmpty
+                          ? Image.network(
+                            mainImage,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: 80,
+                                height: 80,
+                                color: AppColors.lightGrey,
+                                child: const Icon(
+                                  Icons.image_not_supported,
+                                  color: AppColors.greyColor,
+                                ),
+                              );
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                width: 80,
+                                height: 80,
+                                color: AppColors.lightGrey,
+                                child: const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            },
+                          )
+                          : Container(
+                            width: 80,
+                            height: 80,
+                            color: AppColors.lightGrey,
+                            child: const Icon(
+                              Icons.image_not_supported,
+                              color: AppColors.greyColor,
+                            ),
                           ),
-                        ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -132,9 +146,7 @@ class IssueCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             issue.title,
-                            style: AppTextStyles.heading.copyWith(
-                              fontSize: 16,
-                            ),
+                            style: AppTextStyles.heading.copyWith(fontSize: 16),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -151,28 +163,28 @@ class IssueCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     // Show thumbnails for all issue photos if available
-                     Wrap(
+                    Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.location_on_outlined,
-                              size: 16,
-                              color: AppColors.greyColor,
-                            ),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                issue.location,
-                                style: AppTextStyles.hint,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
+                        // Row(
+                        //   mainAxisSize: MainAxisSize.min,
+                        //   children: [
+                        //     const Icon(
+                        //       Icons.location_on_outlined,
+                        //       size: 16,
+                        //       color: AppColors.greyColor,
+                        //     ),
+                        //     const SizedBox(width: 4),
+                        //     Flexible(
+                        //       child: Text(
+                        //         issue.location,
+                        //         style: AppTextStyles.hint,
+                        //         overflow: TextOverflow.ellipsis,
+                        //       ),
+                        //     ),
+                        //   ],
+                        // ),
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -189,8 +201,8 @@ class IssueCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                  ])
-            
+                      ],
+                    ),
                   ],
                 ),
               ),
