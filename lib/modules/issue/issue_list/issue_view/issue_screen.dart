@@ -65,12 +65,12 @@ class IssuesScreen extends StatelessWidget {
         floatingActionButton: FloatingActionButton(
           onPressed: () {
             // Navigate to issue creation screen
-            Get.to(IncidentReportScreen());
-
+            Get.to(() => IncidentReportScreen());
           },
           backgroundColor: AppColors.primary,
           child: const Icon(Icons.add, color: Colors.white),
-      )),
+        ),
+      ),
     );
   }
 
@@ -126,7 +126,6 @@ class IssuesScreen extends StatelessWidget {
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: SizedBox(
-              
               height: Get.height * 0.6,
               child: Center(
                 child: Column(
@@ -183,4 +182,3 @@ class IssuesScreen extends StatelessWidget {
     });
   }
 }
-

@@ -81,6 +81,7 @@ class AuthController extends GetxController {
   Future<void> login() async {
     final input = credentialsController.text.trim();
     final password = passwordController.text.trim();
+    String? fcmId = await notify.getDeviceToken();
 
     // Validation
     if (!_validateInput(input, password)) return;
@@ -94,6 +95,7 @@ class AuthController extends GetxController {
 
       // Use centralized API service
       final response = await _apiService.login(
+        fcmId: fcmId,
         input: input,
         password: password,
         loginWithPhone: loginWithPhone.value,

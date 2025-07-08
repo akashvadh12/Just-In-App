@@ -14,15 +14,21 @@ class ApiPostServices {
 
   /// Centralized login method
   Future<Map<String, dynamic>> login({
+    String? fcmId,
     required String input,
     required String password,
     required bool loginWithPhone,
   }) async {
     const endpoint = 'Auth/UserAuthentication';
-    
-    final body = loginWithPhone
-        ? {'phoneNumber': input, 'password': password}
-        : {'userName': input, 'password': password};
+    print('fcmId 😁😁😁😁😁👍👍👌: $fcmId');
+    final body =
+        loginWithPhone
+            ? {'phoneNumber': input, 'password': password}
+            : {
+              'userName': input,
+              'password': password,
+              'notificationToken': fcmId,
+            };
 
     final headers = <String, String>{
       'Content-Type': 'application/json',
@@ -39,7 +45,9 @@ class ApiPostServices {
       if (response.statusCode == 200) {
         log('$_logTag Login successful');
       } else {
-        log('$_logTag Login failed => Status: ${response.statusCode}, Body: ${response.body}');
+        log(
+          '$_logTag Login failed => Status: ${response.statusCode}, Body: ${response.body}',
+        );
       }
 
       return responseData;
@@ -50,11 +58,9 @@ class ApiPostServices {
   }
 
   /// Send OTP for phone verification
-  Future<Map<String, dynamic>> sendOTP({
-    required String phoneNumber,
-  }) async {
+  Future<Map<String, dynamic>> sendOTP({required String phoneNumber}) async {
     const endpoint = 'Auth/SendOTP'; // Adjust endpoint as per your API
-    
+
     final body = {'phoneNumber': phoneNumber};
     final headers = <String, String>{
       'Content-Type': 'application/json',
@@ -86,11 +92,8 @@ class ApiPostServices {
     required String otp,
   }) async {
     const endpoint = 'Auth/VerifyOTP'; // Adjust endpoint as per your API
-    
-    final body = {
-      'phoneNumber': phoneNumber,
-      'otp': otp,
-    };
+
+    final body = {'phoneNumber': phoneNumber, 'otp': otp};
 
     final headers = <String, String>{
       'Content-Type': 'application/json',
@@ -106,7 +109,9 @@ class ApiPostServices {
       if (response.statusCode == 200) {
         log('$_logTag OTP verified successfully');
       } else {
-        log('$_logTag OTP verification failed => Status: ${response.statusCode}');
+        log(
+          '$_logTag OTP verification failed => Status: ${response.statusCode}',
+        );
       }
 
       return responseData;
@@ -122,10 +127,8 @@ class ApiPostServices {
     required bool isPhone,
   }) async {
     const endpoint = 'Auth/ForgotPassword'; // Adjust as per your API
-    
-    final body = isPhone 
-        ? {'phoneNumber': identifier}
-        : {'email': identifier};
+
+    final body = isPhone ? {'phoneNumber': identifier} : {'email': identifier};
 
     final headers = <String, String>{
       'Content-Type': 'application/json',
@@ -141,7 +144,9 @@ class ApiPostServices {
       if (response.statusCode == 200) {
         log('$_logTag Forgot password request successful');
       } else {
-        log('$_logTag Forgot password request failed => Status: ${response.statusCode}');
+        log(
+          '$_logTag Forgot password request failed => Status: ${response.statusCode}',
+        );
       }
 
       return responseData;
@@ -159,7 +164,7 @@ class ApiPostServices {
     required bool isPhone,
   }) async {
     const endpoint = 'Auth/ResetPassword'; // Adjust as per your API
-    
+
     final body = {
       if (isPhone) 'phoneNumber': identifier else 'email': identifier,
       'newPassword': newPassword,
@@ -203,7 +208,7 @@ class ApiPostServices {
     List<String>? photoPaths,
   }) async {
     final headers = await _getAuthenticatedHeaders();
-    
+
     final fields = {
       'LocationName': locationName,
       'SiteId': siteId,
@@ -231,7 +236,12 @@ class ApiPostServices {
 
       // Use multipart for photos
       log('$_logTag Using multipart request with ${photoPaths.length} photos');
-      return await _uploadWithPhotos(UPSERT_INCIDENT_REPORT, fields, photoPaths, headers);
+      return await _uploadWithPhotos(
+        UPSERT_INCIDENT_REPORT,
+        fields,
+        photoPaths,
+        headers,
+      );
     } catch (e) {
       log('$_logTag Incident report error: $e');
       rethrow;
@@ -247,12 +257,12 @@ class ApiPostServices {
   ) async {
     final uri = Uri.parse('${_client.baseUrl}$endpoint');
     final request = http.MultipartRequest('POST', uri);
-    
+
     // Add headers (remove Content-Type as it's set automatically for multipart)
     final filteredHeaders = Map<String, String>.from(headers)
       ..remove('Content-Type');
     request.headers.addAll(filteredHeaders);
-    
+
     // Add fields
     request.fields.addAll(fields);
 
@@ -262,14 +272,16 @@ class ApiPostServices {
       if (await File(path).exists()) {
         final mimeType = lookupMimeType(path) ?? 'image/jpeg';
         final mediaType = MediaType.parse(mimeType);
-        
-        request.files.add(await http.MultipartFile.fromPath(
-          'Photo', // Use the same field name for all photos
-          path,
-          filename: 'photo_$i.${mimeType.split('/').last}',
-          contentType: mediaType,
-        ));
-        
+
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'Photo', // Use the same field name for all photos
+            path,
+            filename: 'photo_$i.${mimeType.split('/').last}',
+            contentType: mediaType,
+          ),
+        );
+
         log('$_logTag Added photo: ${File(path).uri.pathSegments.last}');
       } else {
         log('$_logTag Warning: Photo file not found: $path');
@@ -278,7 +290,7 @@ class ApiPostServices {
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
-    
+
     log('$_logTag Multipart upload response status: ${response.statusCode}');
     return _parseResponse(response);
   }
@@ -299,7 +311,7 @@ class ApiPostServices {
       if (response.body.isEmpty) {
         return {'status': false, 'message': 'Empty response body'};
       }
-      
+
       return jsonDecode(response.body) as Map<String, dynamic>;
     } catch (e) {
       log('$_logTag Error parsing response: $e');
@@ -314,11 +326,13 @@ class ApiPostServices {
 
   /// Refresh authentication token (NOOP, not supported in LocalStorageService)
   Future<Map<String, dynamic>> refreshToken() async {
-    return {'status': false, 'message': 'Refresh token not supported in local storage'};
+    return {
+      'status': false,
+      'message': 'Refresh token not supported in local storage',
+    };
   }
 
   /// Get user profile by userId
-
 
   /// Update user profile
   Future<Map<String, dynamic>?> updateProfileAPI({
@@ -377,7 +391,9 @@ class ApiPostServices {
     final request = http.MultipartRequest('POST', uri);
     request.headers.addAll(headers..remove('Content-Type'));
     request.fields['userId'] = userId;
-    request.files.add(await http.MultipartFile.fromPath('photo', imageFile.path));
+    request.files.add(
+      await http.MultipartFile.fromPath('photo', imageFile.path),
+    );
     try {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
