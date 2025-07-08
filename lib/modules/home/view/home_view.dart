@@ -81,7 +81,7 @@ class HomeView extends GetView<HomeController> {
           Obx(
             () => GestureDetector(
               onTap: () {
-              bottomNavController.changeTab(4); // Navigate to Profile tab
+                bottomNavController.changeTab(4); // Navigate to Profile tab
               },
               child: Container(
                 width: 42,
@@ -127,7 +127,7 @@ class HomeView extends GetView<HomeController> {
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
-      
+
                 Text(
                   dateString,
                   style: TextStyle(
@@ -140,12 +140,12 @@ class HomeView extends GetView<HomeController> {
             ),
           ),
 
-           Stack(
+          Stack(
             children: [
               IconButton(
                 icon: Icon(Icons.notifications, color: Colors.white),
                 onPressed: () {
-                  // Get.to(() => NotificationsScreen());
+                  Get.to(() => NotificationsScreen());
                 },
               ),
               // Positioned(
@@ -256,43 +256,45 @@ class HomeView extends GetView<HomeController> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-               controller.attendanceStatus.value == 'In' ?   Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Clock In',
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                  controller.attendanceStatus.value == 'In'
+                      ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Clock In',
+                            style: TextStyle(color: Colors.grey, fontSize: 14),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            controller
+                                .clockInTime
+                                .value, // You can bind actual clock in time if available from API
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      )
+                      : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Clock Out',
+                            style: TextStyle(color: Colors.grey, fontSize: 14),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            controller
+                                .clockOutTime
+                                .value, // You can bind actual clock in time if available from API
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        controller
-                            .clockInTime
-                            .value, // You can bind actual clock in time if available from API
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ) :  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Clock Out',
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        controller
-                            .clockOutTime
-                            .value, // You can bind actual clock in time if available from API
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -339,30 +341,30 @@ class HomeView extends GetView<HomeController> {
         _buildActionButton(
           icon: Icons.fingerprint,
           label: 'Mark\nAttendance',
-          color: Color(0xFF4285F4),
+          color: Color.fromARGB(255, 30, 107, 231),
           onTap: () => bottomNavController.changeTab(1),
         ),
-     
+
         Obx(
-          () => controller.profileController.userModel.value?.isAdmin == true?
-          _buildActionButton(
-            icon: Icons.add_location,
-            label: 'Add\nLocation',
-            color: Color.fromARGB(255, 30, 107, 231),
-            onTap: () => Get.to(LocationsListScreen()),
-          ) 
-          :   
-           _buildActionButton(
-            icon: Icons.directions_walk,
-            label: 'Start\nPatrol',
-            color: Color.fromARGB(255, 30, 107, 231),
-            onTap: () => bottomNavController.changeTab(2),
-          ),
+          () =>
+              controller.profileController.userModel.value?.isAdmin == true
+                  ? _buildActionButton(
+                    icon: Icons.add_location,
+                    label: 'Add\nLocation',
+                    color: Color.fromARGB(255, 30, 107, 231),
+                    onTap: () => Get.to(LocationsListScreen()),
+                  )
+                  : _buildActionButton(
+                    icon: Icons.directions_walk,
+                    label: 'Start\nPatrol',
+                    color: Color.fromARGB(255, 30, 107, 231),
+                    onTap: () => bottomNavController.changeTab(2),
+                  ),
         ),
         _buildActionButton(
           icon: Icons.warning,
           label: 'Raise\nIssue',
-          color: Color(0xFF4285F4),
+          color: Color.fromARGB(255, 30, 107, 231),
           onTap: () => Get.to(IncidentReportScreen()),
         ),
       ],
@@ -404,137 +406,133 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-Widget _buildOverviewCards(bottomNavController) {
-  return Obx(
-    () => Column(
-      children: [
-        // New Issues Card
-        InkWell(
-          onTap: () => bottomNavController.changeTab(3),
-          child: Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 12,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'New Issues',
-                      style: TextStyle(
-                        color: Colors.grey[600], 
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.green[100],
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.fiber_new,
-                        color: Colors.green[600],
-                        size: 18,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                Text(
-                  '${controller.issuesNew}',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+  Widget _buildOverviewCards(bottomNavController) {
+    return Obx(
+      () => Column(
+        children: [
+          // New Issues Card
+          InkWell(
+            onTap: () => bottomNavController.changeTab(3),
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'New Issues',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.green[100],
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.fiber_new,
+                          color: Colors.green[600],
+                          size: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    '${controller.issuesNew}',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        
-        SizedBox(height: 12),
-        
-        // Resolved Issues Card
-        InkWell(
-          onTap: () => {
-            
-  
-             Get.to(() => IssuesScreen(initialTabIndex: 1))
-          },
-          child: Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 12,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Resolved Issues',
-                      style: TextStyle(
-                        color: Colors.grey[600], 
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[100],
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.check_circle,
-                        color: Colors.blue[600],
-                        size: 18,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                Text(
-                  '${controller.issuesResolved}',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+
+          SizedBox(height: 12),
+
+          // Resolved Issues Card
+          InkWell(
+            onTap: () => {Get.to(() => IssuesScreen(initialTabIndex: 1))},
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Resolved Issues',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[100],
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.check_circle,
+                          color: Colors.blue[600],
+                          size: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    '${controller.issuesResolved}',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   Widget _buildRecentActivities() {
     return Container(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:security_guard/Data/services/notification_services.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:http/http.dart' as http;
@@ -10,6 +11,7 @@ import 'package:security_guard/modules/profile/controller/localStorageService/lo
 class HomeController extends GetxController {
   // User data from ProfileController
   final ProfileController profileController = Get.find<ProfileController>();
+  final NotificationServices notify = NotificationServices();
 
   String get userName => profileController.userModel.value?.name ?? 'User';
   String get userPhotoUrl => profileController.userModel.value?.photoPath ?? '';
@@ -22,6 +24,24 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     fetchDashboardData();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = Get.context;
+      if (context != null) {
+        // Initialize notification services
+        notify.initialize();
+
+        notify.getDeviceToken().then((value) {
+          // Use a logger instead of print in production
+          // print("The token ========> $value");
+        });
+
+        // Check profile completion after initialization
+      } else {
+        // Use a logger instead of print in production
+        // print("Context is null");
+      }
+    });
   }
 
   // Attendance data
@@ -134,11 +154,11 @@ class HomeController extends GetxController {
   final LocalStorageService _storage = LocalStorageService.instance;
 
   Future<void> fetchDashboardData() async {
-        final connectivityController = Get.find<ConnectivityController>();
+    final connectivityController = Get.find<ConnectivityController>();
 
     if (connectivityController.isOffline.value) {
       connectivityController.showNoInternetSnackbar();
-      return ;
+      return;
     }
     dashboardLoading.value = true;
     try {

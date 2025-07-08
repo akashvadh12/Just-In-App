@@ -19,22 +19,24 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkLoginStatus() async {
     // Add a small delay for splash effect
     await Future.delayed(const Duration(seconds: 2));
-    
+
     try {
       final storage = LocalStorageService.instance;
       final deviceToken = storage.getDeviceToken();
-      
+
       if (deviceToken != null && deviceToken.isNotEmpty) {
         // Device token exists, navigate to main app
         Get.offAllNamed(Routes.BOTTOM_NAV);
       } else {
         // Device token does not exist, navigate to login
+        // Get.offAllNamed(Routes.BOTTOM_NAV);
         Get.offAllNamed(Routes.LOGIN);
       }
     } catch (e) {
       print('Error checking login status: $e');
       // On error, navigate to login
-      Get.offAllNamed(Routes.LOGIN);
+      Get.offAllNamed(Routes.BOTTOM_NAV);
+      // Get.offAllNamed(Routes.LOGIN);
     }
   }
 

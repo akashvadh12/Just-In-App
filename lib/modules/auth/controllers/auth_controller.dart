@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:security_guard/Data/services/notification_services.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/data/services/api_post_service.dart';
 import 'package:security_guard/modules/auth/models/user_model.dart';
@@ -27,11 +28,13 @@ class AuthController extends GetxController {
   final ApiPostServices _apiService = ApiPostServices();
   final LocalStorageService _storage = LocalStorageService.instance;
   final ProfileController profileController = Get.find<ProfileController>();
+  final NotificationServices notify = NotificationServices();
 
   @override
   void onInit() {
     super.onInit();
     checkLoginStatus();
+    notify.initialize();
   }
 
   // Toggle methods
