@@ -273,7 +273,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         if (user.userId != null && user.userId!.isNotEmpty) ...[
                           Center(
                             child: Text(
-                              'ID: ${user.userId}',
+                              'Gaurd ID: ${user.gaurdId}',
                               style: TextStyle(
                                 color: Colors.grey[600],
                                 fontSize: 14,
@@ -604,7 +604,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             ),
                                           );
                                         });
-                                  } 
+                                  }
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.blue,
@@ -865,7 +865,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                   ),
                   Divider(height: 1),
-               
+
                   // Password Change Section
                   if (_showPasswordSection)
                     Container(

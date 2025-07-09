@@ -13,7 +13,7 @@ class Issue {
   final String? resolutionNote;
   final List<String> issuePhotos;
   final List<String> resolvePhotos;
-  bool isRead;
+  // bool isRead;
 
   Issue({
     required this.issueId,
@@ -25,7 +25,7 @@ class Issue {
     this.resolutionNote,
     required this.issuePhotos,
     required this.resolvePhotos,
-    this.isRead = false,
+    // this.isRead = false,
   });
 
   factory Issue.fromJson(Map<String, dynamic> json) {
@@ -39,7 +39,7 @@ class Issue {
       resolutionNote: json['resolutionNote'],
       issuePhotos: List<String>.from(json['issuePhotos'] ?? []),
       resolvePhotos: List<String>.from(json['resolvePhotos'] ?? []),
-      isRead: false,
+      // isRead: false,
     );
   }
 }
@@ -113,7 +113,7 @@ class NotificationsController extends ChangeNotifier {
 
   void markAsRead(String issueId) {
     final issue = _issues.firstWhere((issue) => issue.issueId == issueId);
-    issue.isRead = true;
+    // issue.isRead = true;
     notifyListeners();
   }
 

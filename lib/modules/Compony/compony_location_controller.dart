@@ -137,7 +137,6 @@ class CompanyLocationController extends GetxController {
             data.map((json) => CompanyLocation.fromJson(json)).toList();
         _applyFilters(); // Apply current filters to the new data
 
-        _showSuccessMessage('Company locations loaded successfully');
       } else {
         _showErrorMessage(
           'Failed to fetch company locations: ${response.body}',

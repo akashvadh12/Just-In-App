@@ -82,8 +82,6 @@ class GuardAttendanceController extends GetxController {
         }
 
         capturedImage.value = image;
-
-        Get.snackbar("Photo Captured", "Successfully captured photo");
       }
     } catch (e) {
       Get.snackbar("Error", "Could not capture photo");

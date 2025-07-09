@@ -295,25 +295,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         children: [
                           Row(
                             children: [
-                              if (!issue.isRead) ...[
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.blue,
-                                    shape: BoxShape.circle,
-                                  ),
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: Colors.blue,
+                                  shape: BoxShape.circle,
                                 ),
-                                const SizedBox(width: 8),
-                              ],
+                              ),
+                              const SizedBox(width: 8),
+
                               Expanded(
                                 child: Text(
                                   issue.description,
                                   style: TextStyle(
-                                    fontWeight:
-                                        issue.isRead
-                                            ? FontWeight.w500
-                                            : FontWeight.w600,
+                                    fontWeight: FontWeight.w600,
                                     fontSize: 15,
                                     color: Colors.grey[800],
                                   ),

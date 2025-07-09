@@ -3,6 +3,7 @@ import 'dart:convert';
 
 class UserModel {
   final String userId;
+   String? gaurdId;
   final String userName;
   final String name;
   final String photoPath;
@@ -23,6 +24,7 @@ class UserModel {
    String? logId;
    var isAdmin;
 
+
   UserModel({
     required this.userId,
     required this.userName,
@@ -31,6 +33,7 @@ class UserModel {
     required this.roleId,
     required this.siteId,
     required this.companyId,
+    this.gaurdId,
     this.deviceToken,
     this.deviceId,
     this.email,
@@ -70,6 +73,7 @@ class UserModel {
       issuesCount: json['issuesCount'] != null ? Map<String, dynamic>.from(json['issuesCount']) : null,
       logId: json['logID']?.toString() ?? json['logId']?.toString() ?? '',
       isAdmin: json['isadmin'] == true || json['isadmin']?.toString().toLowerCase() == 'true',
+      gaurdId: json['gaurdId']?.toString() ?? json['gaurdID']?.toString() ?? '', // Added gaurdId
     );
   }
 
@@ -79,6 +83,7 @@ class UserModel {
 UserModel updateWith(Map<String, dynamic> json) {
   return UserModel(
     userId: json['userID']?.toString() ?? json['userId']?.toString() ?? this.userId,
+    gaurdId: json['gaurdId']?.toString() ?? json['gaurdID']?.toString() ?? this.gaurdId,
     userName: json['userName']?.toString() ?? this.userName,
     name: json['name']?.toString() ?? this.name,
     photoPath: json['photoPath']?.toString() ?? this.photoPath,
