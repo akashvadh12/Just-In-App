@@ -8,7 +8,7 @@ class ApiClient {
   final String baseUrl;
   final int timeoutSeconds;
   final int maxRetries;
-  
+
   ApiClient({
     this.baseUrl = BASE_URL,
     this.timeoutSeconds = 30,
@@ -26,16 +26,12 @@ class ApiClient {
     return _executeWithRetry(() async {
       log('$_logTag POST => $baseUrl$endpoint');
       log('$_logTag Request body: ${jsonEncode(body)}');
-      
+
       final url = Uri.parse('$baseUrl$endpoint');
       final mergedHeaders = _buildHeaders(headers);
-      
+
       final response = await http
-          .post(
-            url,
-            headers: mergedHeaders,
-            body: jsonEncode(body),
-          )
+          .post(url, headers: mergedHeaders, body: jsonEncode(body))
           .timeout(Duration(seconds: timeoutSeconds));
 
       _logResponse(endpoint, response);
@@ -50,10 +46,10 @@ class ApiClient {
   }) async {
     return _executeWithRetry(() async {
       log('$_logTag GET => $baseUrl$endpoint');
-      
+
       final url = Uri.parse('$baseUrl$endpoint');
       final mergedHeaders = _buildHeaders(headers);
-      
+
       final response = await http
           .get(url, headers: mergedHeaders)
           .timeout(Duration(seconds: timeoutSeconds));
@@ -71,12 +67,14 @@ class ApiClient {
   }) async {
     return _executeWithRetry(() async {
       final cleanParams = _cleanParams(params);
-      final uri = Uri.parse('$baseUrl$endpoint').replace(queryParameters: cleanParams);
-      
+      final uri = Uri.parse(
+        '$baseUrl$endpoint',
+      ).replace(queryParameters: cleanParams);
+
       log('$_logTag GET with params => $uri');
-      
+
       final mergedHeaders = _buildHeaders(headers);
-      
+
       final response = await http
           .get(uri, headers: mergedHeaders)
           .timeout(Duration(seconds: timeoutSeconds));
@@ -95,16 +93,14 @@ class ApiClient {
     return _executeWithRetry(() async {
       log('$_logTag PUT => $baseUrl$endpoint');
       log('$_logTag Request body: ${jsonEncode(body)}');
-      
-      final url = Uri.parse('$baseUrl$endpoint');
+
+      final url = Uri.parse(
+        'https://official.solarvision-cairo.com/UpdateCompany',
+      );
       final mergedHeaders = _buildHeaders(headers);
-      
+
       final response = await http
-          .put(
-            url,
-            headers: mergedHeaders,
-            body: jsonEncode(body),
-          )
+          .put(url, headers: mergedHeaders, body: jsonEncode(body))
           .timeout(Duration(seconds: timeoutSeconds));
 
       _logResponse(endpoint, response);
@@ -119,10 +115,10 @@ class ApiClient {
   }) async {
     return _executeWithRetry(() async {
       log('$_logTag DELETE => $baseUrl$endpoint');
-      
+
       final url = Uri.parse('$baseUrl$endpoint');
       final mergedHeaders = _buildHeaders(headers);
-      
+
       final response = await http
           .delete(url, headers: mergedHeaders)
           .timeout(Duration(seconds: timeoutSeconds));
@@ -141,16 +137,12 @@ class ApiClient {
     return _executeWithRetry(() async {
       log('$_logTag PATCH => $baseUrl$endpoint');
       log('$_logTag Request body: ${jsonEncode(body)}');
-      
+
       final url = Uri.parse('$baseUrl$endpoint');
       final mergedHeaders = _buildHeaders(headers);
-      
+
       final response = await http
-          .patch(
-            url,
-            headers: mergedHeaders,
-            body: jsonEncode(body),
-          )
+          .patch(url, headers: mergedHeaders, body: jsonEncode(body))
           .timeout(Duration(seconds: timeoutSeconds));
 
       _logResponse(endpoint, response);
@@ -163,25 +155,27 @@ class ApiClient {
     Future<http.Response> Function() request,
   ) async {
     int attempts = 0;
-    
+
     while (attempts < maxRetries) {
       try {
         attempts++;
         final response = await request();
-        
+
         // Return response if successful or client error (4xx)
         if (response.statusCode < 500) {
           return response;
         }
-        
+
         // For server errors (5xx), retry if not the last attempt
         if (attempts < maxRetries) {
           final delay = Duration(seconds: attempts * 2); // Exponential backoff
-          log('$_logTag Server error ${response.statusCode}, retrying in ${delay.inSeconds}s (attempt $attempts/$maxRetries)');
+          log(
+            '$_logTag Server error ${response.statusCode}, retrying in ${delay.inSeconds}s (attempt $attempts/$maxRetries)',
+          );
           await Future.delayed(delay);
           continue;
         }
-        
+
         return response;
       } on SocketException catch (e) {
         log('$_logTag Network error (attempt $attempts/$maxRetries): $e');
@@ -197,7 +191,7 @@ class ApiClient {
         await Future.delayed(Duration(seconds: attempts * 2));
       }
     }
-    
+
     throw Exception('Max retry attempts ($maxRetries) exceeded');
   }
 
@@ -209,11 +203,11 @@ class ApiClient {
       'User-Agent': 'SecurityGuard-Mobile-App',
       'Accept-Encoding': 'gzip, deflate',
     };
-    
+
     if (headers != null) {
       return {...defaultHeaders, ...headers};
     }
-    
+
     return defaultHeaders;
   }
 
@@ -229,16 +223,17 @@ class ApiClient {
   void _logResponse(String endpoint, http.Response response) {
     final statusCode = response.statusCode;
     final emoji = statusCode >= 200 && statusCode < 300 ? '✅' : '❌';
-    
+
     log('$_logTag $emoji Response [$statusCode] for $endpoint');
-    
+
     if (statusCode >= 400) {
       log('$_logTag Error response body: ${response.body}');
     } else {
       // Only log response body in debug mode to avoid cluttering logs
-      final bodyPreview = response.body.length > 200 
-          ? '${response.body.substring(0, 200)}...' 
-          : response.body;
+      final bodyPreview =
+          response.body.length > 200
+              ? '${response.body.substring(0, 200)}...'
+              : response.body;
       log('$_logTag Response preview: $bodyPreview');
     }
   }

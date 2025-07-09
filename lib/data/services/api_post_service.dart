@@ -358,6 +358,46 @@ class ApiPostServices {
     }
   }
 
+  //update company
+  Future<Map<String, dynamic>?> updateCompanyAPI({
+    required String companyID,
+    required String companyName,
+    required String industry,
+    required String headquarters,
+    String? latitude,
+    String? longitude,
+    String? radius,
+    String? locationName,
+    bool? status,
+  }) async {
+    const String endpoint = 'company/UpdateCompany'; // Ensure this is correct
+    final Map<String, String> headers = await _getAuthenticatedHeaders();
+
+    final Map<String, dynamic> body = {
+      'companyID': companyID,
+      'companyName': companyName,
+      'industry': industry,
+      'headquarters': headquarters,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+      if (radius != null) 'radius': radius,
+      if (locationName != null) 'locationName': locationName,
+      if (status != null) 'status': status,
+    };
+
+    try {
+      final response = await _client.put(
+        endpoint,
+        body,
+        headers: {...headers, 'Content-Type': 'application/json'},
+      );
+      return _parseResponse(response);
+    } catch (e, stack) {
+      log('$_logTag ❌ Update company error: $e\n$stack');
+      return {'status': false, 'message': 'Failed to update company'};
+    }
+  }
+
   /// Update user password
   Future<Map<String, dynamic>?> updatePasswordAPI({
     required String userId,

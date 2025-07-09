@@ -1,6 +1,7 @@
 // File: lib/modules/home/views/home_view.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:security_guard/modules/Compony/compony_location_list.dart';
 import 'package:security_guard/modules/addLoacation/location_list_screen.dart';
 
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
@@ -335,39 +336,82 @@ class HomeView extends GetView<HomeController> {
   }
 
   Widget _buildQuickActions(bottomNavController) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _buildActionButton(
-          icon: Icons.fingerprint,
-          label: 'Mark\nAttendance',
-          color: Color.fromARGB(255, 30, 107, 231),
-          onTap: () => bottomNavController.changeTab(1),
-        ),
-
-        Obx(
-          () =>
-              controller.profileController.userModel.value?.isAdmin == true
-                  ? _buildActionButton(
-                    icon: Icons.add_location,
-                    label: 'Add\nLocation',
+    return Container(
+      child: Column(
+        children: [
+          // First row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(right: 6),
+                  child: _buildActionButton(
+                    icon: Icons.fingerprint,
+                    label: 'Mark\nAttendance',
                     color: Color.fromARGB(255, 30, 107, 231),
-                    onTap: () => Get.to(LocationsListScreen()),
-                  )
-                  : _buildActionButton(
-                    icon: Icons.directions_walk,
-                    label: 'Start\nPatrol',
-                    color: Color.fromARGB(255, 30, 107, 231),
-                    onTap: () => bottomNavController.changeTab(2),
+                    onTap: () => bottomNavController.changeTab(1),
                   ),
-        ),
-        _buildActionButton(
-          icon: Icons.warning,
-          label: 'Raise\nIssue',
-          color: Color.fromARGB(255, 30, 107, 231),
-          onTap: () => Get.to(IncidentReportScreen()),
-        ),
-      ],
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(left: 6),
+                  child: Obx(
+                    () =>
+                        controller.profileController.userModel.value?.isAdmin ==
+                                true
+                            ? _buildActionButton(
+                              icon: Icons.add_location,
+                              label: 'Add\nLocation',
+                              color: Color.fromARGB(255, 30, 107, 231),
+                              onTap: () => Get.to(LocationsListScreen()),
+                            )
+                            : _buildActionButton(
+                              icon: Icons.directions_walk,
+                              label: 'Start\nPatrol',
+                              color: Color.fromARGB(255, 30, 107, 231),
+                              onTap: () => bottomNavController.changeTab(2),
+                            ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          // Second row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(right: 6),
+                  child: _buildActionButton(
+                    icon: Icons.warning,
+                    label: 'Raise\nIssue',
+                    color: Color.fromARGB(255, 30, 107, 231),
+                    onTap: () => Get.to(IncidentReportScreen()),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(left: 6),
+                  child: _buildActionButton(
+                    icon: Icons.business,
+                    label: 'Company\nLocation',
+                    color: Color.fromARGB(255, 30, 107, 231),
+                    onTap: () {
+                      // Add your company location navigation here
+                      Get.to(CompanyLocationsListScreen());
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -380,7 +424,6 @@ class HomeView extends GetView<HomeController> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 100,
         height: 100,
         decoration: BoxDecoration(
           color: color,
