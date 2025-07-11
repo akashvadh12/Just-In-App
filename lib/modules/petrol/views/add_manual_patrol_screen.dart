@@ -114,7 +114,14 @@ class _AddManualPatrolScreenState extends State<AddManualPatrolScreen> {
           child: ElevatedButton(
             onPressed: () {
               if (locationNameController.text.trim().isEmpty) {
-                Get.snackbar('Error', 'Please enter a location name');
+                 Get.snackbar(
+                                    'Error',
+                                    'Please enter a location name',
+                                    snackPosition: SnackPosition.BOTTOM,
+                                    backgroundColor: Colors.red,
+                                    colorText: Colors.white,
+                                  );
+               
                 return;
               }
               nextStep();
@@ -345,11 +352,26 @@ class _AddManualPatrolScreenState extends State<AddManualPatrolScreen> {
                 : () async {
                     final latLng = controller.currentLatLng.value;
                     if (latLng == null) {
-                      Get.snackbar('Error', 'Current location not available');
+                        Get.snackbar(
+                                    'Error',
+                                    'Current location not available',
+                                    snackPosition: SnackPosition.BOTTOM,
+                                    backgroundColor: Colors.red,
+                                    colorText: Colors.white,
+                                  );
+                     
                       return;
                     }
                     if (controller.capturedImage.value == null) {
-                      Get.snackbar('Error', 'Please take a selfie before submitting');
+                      
+                        Get.snackbar(
+                                    'Error',
+                                    'Please take a selfie before submitting',
+                                    snackPosition: SnackPosition.BOTTOM,
+                                    backgroundColor: Colors.red,
+                                    colorText: Colors.white,
+                                  );
+                
                       return;
                     }
                     controller.isLoading.value = true;

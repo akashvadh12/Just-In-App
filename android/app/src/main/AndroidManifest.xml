@@ -17,7 +17,7 @@
     <application
         android:label="Just In"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/launcher_icon">
 
         <!-- Google Maps API Key -->
         <meta-data

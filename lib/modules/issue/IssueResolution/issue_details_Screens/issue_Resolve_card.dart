@@ -77,12 +77,12 @@ class IssueCard extends StatelessWidget {
               MaterialPageRoute(
                 builder:
                     (context) =>
-                        IssueDetailScreen(issue: issue, userId: issue.id),
+                        IssueDetailScreen(issue: issue, userId: userId ?? ''),
               ),
             );
-               if (updatedIssue != null && onIssueUpdated != null) {
-            onIssueUpdated!(updatedIssue);
-          }
+            if (updatedIssue != null && onIssueUpdated != null) {
+              onIssueUpdated!(updatedIssue);
+            }
             print('Issue is not resolved, navigating to issue details screen');
           }
         },

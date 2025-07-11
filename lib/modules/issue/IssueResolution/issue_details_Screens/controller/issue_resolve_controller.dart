@@ -18,7 +18,7 @@ class IssueDetailController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool isLoadingLocation = false.obs;
   final RxString errorMessage = ''.obs;
-// Location distance check will be performed in resolveIssue method.
+  // Location distance check will be performed in resolveIssue method.
   final LocalStorageService _storage = LocalStorageService.instance;
 
   late String userId;
@@ -26,6 +26,8 @@ class IssueDetailController extends GetxController {
   /// Call this in your UI to initialize the controller
   void initializeIssue(Issue issue, String userId) {
     currentIssue.value = issue;
+    print('Issue initialized😂😂😂: ${issue.id}');
+    print('User ID: $userId');
     this.userId = userId;
   }
 
@@ -45,7 +47,15 @@ class IssueDetailController extends GetxController {
         selectedImages.add(File(pickedFile.path));
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to pick image: ${e.toString()}');
+
+       Get.snackbar(
+          "Error",
+          "Failed to pick image: ${e.toString()}",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
+        );
+     
     }
   }
 
@@ -81,21 +91,21 @@ class IssueDetailController extends GetxController {
       currentPosition.value = position;
     } catch (e) {
       errorMessage.value = 'Failed to get location: ${e.toString()}';
-     Get.snackbar(
-          "Location Service Disabled",
-          "Please enable location services to continue",
-          backgroundColor: Colors.orange,
-          colorText: Colors.white,
-          icon: const Icon(Icons.location_off, color: Colors.white),
-          duration: const Duration(seconds: 3),
-        );
+      Get.snackbar(
+        "Location Service Disabled",
+        "Please enable location services to continue",
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        icon: const Icon(Icons.location_off, color: Colors.white),
+        duration: const Duration(seconds: 3),
+      );
     } finally {
       isLoadingLocation.value = false;
     }
   }
 
   Future<bool> resolveIssue(String resolutionNote) async {
-        final connectivityController = Get.find<ConnectivityController>();
+    final connectivityController = Get.find<ConnectivityController>();
 
     if (connectivityController.isOffline.value) {
       connectivityController.showNoInternetSnackbar();
@@ -106,14 +116,13 @@ class IssueDetailController extends GetxController {
         throw Exception('Missing required data');
       }
       if (selectedImages.isEmpty) {
-         Get.snackbar(
-        'No Images Selected',
-        'Please select at least one image to resolve the issue.',
-        backgroundColor: AppColors.error,
-        colorText: Colors.white,
-      );
+        Get.snackbar(
+          'No Images Selected',
+          'Please select at least one image to resolve the issue.',
+          backgroundColor: AppColors.error,
+          colorText: Colors.white,
+        );
         return false;
-    
       }
 
       isLoading.value = true;
@@ -159,6 +168,4 @@ class IssueDetailController extends GetxController {
       isLoading.value = false;
     }
   }
-
-  
 }

@@ -225,7 +225,7 @@ class AuthController extends GetxController {
   void _showErrorSnackbar(String message) {
     CustomSnackbar.showSnackbar(
       title: 'Error',
-      message: message,
+      message: 'Please enter a valid ID and password.',
       backgroundColor: AppColors.error,
       icon: Icons.error_outline,
     );

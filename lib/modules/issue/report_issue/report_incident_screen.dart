@@ -20,10 +20,9 @@ class IncidentReportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(IncidentReportController());
-  
 
     return Scaffold(
-      backgroundColor:  AppColors.background,
+      backgroundColor: AppColors.background,
       appBar: _buildAppBar(),
       body: Obx(
         () =>
@@ -31,9 +30,7 @@ class IncidentReportScreen extends StatelessWidget {
                 ? _buildLoadingState()
                 : SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
-                  child: Column(
-                    children: [_buildForm(controller)],
-                  ),
+                  child: Column(children: [_buildForm(controller)]),
                 ),
       ),
     );
@@ -41,13 +38,13 @@ class IncidentReportScreen extends StatelessWidget {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text(
-          'Report Incident',
-          style: TextStyle(color: Colors.white),
-        ),
-        elevation: 0,
-      );
+      iconTheme: const IconThemeData(color: Colors.white),
+      title: const Text(
+        'Report Incident',
+        style: TextStyle(color: Colors.white),
+      ),
+      elevation: 0,
+    );
   }
 
   Widget _buildHeader() {
@@ -251,13 +248,27 @@ class IncidentReportScreen extends StatelessWidget {
                             options: MapOptions(
                               initialCenter: controller.currentPosition.value!,
                               initialZoom: 15.0,
+                              minZoom: 5.0,
+                              maxZoom: 19.0,
                             ),
                             children: [
+                              // Using CartoDB tile server (more reliable)
                               TileLayer(
                                 urlTemplate:
-                                    "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                                    "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+                                subdomains: const ['a', 'b', 'c', 'd'],
                                 userAgentPackageName: 'com.example.app',
+                                maxZoom: 19,
+                                errorTileCallback: (tile, error, stackTrace) {
+                                  print('Tile loading error: $error');
+                                },
                               ),
+                              // Alternative tile providers (uncomment if needed)
+                              // TileLayer(
+                              //   urlTemplate: "https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=YOUR_API_KEY",
+                              //   userAgentPackageName: 'com.example.app',
+                              //   maxZoom: 19,
+                              // ),
                               MarkerLayer(
                                 markers: [
                                   Marker(
@@ -372,15 +383,14 @@ class IncidentReportScreen extends StatelessWidget {
                           color: Colors.black87,
                         ),
                       ),
-                        const Text(
-                  ' *',
-                  style: TextStyle(color: Colors.red, fontSize: 16),
-                ),
+                      const Text(
+                        ' *',
+                        style: TextStyle(color: Colors.red, fontSize: 16),
+                      ),
                     ],
                   ),
-
                 ),
-               
+
                 Obx(
                   () =>
                       controller.selectedPhotos.isNotEmpty
@@ -428,127 +438,128 @@ class IncidentReportScreen extends StatelessWidget {
     );
   }
 
+  void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
+    final controller = PhotoViewController();
+    final scaleStateController = PhotoViewScaleStateController();
 
-
-void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
-  final controller = PhotoViewController();
-  final scaleStateController = PhotoViewScaleStateController();
-  
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) {
-      return Dialog(
-        backgroundColor: Colors.black,
-        insetPadding: const EdgeInsets.all(16),
-        child: Stack(
-          children: [
-            AspectRatio(
-              aspectRatio: 1,
-              child: PhotoView(
-                imageProvider: imageProvider,
-                backgroundDecoration: const BoxDecoration(color: Colors.black),
-                minScale: PhotoViewComputedScale.contained,
-                maxScale: PhotoViewComputedScale.covered * 2.0,
-                controller: controller,
-                scaleStateController: scaleStateController,
-              ),
-            ),
-            // Close button
-            Positioned(
-              top: 8,
-              right: 8,
-              child: GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
-                    shape: BoxShape.circle,
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.black,
+          insetPadding: const EdgeInsets.all(16),
+          child: Stack(
+            children: [
+              AspectRatio(
+                aspectRatio: 1,
+                child: PhotoView(
+                  imageProvider: imageProvider,
+                  backgroundDecoration: const BoxDecoration(
+                    color: Colors.black,
                   ),
-                  padding: const EdgeInsets.all(8),
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 28,
+                  minScale: PhotoViewComputedScale.contained,
+                  maxScale: PhotoViewComputedScale.covered * 2.0,
+                  controller: controller,
+                  scaleStateController: scaleStateController,
+                ),
+              ),
+              // Close button
+              Positioned(
+                top: 8,
+                right: 8,
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                   ),
                 ),
               ),
-            ),
-            // Zoom controls
-            Positioned(
-              bottom: 16,
-              right: 16,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Zoom in button
-                  GestureDetector(
-                    onTap: () {
-                      final currentScale = controller.scale ?? 1.0;
-                      controller.scale = (currentScale * 1.1).clamp(0.2, 2.0);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      child: const Icon(
-                        Icons.zoom_in,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Zoom out button
-                  GestureDetector(
-                    onTap: () {
-                      final currentScale = controller.scale ?? 1.0;
-                      controller.scale = (currentScale / 1.5).clamp(0.2, 2.0);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      child: const Icon(
-                        Icons.zoom_out,
-                        color: Colors.white,
-                        size: 24,
+              // Zoom controls
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Zoom in button
+                    GestureDetector(
+                      onTap: () {
+                        final currentScale = controller.scale ?? 1.0;
+                        controller.scale = (currentScale * 1.1).clamp(0.2, 2.0);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: const Icon(
+                          Icons.zoom_in,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Reset zoom button
-                  GestureDetector(
-                    onTap: () {
-                      controller.scale = 1.0;
-                      scaleStateController.scaleState = PhotoViewScaleState.initial;
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      child: const Icon(
-                        Icons.center_focus_strong,
-                        color: Colors.white,
-                        size: 24,
+                    const SizedBox(height: 8),
+                    // Zoom out button
+                    GestureDetector(
+                      onTap: () {
+                        final currentScale = controller.scale ?? 1.0;
+                        controller.scale = (currentScale / 1.5).clamp(0.2, 2.0);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: const Icon(
+                          Icons.zoom_out,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    // Reset zoom button
+                    GestureDetector(
+                      onTap: () {
+                        controller.scale = 1.0;
+                        scaleStateController.scaleState =
+                            PhotoViewScaleState.initial;
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: const Icon(
+                          Icons.center_focus_strong,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   Widget _buildAddPhotoButton(IncidentReportController controller) {
     return GestureDetector(
@@ -589,7 +600,6 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
                 color: Colors.grey,
               ),
             ),
-            
           ],
         ),
       ),
@@ -599,13 +609,10 @@ void _showZoomableImage(BuildContext context, ImageProvider imageProvider) {
   Widget _buildPhotoItem(XFile img, IncidentReportController controller) {
     return Stack(
       children: [
-      GestureDetector(
+        GestureDetector(
           onTap: () {
-          _showZoomableImage(
-            Get.context!,
-            FileImage(File(img.path)),
-          );
-        },
+            _showZoomableImage(Get.context!, FileImage(File(img.path)));
+          },
           child: Container(
             width: 100,
             margin: const EdgeInsets.only(right: 12),

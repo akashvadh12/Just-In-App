@@ -2,12 +2,15 @@ import 'dart:math';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
+import 'package:security_guard/modules/issue/IssueResolution/issue_details_Screens/issuDetails.dart';
 import 'package:security_guard/modules/notification/notification_screen.dart';
+import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
 
 class NotificationServices {
   FirebaseMessaging messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  final BottomNavController controller = Get.put(BottomNavController());
 
   // bool _tokenSentToBackend = false;
 
@@ -100,11 +103,16 @@ class NotificationServices {
     if (payload != null && payload.payload != null) {
       print('Notification tapped with payload: ${payload.payload}');
       print('Notification tapped with payload: ${Get.currentRoute}');
-      if (Get.currentRoute != '/home/notification') {
-        Get.to(NotificationsScreen);
-        // Get.to(NotificationScreen());
-      }
+      // if (Get.currentRoute != '/home/notification') {
+      //   Get.to(NotificationsScreen);
+      //   // Get.to(NotificationScreen());
+      // }
       // Get.find<NotificationController>().fetchNotifications();
+      // Get.to(NotificationsScreen);
+      print('Current route: ${controller.currentIndex.value}');
+
+      controller.currentIndex.value = 3;
+      print('Current route: ${controller.currentIndex.value}');
     }
   }
 

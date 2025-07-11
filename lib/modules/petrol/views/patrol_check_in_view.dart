@@ -305,8 +305,12 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen>
           child: ElevatedButton.icon(
             onPressed: () {
               // Navigate to the new AddManualPatrolScreen
-              if (profileController.userModel.value == null) return;
-              if (profileController.userModel.value!.logId == null) {
+              print(
+                'Navigating to AddManualPatrolScreen ${profileController.userModel.value?.logId}',
+              );
+              // if (profileController.userModel.value == null) return;
+              if (profileController.userModel.value!.logId == null ||
+                  profileController.userModel.value!.logId!.isEmpty) {
                 Get.snackbar(
                   "No Patrol Log",
                   "Please start a patrol first.",
@@ -799,42 +803,103 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen>
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
+        contentPadding: const EdgeInsets.all(24),
+        title: Column(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 24),
-            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.orange.shade700,
+                size: 32,
+              ),
+            ),
+            const SizedBox(height: 16),
             Text(
               'Cancel Patrol?',
-              style: AppTextStyles.heading.copyWith(fontSize: 18),
+              style: AppTextStyles.heading.copyWith(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
-        content: Text(
-          'Are you sure you want to cancel the current patrol? All progress will be lost.',
-          style: AppTextStyles.body.copyWith(fontSize: 14),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Are you sure you want to cancel your current patrol?',
+              style: AppTextStyles.body.copyWith(
+                fontSize: 16,
+                color: Colors.grey.shade600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
-        actionsPadding: const EdgeInsets.all(16),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text(
-              'Keep Patrol',
-              style: AppTextStyles.subtitle.copyWith(color: AppColors.primary),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Get.back();
-              controller.cancelCurrentPatrol();
-              controller.currentStep.value = 0;
-              controller.isManualPatrol.value = false;
-              controller.currentPatrolLocation.value = null;
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Cancel Patrol'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () => Get.back(),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: Text(
+                    'Keep Patrol',
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Get.back();
+                    controller.cancelCurrentPatrol();
+                    controller.currentStep.value = 0;
+                    controller.isManualPatrol.value = false;
+                    controller.currentPatrolLocation.value = null;
+
+                    // Show success message
+                    Get.snackbar(
+                      'Patrol Canceled',
+                      'Your patrol has been canceled successfully',
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.green.shade100,
+                      colorText: Colors.green.shade800,
+                      icon: Icon(
+                        Icons.check_circle,
+                        color: Colors.green.shade600,
+                      ),
+                      duration: const Duration(seconds: 2),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade600,
+                    foregroundColor: Colors.white,
+                    elevation: 2,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'Cancel Patrol',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

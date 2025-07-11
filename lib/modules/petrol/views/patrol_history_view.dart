@@ -148,10 +148,10 @@ class PatrolHistoryScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: Card(
         elevation: 2,
-        color:
-            history.status
-                ? AppColors.greenColor.withOpacity(0.1)
-                : AppColors.lightGrey,
+        color: AppColors.background,
+        // history.status
+        //     ? AppColors.greenColor
+        //     : AppColors.lightGrey,
         child: InkWell(
           onTap: () {
             Get.to(() => PatrolHistoryDetailScreen(logID: history.logID));
@@ -374,10 +374,7 @@ class PatrolHistoryDetailScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       child: Card(
         elevation: 3,
-        color:
-            detail.status
-                ? AppColors.lightGrey
-                : AppColors.lightGrey,
+        color: detail.status ? AppColors.lightGrey : AppColors.lightGrey,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(

@@ -19,11 +19,7 @@ class IssueScreen extends StatefulWidget {
   final Issue issue;
   final String userId;
 
-  const IssueScreen({
-    super.key,
-    required this.issue,
-    required this.userId,
-  });
+  const IssueScreen({super.key, required this.issue, required this.userId});
 
   @override
   State<IssueScreen> createState() => _IssueDetailScreenState();
@@ -43,6 +39,8 @@ class _IssueDetailScreenState extends State<IssueScreen> {
     // Set an initial value for the resolution notes.
     _resolutionController.text = widget.issue.resolutionNote ?? '';
     controller = Get.put(IssueDetailController());
+    print('Issue initialized:🏅🏅🏅 ${widget.issue.id}');
+    print('User ID:🏅🏅🏅 ${widget.userId}');
     controller.initializeIssue(widget.issue, widget.userId);
   }
 

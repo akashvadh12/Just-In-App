@@ -25,23 +25,23 @@ class HomeController extends GetxController {
     super.onInit();
     fetchDashboardData();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final context = Get.context;
-      if (context != null) {
-        // Initialize notification services
-        notify.initialize();
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   final context = Get.context;
+    //   if (context != null) {
+    //     // Initialize notification services
+    //     notify.initialize();
 
-        notify.getDeviceToken().then((value) {
-          // Use a logger instead of print in production
-          // print("The token ========> $value");
-        });
+    //     notify.getDeviceToken().then((value) {
+    //       // Use a logger instead of print in production
+    //       // print("The token ========> $value");
+    //     });
 
-        // Check profile completion after initialization
-      } else {
-        // Use a logger instead of print in production
-        // print("Context is null");
-      }
-    });
+    //     // Check profile completion after initialization
+    //   } else {
+    //     // Use a logger instead of print in production
+    //     // print("Context is null");
+    //   }
+    // });
   }
 
   // Attendance data

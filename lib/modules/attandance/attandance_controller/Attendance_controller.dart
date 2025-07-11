@@ -77,14 +77,26 @@ class GuardAttendanceController extends GetxController {
         final fileSize = await image.length();
 
         if (fileSize > 3 * 1024 * 1024) {
-          Get.snackbar("Image Too Large", "Please use a smaller one");
+          Get.snackbar(
+            'Image Too Large',
+            'Please use a smaller one',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
           return;
         }
 
         capturedImage.value = image;
       }
     } catch (e) {
-      Get.snackbar("Error", "Could not capture photo");
+       Get.snackbar(
+            'Error',
+            'Could not capture photo',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+      
+    
       print(e);
     }
   }

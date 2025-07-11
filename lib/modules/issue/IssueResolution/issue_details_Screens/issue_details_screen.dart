@@ -44,6 +44,8 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     _currentIssue = widget.issue;
     _resolutionController.text = widget.issue.resolutionNote ?? '';
     controller = Get.put(IssueDetailController());
+    print('Issue initialized:👌👌👌 ${widget.issue.id}');
+    print('User ID:👌👌👌👌 ${widget.userId}');
     controller.initializeIssue(widget.issue, widget.userId);
   }
 
@@ -153,13 +155,15 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     if (issue == null) return const SizedBox.shrink();
 
     final issueLatLng = LatLng(issue.latitude ?? 0.0, issue.longitude ?? 0.0);
-    final userLatLng = userPosition != null
-        ? LatLng(userPosition.latitude, userPosition.longitude)
-        : null;
+    final userLatLng =
+        userPosition != null
+            ? LatLng(userPosition.latitude, userPosition.longitude)
+            : null;
 
-    final distance = userLatLng != null
-        ? const Distance().as(LengthUnit.Meter, issueLatLng, userLatLng)
-        : null;
+    final distance =
+        userLatLng != null
+            ? const Distance().as(LengthUnit.Meter, issueLatLng, userLatLng)
+            : null;
 
     final isWithinRange = distance != null && distance <= 50;
 
@@ -397,10 +401,11 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
               itemCount: _currentIssue.issuePhotos.length,
               itemBuilder: (context, index) {
                 return GestureDetector(
-                  onTap: () => _showZoomableImage(
-                    context,
-                    NetworkImage(_currentIssue.issuePhotos[index]),
-                  ),
+                  onTap:
+                      () => _showZoomableImage(
+                        context,
+                        NetworkImage(_currentIssue.issuePhotos[index]),
+                      ),
                   child: Container(
                     width: 100,
                     height: 100,
@@ -478,10 +483,11 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                     return Stack(
                       children: [
                         GestureDetector(
-                          onTap: () => _showZoomableImage(
-                            context,
-                            FileImage(controller.selectedImages[index]),
-                          ),
+                          onTap:
+                              () => _showZoomableImage(
+                                context,
+                                FileImage(controller.selectedImages[index]),
+                              ),
                           child: Container(
                             width: 100,
                             height: 100,
@@ -541,13 +547,11 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                 width: double.infinity,
                 height: 50,
                 child: OutlinedButton.icon(
-                  onPressed: controller.isLoading.value
-                      ? null
-                      : () => _showImagePickerOptions(context),
-                  icon: const Icon(
-                    Icons.camera_alt,
-                    color: AppColors.primary,
-                  ),
+                  onPressed:
+                      controller.isLoading.value
+                          ? null
+                          : () => _showImagePickerOptions(context),
+                  icon: const Icon(Icons.camera_alt, color: AppColors.primary),
                   label: const Text(
                     'Add Updated Photos',
                     style: TextStyle(color: AppColors.primary),
@@ -565,36 +569,39 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: controller.isLoading.value
-                      ? null
-                      : () => _markAsResolved(),
+                  onPressed:
+                      controller.isLoading.value
+                          ? null
+                          : () => _markAsResolved(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: controller.isLoading.value
-                        ? Colors.grey
-                        : AppColors.primary,
+                    backgroundColor:
+                        controller.isLoading.value
+                            ? Colors.grey
+                            : AppColors.primary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: controller.isLoading.value
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
+                  child:
+                      controller.isLoading.value
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                          : const Text(
+                            'Mark as Resolved',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                        )
-                      : const Text(
-                          'Mark as Resolved',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
                 ),
               ),
             ],
@@ -670,8 +677,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                   const SizedBox(height: 20),
                   const Text(
                     'Add Photo',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 20),
                   _buildImageOption(
@@ -745,8 +751,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                   ),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                        fontSize: 12, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
                 ],
               ),
@@ -897,19 +902,21 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       return;
     }
 
-          final issue = controller.currentIssue.value;
+    final issue = controller.currentIssue.value;
     final userPosition = controller.currentPosition.value;
 
     if (issue == null) return;
 
     final issueLatLng = LatLng(issue.latitude ?? 0.0, issue.longitude ?? 0.0);
-    final userLatLng = userPosition != null
-        ? LatLng(userPosition.latitude, userPosition.longitude)
-        : null;
+    final userLatLng =
+        userPosition != null
+            ? LatLng(userPosition.latitude, userPosition.longitude)
+            : null;
 
-    final distance = userLatLng != null
-        ? const Distance().as(LengthUnit.Meter, issueLatLng, userLatLng)
-        : null;
+    final distance =
+        userLatLng != null
+            ? const Distance().as(LengthUnit.Meter, issueLatLng, userLatLng)
+            : null;
 
     final isWithinRange = distance != null && distance <= 50;
     print('Distance: $distance, Is within range: $isWithinRange');
@@ -921,8 +928,6 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       return;
     }
 
-    
-
     bool success = await controller.resolveIssue(
       _resolutionController.text.trim(),
     );
@@ -932,15 +937,13 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
         'Issue Resolved',
         'Issue marked as resolved successfully!',
       );
-       Future.delayed(const Duration(seconds: 1), () {
+      Future.delayed(const Duration(seconds: 1), () {
         if (mounted) {
           issuesController.refreshIssues();
           homeController.fetchDashboardData();
           Navigator.pop(context, controller.currentIssue.value);
         }
       });
-
-     
     }
   }
 }

@@ -116,11 +116,24 @@ class ResolvedIssueScreen extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: FlutterMap(
-          options: MapOptions(initialCenter: issueLatLng),
+          options: MapOptions(
+            initialCenter: issueLatLng,
+            initialZoom: 15.0,
+            minZoom: 5.0,
+            maxZoom: 18.0,
+          ),
           children: [
+            // Try alternative tile providers if OpenStreetMap doesn't work
             TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              urlTemplate:
+                  'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png',
+              subdomains: const ['a', 'b', 'c', 'd'],
               userAgentPackageName: 'com.example.app',
+              maxZoom: 18,
+              // Add error handling
+              errorTileCallback: (tile, error, stackTrace) {
+                print('Tile loading error: $error');
+              },
             ),
             MarkerLayer(
               markers: [
@@ -214,10 +227,11 @@ class ResolvedIssueScreen extends StatelessWidget {
               itemCount: issue.issuePhotos.length,
               itemBuilder: (context, index) {
                 return GestureDetector(
-                  onTap: () => _showZoomableImage(
-                    context,
-                    NetworkImage(issue.issuePhotos[index]),
-                  ),
+                  onTap:
+                      () => _showZoomableImage(
+                        context,
+                        NetworkImage(issue.issuePhotos[index]),
+                      ),
                   child: Container(
                     width: 100,
                     height: 100,
@@ -287,10 +301,11 @@ class ResolvedIssueScreen extends StatelessWidget {
               itemCount: issue.resolvePhotos.length,
               itemBuilder: (context, index) {
                 return GestureDetector(
-                  onTap: () => _showZoomableImage(
-                    context,
-                    NetworkImage(issue.resolvePhotos[index]),
-                  ),
+                  onTap:
+                      () => _showZoomableImage(
+                        context,
+                        NetworkImage(issue.resolvePhotos[index]),
+                      ),
                   child: Container(
                     width: 100,
                     height: 100,

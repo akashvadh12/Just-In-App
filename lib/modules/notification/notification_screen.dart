@@ -120,22 +120,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
           return Column(
             children: [
-              // Filter Tabs with counts
-              Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                child: Row(
-                  children: [
-                    _buildFilterChip('All', _controller.issues.length),
-                    _buildFilterChip('Alerts', _controller.alertsCount),
-                    _buildFilterChip('Reminders', _controller.remindersCount),
-                  ],
-                ),
-              ),
+              const SizedBox(height: 16),
 
               // Issues List
               Expanded(

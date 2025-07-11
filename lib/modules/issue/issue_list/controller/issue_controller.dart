@@ -1,6 +1,7 @@
 
 // Issues Controller with integrated API calls
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:security_guard/data/services/conectivity_controller.dart';
@@ -126,24 +127,34 @@ class IssuesController extends GetxController with SingleGetTickerProviderMixin 
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Refresh issues after successful update
         await fetchIssues();
-        Get.snackbar(
-          'Success',
-          'Incident report updated successfully',
-          snackPosition: SnackPosition.BOTTOM,
+         Get.snackbar(
+          "Success",
+          "Incident report updated successfully",
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
         );
+       
       } else {
-        Get.snackbar(
-          'Error',
-          'Failed to update incident. Status: ${response.statusCode}',
-          snackPosition: SnackPosition.BOTTOM,
+         Get.snackbar(
+          "Error",
+          "Failed to update incident. Status: ${response.statusCode}",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
         );
+      
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Network error: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+
+         Get.snackbar(
+          "Error",
+          "Network error: $e",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
+        );
+     ;
     } finally {
       isLoading.value = false;
     }
