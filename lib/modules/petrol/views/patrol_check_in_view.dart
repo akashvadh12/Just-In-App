@@ -309,6 +309,18 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen>
                 'Navigating to AddManualPatrolScreen ${profileController.userModel.value?.logId}',
               );
               // if (profileController.userModel.value == null) return;
+
+              if (profileController.userModel.value!.attendanceStatus ==
+                  "Not Marked") {
+                Get.snackbar(
+                  'Reminder',
+                  'Kindly mark your attendance to proceed.',
+                  backgroundColor: AppColors.error,
+                  colorText: Colors.white,
+                );
+
+                return;
+              }
               if (profileController.userModel.value!.logId == null ||
                   profileController.userModel.value!.logId!.isEmpty) {
                 Get.snackbar(

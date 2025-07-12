@@ -15,6 +15,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/attandance/AttendanceScreen/capture_image.dart';
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
+import 'package:security_guard/modules/petrol/views/mobile_scanner_view.dart';
 import 'package:security_guard/modules/petrol/views/qr_scanner_view.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
@@ -69,7 +70,6 @@ class PatrolCheckInController extends GetxController {
   final mapController = MapController();
   final isMapReady = false.obs;
   final notes = ''.obs;
-
 
   final Rxn<File> capturedImage = Rxn<File>();
   final isFlashOn = false.obs;
@@ -327,9 +327,7 @@ class PatrolCheckInController extends GetxController {
         // Otherwise, fetch all patrol locations
         response = await http
             .get(
-              Uri.parse(
-                "https://justin.solarvision-cairo.com/patrol/history",
-              ),
+              Uri.parse("https://justin.solarvision-cairo.com/patrol/history"),
               headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
@@ -464,6 +462,16 @@ class PatrolCheckInController extends GetxController {
   }
 
   void startPatrolForLocation(PatrolLocation location) {
+    if (profileController.userModel.value!.attendanceStatus == "Not Marked") {
+      Get.snackbar(
+        'Reminder',
+        'Kindly mark your attendance to proceed.',
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+      );
+
+      return;
+    }
     currentPatrolLocation.value = location;
     currentStep.value = 1;
     isManualPatrol.value = false;
@@ -666,51 +674,69 @@ class PatrolCheckInController extends GetxController {
   }
 
   // Update openQRScanner to use handleScannedQRCode
-  void openQRScanner({VoidCallback? onSuccess}) async {
-    final cameraPermission = await Permission.camera.request();
-    if (!cameraPermission.isGranted) {
-      Get.snackbar(
-        'Permission Denied',
-        'Camera permission is required for QR scanning',
-        backgroundColor: AppColors.error,
-        colorText: Colors.white,
-      );
-      return;
-    }
-    print('QR Code Scanned: Waiting for QR scanner to open...');
-    Get.to(
-      () => QRScannerView(
-        onQRViewCreated: (QRViewController controller) {
-          controller.scannedDataStream.listen((scanData) {
-            if (scanData.code != null) {
-              qrResult.value = scanData.code;
-              isQRScanned.value = true;
-              handleScannedQRCode(scanData.code!);
+bool isQRScannerOpen = false;
+bool isHandlingScan = false;
 
-              print('QR Code Scanned: ${scanData.code}');
-              Get.back();
-              // Get.snackbar(
-              //   'Success',
-              //   'QR Code Scanned',
-              //   backgroundColor: AppColors.greenColor,
-              //   colorText: Colors.white,
-              // );
+void openQRScanner({VoidCallback? onSuccess}) async {
+  if (profileController.userModel.value!.attendanceStatus == "Not Marked") {
+    Get.snackbar(
+      'Reminder',
+      'Kindly mark your attendance to proceed.',
+      backgroundColor: AppColors.error,
+      colorText: Colors.white,
+      duration: const Duration(seconds: 3),
+    );
+    return;
+  }
+
+  final permission = await Permission.camera.request();
+  if (!permission.isGranted) {
+    Get.snackbar(
+      'Permission Denied',
+      'Camera permission is required for QR scanning',
+      backgroundColor: AppColors.error,
+      colorText: Colors.white,
+      duration: const Duration(seconds: 3),
+    );
+    return;
+  }
+
+  // Close any existing snackbars before opening scanner
+  try {
+    Get.closeAllSnackbars();
+  } catch (e) {
+    debugPrint('Error closing snackbars: $e');
+  }
+
+  // Use Navigator.push instead of Get.to for more control
+  Navigator.of(Get.context!).push(
+    MaterialPageRoute(
+      builder: (context) => MobileQRScannerView(
+        onScanned: (code) {
+          // Set the values
+          qrResult.value = code;
+          isQRScanned.value = true;
+          
+          // Handle the scanned code AFTER navigation
+          Future.delayed(const Duration(milliseconds: 300), () {
+            try {
+              handleScannedQRCode(code);
+
               if (isQRMatched.value) {
-                // Check if patrol already completed for this location
                 final locationId = matchedLocation?.locationId;
-                if (locationId != null &&
-                    !completedPatrols.contains(locationId)) {
-                  // goToNextStep();
-
-                  if (onSuccess != null) onSuccess();
+                if (locationId != null && !completedPatrols.contains(locationId)) {
+                  onSuccess?.call();
                 }
               }
+            } catch (e) {
+              debugPrint('Error handling scanned QR code: $e');
             }
           });
         },
       ),
-    );
-  }
+    ),
+  );
+}
 
   // Update submitPatrolReport to call the check-in API
   Future<void> submitPatrolReport() async {
@@ -916,46 +942,43 @@ class PatrolCheckInController extends GetxController {
   }
 
   // Take a picture using the camera
-Future<void> takePicture(BuildContext context) async {
-  final cameraPermission = await Permission.camera.request();
+  Future<void> takePicture(BuildContext context) async {
+    final cameraPermission = await Permission.camera.request();
 
-  if (!cameraPermission.isGranted) {
-    Get.snackbar(
-      'Permission Denied',
-      'Camera permission is required for taking photos',
-      backgroundColor: AppColors.error,
-      colorText: Colors.white,
-    );
-    return;
-  }
-
-  try {
-    // Get all cameras and select rear
-    final cameras = await availableCameras();
-    final rearCamera = cameras.firstWhere(
-      (cam) => cam.lensDirection == CameraLensDirection.front,
-    );
-
-    final File? image = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CameraScreen(camera: rearCamera),
-      ),
-    );
-
-    if (image != null) {
-      capturedImage.value = image;
+    if (!cameraPermission.isGranted) {
+      Get.snackbar(
+        'Permission Denied',
+        'Camera permission is required for taking photos',
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+      );
+      return;
     }
-  } catch (e) {
-    Get.snackbar(
-      'Camera Error',
-      'Failed to capture image: $e',
-      backgroundColor: AppColors.error,
-      colorText: Colors.white,
-    );
-  }
-}
 
+    try {
+      // Get all cameras and select rear
+      final cameras = await availableCameras();
+      final rearCamera = cameras.firstWhere(
+        (cam) => cam.lensDirection == CameraLensDirection.front,
+      );
+
+      final File? image = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => CameraScreen(camera: rearCamera)),
+      );
+
+      if (image != null) {
+        capturedImage.value = image;
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Camera Error',
+        'Failed to capture image: $e',
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+      );
+    }
+  }
 
   // Retake photo (clear current image)
   void retakePhoto() {

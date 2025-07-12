@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 
-
 class QRScannerView extends StatefulWidget {
   final Function(QRViewController) onQRViewCreated;
   const QRScannerView({super.key, required this.onQRViewCreated});
@@ -19,20 +18,11 @@ class _QRScannerViewState extends State<QRScannerView> {
   QRViewController? controller;
   bool isFlashOn = false;
 
-  @override
-  void reassemble() {
-    super.reassemble();
-    if (Platform.isAndroid) {
-      controller?.pauseCamera();
-    }
-    controller?.resumeCamera();
-  }
-
   void _onQRViewCreated(QRViewController ctrl) {
     controller = ctrl;
     widget.onQRViewCreated(ctrl);
 
-    // Check current flash status
+    // Update flash status
     controller?.getFlashStatus().then((flash) {
       setState(() {
         isFlashOn = flash ?? false;
@@ -52,6 +42,7 @@ class _QRScannerViewState extends State<QRScannerView> {
 
   @override
   void dispose() {
+    controller?.stopCamera(); // Ensure camera is stopped
     controller?.dispose();
     super.dispose();
   }
