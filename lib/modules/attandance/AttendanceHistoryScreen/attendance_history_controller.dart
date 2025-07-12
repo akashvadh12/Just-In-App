@@ -20,7 +20,7 @@ class AttendanceHistoryController extends GetxController {
 
   // Base URL
   final String baseUrl =
-      "https://official.solarvision-cairo.com/api/AttendanceRecord";
+      "https://justin.solarvision-cairo.com/api/AttendanceRecord";
 
   @override
   void onInit() {

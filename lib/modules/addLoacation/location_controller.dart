@@ -62,7 +62,7 @@ class LocationController extends GetxController {
   Rx<File?> selectedImage = Rx<File?>(null);
   
   // Base URL
-  final String baseUrl = 'https://official.solarvision-cairo.com/api/Loaction';
+  final String baseUrl = 'https://justin.solarvision-cairo.com/api/Loaction';
   
   @override
   void onInit() {

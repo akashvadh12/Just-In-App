@@ -95,7 +95,7 @@ class ApiClient {
       log('$_logTag Request body: ${jsonEncode(body)}');
 
       final url = Uri.parse(
-        'https://official.solarvision-cairo.com/UpdateCompany',
+        'https://justin.solarvision-cairo.com/UpdateCompany',
       );
       final mergedHeaders = _buildHeaders(headers);
 

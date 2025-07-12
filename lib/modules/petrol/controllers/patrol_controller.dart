@@ -99,7 +99,7 @@ class PatrolCheckInController extends GetxController {
 
   // API endpoint
   static const String _apiUrl =
-      'https://official.solarvision-cairo.com/patrol/get-all-locations';
+      'https://justin.solarvision-cairo.com/patrol/get-all-locations';
 
   // Add a variable to store the last scanned QR data and status
   final scannedQRData = ''.obs;
@@ -162,7 +162,7 @@ class PatrolCheckInController extends GetxController {
   Future<Map<String, dynamic>> _callStopPatrolAPI() async {
     try {
       final url = Uri.parse(
-        'https://official.solarvision-cairo.com/patrol/checkout',
+        'https://justin.solarvision-cairo.com/patrol/checkout',
       );
 
       final requestBody = {
@@ -313,7 +313,7 @@ class PatrolCheckInController extends GetxController {
 
       if (logId != null && logId.isNotEmpty && !isRefresh) {
         final url =
-            'https://official.solarvision-cairo.com/patrol/history?logId=$logId';
+            'https://justin.solarvision-cairo.com/patrol/history?logId=$logId';
         response = await http
             .get(
               Uri.parse(url),
@@ -328,7 +328,7 @@ class PatrolCheckInController extends GetxController {
         response = await http
             .get(
               Uri.parse(
-                "https://official.solarvision-cairo.com/patrol/history",
+                "https://justin.solarvision-cairo.com/patrol/history",
               ),
               headers: {
                 'Content-Type': 'application/json',
@@ -747,7 +747,7 @@ class PatrolCheckInController extends GetxController {
           !isAlreadyCompleted && (completedCount + 1) >= totalLocations;
 
       final url = Uri.parse(
-        'https://official.solarvision-cairo.com/patrol/checkin',
+        'https://justin.solarvision-cairo.com/patrol/checkin',
       );
       try {
         final request =
@@ -825,7 +825,7 @@ class PatrolCheckInController extends GetxController {
     isLoading.value = true;
     try {
       final url = Uri.parse(
-        'https://official.solarvision-cairo.com/patrol/unknown-checkin',
+        'https://justin.solarvision-cairo.com/patrol/unknown-checkin',
       );
       final userId = profileController.userModel.value?.userId ?? '';
       final request =

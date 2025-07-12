@@ -31,8 +31,8 @@ class LoginPage extends StatelessWidget {
               ),
               child: Image.asset(
                 'lib/assets/JustIN.jpeg', // Replace with your actual image path
-                height: 130,
-                width: 130,
+                height: 50,
+                width: 50,
                 fit: BoxFit.contain,
               ),
             ),

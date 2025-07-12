@@ -205,7 +205,7 @@ class IncidentReportController extends GetxController {
     isLoading.value = true;
 
     final uri = Uri.parse(
-      "https://official.solarvision-cairo.com/api/IssuesRecord/create",
+      "https://justin.solarvision-cairo.com/api/IssuesRecord/create",
     );
     final headers = {'Authorization': 'Bearer $token'};
 

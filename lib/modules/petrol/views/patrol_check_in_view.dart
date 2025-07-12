@@ -874,7 +874,7 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen>
                     Get.snackbar(
                       'Patrol Canceled',
                       'Your patrol has been canceled successfully',
-                      snackPosition: SnackPosition.BOTTOM,
+                      snackPosition: SnackPosition.TOP,
                       backgroundColor: Colors.green.shade100,
                       colorText: Colors.green.shade800,
                       icon: Icon(

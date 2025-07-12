@@ -173,7 +173,7 @@ class HomeController extends GetxController {
         return;
       }
       final url = Uri.parse(
-        'https://official.solarvision-cairo.com/dashboard?userId=$userId',
+        'https://justin.solarvision-cairo.com/dashboard?userId=$userId',
       );
       final response = await http.get(url);
       if (response.statusCode == 200) {

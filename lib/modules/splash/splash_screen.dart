@@ -57,8 +57,8 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
               child: Image.asset(
                 'lib/assets/JustIN.jpeg', // Replace with your actual image path
-                height: 150,
-                width: 150,
+                height: 60,
+                width: 60,
                 fit: BoxFit.contain,
               ),
             ),

@@ -27,7 +27,7 @@ class GuardAttendanceController extends GetxController {
 
   // API endpoint
   static const String attendanceApiUrl =
-      'https://official.solarvision-cairo.com/api/AttendanceRecord/attendance/mark';
+      'https://justin.solarvision-cairo.com/api/AttendanceRecord/attendance/mark';
 
   @override
   void onInit() {
@@ -116,7 +116,7 @@ class GuardAttendanceController extends GetxController {
       // 1. Fetch office location from API
       final officeResponse = await http.get(
         Uri.parse(
-          'https://official.solarvision-cairo.com/GetOfficeLoc?CompanyId=1',
+          'https://justin.solarvision-cairo.com/GetOfficeLoc?CompanyId=1',
         ),
       );
       if (officeResponse.statusCode != 200) {
@@ -264,13 +264,13 @@ class GuardAttendanceController extends GetxController {
       currentPosition.value = null;
 
       Get.snackbar(
-        "Location Error",
-        "Failed to get location: ${e.toString()}",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        icon: const Icon(Icons.error, color: Colors.white),
-        duration: const Duration(seconds: 3),
-      );
+  "Location Error",
+  "Unable to get your location. Please check settings.",
+  backgroundColor: Colors.red,
+  colorText: Colors.white,
+  icon: const Icon(Icons.location_off, color: Colors.white),
+  duration: const Duration(seconds: 3),
+);
     } finally {
       isLoadingLocation.value = false;
     }

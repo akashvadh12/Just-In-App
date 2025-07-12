@@ -103,14 +103,14 @@ class PatrolHistoryController extends GetxController {
   final RxList<PatrolHistoryDetail> historyDetails = <PatrolHistoryDetail>[].obs;
   final RxBool isLoadingHistory = false.obs;
   final RxBool isLoadingDetails = false.obs;
-  final Rx<DateTime> startDate = DateTime.now().subtract(const Duration(days: 30)).obs;
+  final Rx<DateTime> startDate = DateTime.now().obs;
   final Rx<DateTime> endDate = DateTime.now().obs;
   final ProfileController profileController = Get.find<ProfileController>();
   
   // Replace with actual user logic
   // final String userId = '202408056';
   
-  static const String _baseUrl = 'https://official.solarvision-cairo.com/patrol';
+  static const String _baseUrl = 'https://justin.solarvision-cairo.com/patrol';
 
   @override
   void onInit() {
@@ -241,6 +241,7 @@ class PatrolHistoryController extends GetxController {
       await fetchPatrolHistory();
     }
   }
+
 
   String formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';

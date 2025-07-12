@@ -43,7 +43,7 @@ class ForgotPasswordController extends GetxController {
       String encodedEmail = Uri.encodeComponent(phoneOrEmployeeId.value);
       
       // API endpoint
-      String apiUrl = 'https://official.solarvision-cairo.com/api/Auth/forgot-password?email=$encodedEmail';
+      String apiUrl = 'https://justin.solarvision-cairo.com/api/Auth/forgot-password?email=$encodedEmail';
       
       // Make API call
       final response = await http.post(

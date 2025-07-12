@@ -10,7 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class IssuesController extends GetxController with SingleGetTickerProviderMixin {
   // API Constants
-  static const String BASE_URL = "https://official.solarvision-cairo.com/api/";
+  static const String BASE_URL = "https://justin.solarvision-cairo.com/api/";
   static const String UPSERT_INCIDENT_REPORT = 'Admin/UpsertIncidentReport';
   static const String ISSUES_RECORD = 'IssuesRecord';
   

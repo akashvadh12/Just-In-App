@@ -4,7 +4,7 @@ import 'package:http_parser/http_parser.dart'; // For contentType
 import 'package:path/path.dart'; // For basename
 
 class ApiService {
-  static const String baseUrl = "https://official.solarvision-cairo.com/api/";
+  static const String baseUrl = "https://justin.solarvision-cairo.com/api/";
   static const String resolveIssueEndpoint = 'IssuesRecord/resolve';
 
   Future<bool> resolveIssue({
