@@ -29,10 +29,11 @@ class LoginPage extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                Icons.shield_outlined,
-                color: AppColors.primary,
-                size: 40,
+              child: Image.asset(
+                'lib/assets/JustIN.jpeg', // Replace with your actual image path
+                height: 130,
+                width: 130,
+                fit: BoxFit.contain,
               ),
             ),
             SizedBox(height: 16),

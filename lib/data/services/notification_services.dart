@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'dart:typed_data';
+import 'dart:ui';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
@@ -41,9 +43,9 @@ class NotificationServices {
 
   Future<void> initLocalNotification() async {
     try {
-      // Android initialization settings
+      // Android initialization settings with custom launcher icon
       var androidInitializationSettings = const AndroidInitializationSettings(
-        "@mipmap/ic_launcher",
+        "@drawable/launcher_icon", // Custom launcher icon for notifications
       );
 
       // iOS initialization settings with all permissions explicitly requested
@@ -147,6 +149,8 @@ class NotificationServices {
         Random.secure().nextInt(100000).toString(),
         "High Importance Notifications",
         importance: Importance.max,
+        enableVibration: true, // Enable vibration
+        playSound: true, // Enable sound
       );
 
       AndroidNotificationDetails androidNotificationDetails =
@@ -157,6 +161,25 @@ class NotificationServices {
             importance: Importance.high,
             priority: Priority.high,
             ticker: 'ticker',
+            icon: '@drawable/launcher_icon', // Custom launcher icon
+            largeIcon: const DrawableResourceAndroidBitmap(
+              '@drawable/launcher_icon',
+            ),
+            sound: const RawResourceAndroidNotificationSound(
+              'notification_sound',
+            ), // Custom sound (optional)
+            enableVibration: true,
+            vibrationPattern: Int64List.fromList([
+              0,
+              1000,
+              500,
+              1000,
+            ]), // Custom vibration pattern
+            enableLights: true,
+            ledColor: const Color.fromARGB(255, 255, 0, 0),
+            ledOnMs: 1000,
+            ledOffMs: 500,
+            playSound: true,
           );
 
       // Configure iOS notification details with all presentation options enabled
@@ -166,7 +189,8 @@ class NotificationServices {
             presentAlert: true,
             presentBadge: true,
             presentSound: true,
-            sound: 'default',
+            sound: 'default', // You can use custom sound file name here
+            badgeNumber: 1,
           );
 
       NotificationDetails notificationDetails = NotificationDetails(

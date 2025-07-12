@@ -168,38 +168,62 @@ class _IssueDetailScreenState extends State<IssueScreen> {
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      height: 250,
+      height: 200,
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: FlutterMap(
-          options: MapOptions(initialCenter: issueLatLng),
+          options: MapOptions(
+            initialCenter: issueLatLng,
+            initialZoom: 15.0,
+            minZoom: 5.0,
+            maxZoom: 19.0,
+          ),
           children: [
+            // Using CartoDB tile server (more reliable)
             TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              urlTemplate:
+                  "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+              subdomains: const ['a', 'b', 'c', 'd'],
               userAgentPackageName: 'com.example.app',
+              maxZoom: 19,
+              errorTileCallback: (tile, error, stackTrace) {
+                print('Tile loading error: $error');
+              },
             ),
+            // Alternative tile providers (uncomment if needed)
+            // TileLayer(
+            //   urlTemplate: "https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=YOUR_API_KEY",
+            //   userAgentPackageName: 'com.example.app',
+            //   maxZoom: 19,
+            // ),
             MarkerLayer(
               markers: [
                 Marker(
                   point: issueLatLng,
                   width: 40,
                   height: 40,
-                  child: const Icon(
-                    Icons.location_pin,
-                    size: 40,
-                    color: Colors.red,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.location_pin,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                   ),
                 ),
                 if (userLatLng != null)
@@ -207,10 +231,24 @@ class _IssueDetailScreenState extends State<IssueScreen> {
                     point: userLatLng,
                     width: 40,
                     height: 40,
-                    child: const Icon(
-                      Icons.person_pin_circle,
-                      size: 40,
-                      color: Colors.blue,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white, width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.person_pin_circle,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
                   ),
               ],

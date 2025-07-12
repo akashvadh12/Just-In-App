@@ -55,12 +55,14 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(
-                Icons.shield_outlined,
-                color: AppColors.primary,
-                size: 80,
+              child: Image.asset(
+                'lib/assets/JustIN.jpeg', // Replace with your actual image path
+                height: 150,
+                width: 150,
+                fit: BoxFit.contain,
               ),
             ),
+
             SizedBox(height: 24),
             // App Title
             Text(
