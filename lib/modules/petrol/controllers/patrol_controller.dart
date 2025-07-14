@@ -99,7 +99,7 @@ class PatrolCheckInController extends GetxController {
 
   // API endpoint
   static const String _apiUrl =
-      'https://justin.solarvision-cairo.com/patrol/get-all-locations';
+      'https://justin.solarvision-cairo.com/api/patrol/get-all-locations';
 
   // Add a variable to store the last scanned QR data and status
   final scannedQRData = ''.obs;
@@ -162,7 +162,7 @@ class PatrolCheckInController extends GetxController {
   Future<Map<String, dynamic>> _callStopPatrolAPI() async {
     try {
       final url = Uri.parse(
-        'https://justin.solarvision-cairo.com/patrol/checkout',
+        'https://justin.solarvision-cairo.com/api/patrol/checkout',
       );
 
       final requestBody = {
@@ -313,7 +313,7 @@ class PatrolCheckInController extends GetxController {
 
       if (logId != null && logId.isNotEmpty && !isRefresh) {
         final url =
-            'https://justin.solarvision-cairo.com/patrol/history?logId=$logId';
+            'https://justin.solarvision-cairo.com/api/patrol/history?logId=$logId';
         response = await http
             .get(
               Uri.parse(url),
@@ -327,7 +327,7 @@ class PatrolCheckInController extends GetxController {
         // Otherwise, fetch all patrol locations
         response = await http
             .get(
-              Uri.parse("https://justin.solarvision-cairo.com/patrol/history"),
+              Uri.parse("https://justin.solarvision-cairo.com/api/patrol/history"),
               headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
@@ -773,7 +773,7 @@ void openQRScanner({VoidCallback? onSuccess}) async {
           !isAlreadyCompleted && (completedCount + 1) >= totalLocations;
 
       final url = Uri.parse(
-        'https://justin.solarvision-cairo.com/patrol/checkin',
+        'https://justin.solarvision-cairo.com/api/patrol/checkin',
       );
       try {
         final request =
@@ -851,7 +851,7 @@ void openQRScanner({VoidCallback? onSuccess}) async {
     isLoading.value = true;
     try {
       final url = Uri.parse(
-        'https://justin.solarvision-cairo.com/patrol/unknown-checkin',
+        'https://justin.solarvision-cairo.com/api/patrol/unknown-checkin',
       );
       final userId = profileController.userModel.value?.userId ?? '';
       final request =

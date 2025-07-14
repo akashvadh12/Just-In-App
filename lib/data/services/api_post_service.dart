@@ -386,7 +386,7 @@ class ApiPostServices {
     };
 
     try {
-      final response = await _client.put(
+      final response = await _client.companyPut(
         endpoint,
         body,
         headers: {...headers, 'Content-Type': 'application/json'},

@@ -147,106 +147,117 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       ),
     );
   }
+  
+Widget _buildLocationMap(IssueDetailController controller) {
+  final issue = controller.currentIssue.value;
+  final userPosition = controller.currentPosition.value;
 
-  Widget _buildLocationMap(IssueDetailController controller) {
-    final issue = controller.currentIssue.value;
-    final userPosition = controller.currentPosition.value;
+  if (issue == null) return const SizedBox.shrink();
 
-    if (issue == null) return const SizedBox.shrink();
+  final issueLatLng = LatLng(issue.latitude ?? 0.0, issue.longitude ?? 0.0);
+  final userLatLng = userPosition != null
+      ? LatLng(userPosition.latitude, userPosition.longitude)
+      : null;
 
-    final issueLatLng = LatLng(issue.latitude ?? 0.0, issue.longitude ?? 0.0);
-    final userLatLng =
-        userPosition != null
-            ? LatLng(userPosition.latitude, userPosition.longitude)
-            : null;
+  final distance = userLatLng != null
+      ? const Distance().as(LengthUnit.Meter, issueLatLng, userLatLng)
+      : null;
 
-    final distance =
-        userLatLng != null
-            ? const Distance().as(LengthUnit.Meter, issueLatLng, userLatLng)
-            : null;
+  final isWithinRange = distance != null && distance <= 50;
 
-    final isWithinRange = distance != null && distance <= 50;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      height: 250,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: FlutterMap(
-          options: MapOptions(initialCenter: issueLatLng),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.example.app',
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    height: 250,
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.1),
+          spreadRadius: 1,
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Stack(  // Use Stack instead of putting Positioned in children
+        children: [
+          FlutterMap(
+            options: MapOptions(
+              initialCenter: issueLatLng,
+              initialZoom: 15.0,
+              minZoom: 5.0,
+              maxZoom: 18.0,
             ),
-            MarkerLayer(
-              markers: [
-                Marker(
-                  point: issueLatLng,
-                  width: 40,
-                  height: 40,
-                  child: const Icon(
-                    Icons.location_pin,
-                    size: 40,
-                    color: Colors.red,
-                  ),
-                ),
-                if (userLatLng != null)
+            children: [
+              TileLayer(
+                urlTemplate: 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png',
+                subdomains: const ['a', 'b', 'c', 'd'],
+                userAgentPackageName: 'com.example.app',
+                maxZoom: 18,
+                errorTileCallback: (tile, error, stackTrace) {
+                  print('Tile loading error: $error');
+                },
+              ),
+              MarkerLayer(
+                markers: [
                   Marker(
-                    point: userLatLng,
+                    point: issueLatLng,
                     width: 40,
                     height: 40,
                     child: const Icon(
-                      Icons.person_pin_circle,
+                      Icons.location_pin,
                       size: 40,
-                      color: Colors.blue,
+                      color: Colors.red,
                     ),
                   ),
-              ],
-            ),
-            if (distance != null)
-              Positioned(
-                bottom: 10,
-                left: 10,
-                right: 10,
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                  decoration: BoxDecoration(
-                    color: isWithinRange ? Colors.green : Colors.red,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Center(
-                    child: Text(
-                      isWithinRange
-                          ? 'You are within 50 meters (${distance.toStringAsFixed(1)} m)'
-                          : 'Too far! (${distance.toStringAsFixed(1)} m from target)',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                  if (userLatLng != null)
+                    Marker(
+                      point: userLatLng,
+                      width: 40,
+                      height: 40,
+                      child: const Icon(
+                        Icons.person_pin_circle,
+                        size: 40,
+                        color: Colors.blue,
                       ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+          if (distance != null)
+            Positioned(
+              bottom: 10,
+              left: 10,
+              right: 10,
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                margin: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: isWithinRange ? Colors.green : Colors.red,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Text(
+                    isWithinRange
+                        ? 'You are within 50 meters (${distance.toStringAsFixed(1)} m)'
+                        : 'Too far! (${distance.toStringAsFixed(1)} m from target)',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
-    );
-  }
-
+    ),
+  );
+}
   Widget _buildCurrentLocationDisplay() {
     return GetX<IssueDetailController>(
       builder: (controller) {

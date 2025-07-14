@@ -30,7 +30,7 @@ class LoginPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Image.asset(
-                'lib/assets/JustIN.jpeg', // Replace with your actual image path
+                'lib/assets/Just-IN.jpeg', // Replace with your actual image path
                 height: 50,
                 width: 50,
                 fit: BoxFit.contain,

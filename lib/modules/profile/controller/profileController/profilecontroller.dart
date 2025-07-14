@@ -64,7 +64,10 @@ Future<void> fetchUserProfile(String userId) async {
         phone: phone,
       );
       if (response != null) {
+        print('Profile updated successfully: ${response["user"]}');
         userModel.value = userModel.value?.copyWith(
+          userId: userId,
+          gaurdId: response['user']['gaurdID'] ?? userModel.value?.gaurdId,
           name: name,
           email: email,
           phone: phone,

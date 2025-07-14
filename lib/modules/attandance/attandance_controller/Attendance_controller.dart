@@ -116,7 +116,7 @@ class GuardAttendanceController extends GetxController {
       // 1. Fetch office location from API
       final officeResponse = await http.get(
         Uri.parse(
-          'https://justin.solarvision-cairo.com/GetOfficeLoc?CompanyId=1',
+          'https://justin.solarvision-cairo.com/api/CompanyConfig/GetOfficeLoc?CompanyId=1',
         ),
       );
       if (officeResponse.statusCode != 200) {

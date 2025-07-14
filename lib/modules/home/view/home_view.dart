@@ -346,26 +346,13 @@ class HomeView extends GetView<HomeController> {
 
   Widget _buildAdminQuickActions(bottomNavController) {
     return Container(
-      child: Column(
-        children: [
-          // First row
+      child: 
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Expanded(
+                Expanded(
                 child: Padding(
-                  padding: EdgeInsets.only(right: 6),
-                  child: _buildActionButton(
-                    icon: Icons.fingerprint,
-                    label: 'Mark\nAttendance',
-                    color: Color.fromARGB(255, 30, 107, 231),
-                    onTap: () => bottomNavController.changeTab(1),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(left: 6),
+                  padding: EdgeInsets.only(right: 4),
                   child: _buildActionButton(
                     icon: Icons.add_location,
                     label: 'Add\nLocation',
@@ -374,34 +361,11 @@ class HomeView extends GetView<HomeController> {
                   ),
                 ),
               ),
-            ],
-          ),
-          SizedBox(height: 12),
-          // Second row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
+          
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.only(right: 6),
-                  child: _buildActionButton(
-                    icon: Icons.warning,
-                    label: 'Raise\nIssue',
-                    color: Color.fromARGB(255, 30, 107, 231),
-                    onTap: () {
-                      Get.to(
-                        () => IncidentReportScreen(),
-                        binding: BindingsBuilder(() {
-                          Get.put(IssuesController());
-                        }),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(left: 6),
+                  padding: EdgeInsets.symmetric(horizontal: 4),
+                  
                   child: _buildActionButton(
                     icon: Icons.business,
                     label: 'Company\nLocation',
@@ -412,10 +376,20 @@ class HomeView extends GetView<HomeController> {
                   ),
                 ),
               ),
+                  Expanded(
+                child: Padding(
+                 padding: EdgeInsets.only(left: 4),
+                  child: _buildActionButton(
+                    icon: Icons.warning,
+                    label: 'Issues',
+                    color: Color.fromARGB(255, 30, 107, 231),
+                    onTap: () => bottomNavController.changeTab(3)
+                  ),
+                ),
+              ),
             ],
           ),
-        ],
-      ),
+     
     );
   }
 

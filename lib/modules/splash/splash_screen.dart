@@ -56,7 +56,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Image.asset(
-                'lib/assets/JustIN.jpeg', // Replace with your actual image path
+                'lib/assets/Just-IN.jpeg', // Replace with your actual image path
                 height: 60,
                 width: 60,
                 fit: BoxFit.contain,

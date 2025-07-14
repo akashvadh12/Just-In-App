@@ -172,9 +172,11 @@ UserModel copyWith({
   Map<String, dynamic>? issuesCount,
   String? logId, // Added missing logId
   bool? isAdmin, // Added missing isAdmin
+  String? gaurdId
 }) {
   return UserModel(
     userId: userId ?? this.userId,
+    gaurdId: gaurdId ?? this.gaurdId,
     userName: userName ?? this.userName,
     name: name ?? this.name,
     photoPath: photoPath ?? this.photoPath,

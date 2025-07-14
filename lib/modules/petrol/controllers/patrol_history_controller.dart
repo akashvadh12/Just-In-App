@@ -110,7 +110,7 @@ class PatrolHistoryController extends GetxController {
   // Replace with actual user logic
   // final String userId = '202408056';
   
-  static const String _baseUrl = 'https://justin.solarvision-cairo.com/patrol';
+  static const String _baseUrl = 'https://justin.solarvision-cairo.com/api/patrol';
 
   @override
   void onInit() {

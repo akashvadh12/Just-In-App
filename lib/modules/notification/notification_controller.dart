@@ -86,7 +86,7 @@ class NotificationsController extends ChangeNotifier {
 
     try {
       final response = await http.get(
-        Uri.parse('https://justin.solarvision-cairo.com/top-list'),
+        Uri.parse('https://justin.solarvision-cairo.com/api/Notification/top-list'),
         headers: {'Content-Type': 'application/json'},
       );
 

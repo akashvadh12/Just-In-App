@@ -784,7 +784,11 @@ class _PatrolCheckInScreenState extends State<PatrolCheckInScreen>
               child: OutlinedButton.icon(
                 onPressed: () {
                   // Show confirmation dialog for better UX
-                  _showCancelConfirmation();
+                  // _showCancelConfirmation();
+                   controller.cancelCurrentPatrol();
+                    controller.currentStep.value = 0;
+                    controller.isManualPatrol.value = false;
+                    controller.currentPatrolLocation.value = null;
                 },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,

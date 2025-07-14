@@ -106,7 +106,7 @@ class CompanyLocationController extends GetxController {
 
   // API URLs
   final String getAllCompaniesUrl =
-      'https://justin.solarvision-cairo.com/GetCompanyLoc';
+      'https://justin.solarvision-cairo.com/api/CompanyConfig/GetCompanyLoc';
   final String baseUrl = 'https://justin.solarvision-cairo.com/api/Loaction';
 
   @override

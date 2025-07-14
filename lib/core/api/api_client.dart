@@ -94,8 +94,32 @@ class ApiClient {
       log('$_logTag PUT => $baseUrl$endpoint');
       log('$_logTag Request body: ${jsonEncode(body)}');
 
+      final url = Uri.parse('$baseUrl$endpoint');
+
+      final mergedHeaders = _buildHeaders(headers);
+
+      final response = await http
+          .put(url, headers: mergedHeaders, body: jsonEncode(body))
+          .timeout(Duration(seconds: timeoutSeconds));
+
+      _logResponse(endpoint, response);
+      return response;
+    });
+  }
+
+  
+  /// PUT request
+  Future<http.Response> companyPut(
+    String endpoint,
+    Map<String, dynamic> body, {
+    Map<String, String>? headers,
+  }) async {
+    return _executeWithRetry(() async {
+      log('$_logTag PUT => $baseUrl$endpoint');
+      log('$_logTag Request body: ${jsonEncode(body)}');
+
       final url = Uri.parse(
-        'https://justin.solarvision-cairo.com/UpdateCompany',
+        'https://justin.solarvision-cairo.com/api/CompanyConfig/UpdateCompany',
       );
       final mergedHeaders = _buildHeaders(headers);
 
