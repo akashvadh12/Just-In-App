@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/modules/auth/models/user_model.dart';
 import 'package:security_guard/data/services/api_post_service.dart';
+import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 
 class ProfileController extends GetxController {
@@ -14,6 +15,7 @@ class ProfileController extends GetxController {
   final LocalStorageService _storage = LocalStorageService.instance;
   final ApiPostServices _apiPostService = ApiPostServices();
   final ApiGetServices _apiGetService = ApiGetServices();
+  
 
   @override
   void onInit() {
@@ -153,6 +155,7 @@ Future<void> fetchUserProfile(String userId) async {
   Future<void> logout() async {
     userModel.value = null;
     await _storage.removeDeviceToken();
+  Get.find<HomeController>().selectedIndex.value = 0;
     Get.offAllNamed('/login');
   }
 

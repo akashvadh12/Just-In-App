@@ -38,15 +38,18 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
               Container(
                 width: 100,
                 height: 100,
-                decoration: BoxDecoration(
-                  color: AppColors.lightGrey,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Icon(Icons.shield, color: AppColors.primary, size: 50),
-                ),
+                // decoration: BoxDecoration(
+                //   color: AppColors.lightGrey,
+                //   shape: BoxShape.circle,
+                // ),
+                child: Image.asset(
+                'lib/assets/Just-IN.jpeg', // Replace with your actual image path
+                height: 50,
+                width: 50,
+                fit: BoxFit.contain,
               ),
-              const SizedBox(height: 20),
+              ),
+              const SizedBox(height: 8),
 
               // Instructions text
               Text(

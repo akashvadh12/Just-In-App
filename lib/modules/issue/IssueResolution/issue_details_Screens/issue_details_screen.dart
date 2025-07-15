@@ -13,6 +13,7 @@ import 'package:security_guard/modules/issue/IssueResolution/issue_details_Scree
 import 'package:security_guard/modules/issue/IssueResolution/issue_details_Screens/issue_resolved_screen.dart';
 import 'package:security_guard/modules/issue/issue_list/controller/issue_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
+import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:security_guard/shared/widgets/Custom_Snackbar/Custom_Snackbar.dart';
 import 'package:photo_view/photo_view.dart';
 
@@ -37,6 +38,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
 
   final IssuesController issuesController = Get.find<IssuesController>();
   final HomeController homeController = Get.find<HomeController>();
+  final ProfileController profileController = Get.find<ProfileController>();
 
   @override
   void initState() {
@@ -163,7 +165,9 @@ Widget _buildLocationMap(IssueDetailController controller) {
       ? const Distance().as(LengthUnit.Meter, issueLatLng, userLatLng)
       : null;
 
-  final isWithinRange = distance != null && distance <= 50;
+  final isWithinRange = distance != null && distance <= (profileController.userModel.value?.issue_radius != null
+        ? int.tryParse(profileController.userModel.value!.issue_radius ?? '') ?? 500
+        : 500);
 
   return Container(
     margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -243,7 +247,7 @@ Widget _buildLocationMap(IssueDetailController controller) {
                 child: Center(
                   child: Text(
                     isWithinRange
-                        ? 'You are within 50 meters (${distance.toStringAsFixed(1)} m)'
+                        ? 'You are within ${profileController.userModel.value?.issue_radius ?? '500'} meters (${distance.toStringAsFixed(1)} m)'
                         : 'Too far! (${distance.toStringAsFixed(1)} m from target)',
                     style: const TextStyle(
                       color: Colors.white,
@@ -929,7 +933,9 @@ Widget _buildLocationMap(IssueDetailController controller) {
             ? const Distance().as(LengthUnit.Meter, issueLatLng, userLatLng)
             : null;
 
-    final isWithinRange = distance != null && distance <= 50;
+    final isWithinRange = distance != null && distance <= (profileController.userModel.value?.issue_radius != null
+        ? int.tryParse(profileController.userModel.value!.issue_radius ?? '') ?? 500
+        : 500);
     print('Distance: $distance, Is within range: $isWithinRange');
     if (!isWithinRange) {
       CustomSnackbar.showError(

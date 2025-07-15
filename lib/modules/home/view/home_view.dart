@@ -258,7 +258,7 @@ class HomeView extends GetView<HomeController> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  controller.attendanceStatus.value == 'In'
+                  controller.attendanceStatus.value != 'Out'
                       ? Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -289,7 +289,7 @@ class HomeView extends GetView<HomeController> {
                           Text(
                             controller
                                 .clockOutTime
-                                .value, // You can bind actual clock in time if available from API
+                                .value ?? '-' , // You can bind actual clock in time if available from API
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,

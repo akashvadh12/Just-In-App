@@ -746,7 +746,9 @@ class _CompanyLocationEditScreenState extends State<CompanyLocationEditScreen> {
     );
 
     if (success) {
-      Get.back();
+
+    Get.back(canPop: true);
+
     }
   }
 }
