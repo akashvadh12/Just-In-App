@@ -39,7 +39,7 @@ class LoginPage extends StatelessWidget {
             SizedBox(height: 16),
             // App Title
             Text(
-              'Just IN',
+              'JustIN',
               style: AppTextStyles.heading.copyWith(color: Colors.white),
             ),
             SizedBox(height: 6),

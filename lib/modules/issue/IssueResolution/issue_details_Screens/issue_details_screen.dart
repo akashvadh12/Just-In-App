@@ -103,7 +103,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
           Row(
             children: [
               Text(
-                '#${_currentIssue.id.toUpperCase()}-2024-0123',
+                'ID: #${_currentIssue.id.toUpperCase()}-2024-0123',
                 style: AppTextStyles.hint.copyWith(
                   fontSize: 12,
                   color: Colors.grey[600],
@@ -132,7 +132,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Creator: ${_currentIssue.creatorName}',
+            'Raised by: ${_currentIssue.creatorName}',
             style: AppTextStyles.hint.copyWith(color: Colors.grey[600]),
           ),
           // const SizedBox(height: 8),
@@ -143,7 +143,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
           const SizedBox(height: 8),
           Text(
             _currentIssue.location,
-            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500),
+            style: AppTextStyles.hint.copyWith(color: Colors.grey[600]),
           ),
         ],
       ),
@@ -635,10 +635,10 @@ Widget _buildLocationMap(IssueDetailController controller) {
         text = 'New';
         color = AppColors.error;
         break;
-      case IssueStatus.pending:
-        text = 'Pending';
-        color = Colors.orange;
-        break;
+      // case IssueStatus.pending:
+      //   text = 'Pending';
+      //   color = Colors.orange;
+      //   break;
       case IssueStatus.resolved:
         text = 'Resolved';
         color = AppColors.greenColor;

@@ -80,19 +80,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ListTile(
                 leading: const Icon(Icons.email, color: Colors.blue),
                 title: const Text('Email Support'),
-                subtitle: const Text('support@securityguard.com'),
+                subtitle: const Text('vedpal@cairovisions.com'),
                 onTap: () {
                   Navigator.pop(context);
-                  _launchURL('mailto:support@securityguard.com');
+                  _launchURL('mailto:vedpal@cairovisions.com');
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.phone, color: Colors.blue),
                 title: const Text('Call Support'),
-                subtitle: const Text('+1 (800) 123-4567'),
+                subtitle: const Text('+91 91086 28001'),
                 onTap: () {
                   Navigator.pop(context);
-                  _launchURL('tel:+18001234567');
+                  _launchURL('tel:+919108628001');
                 },
               ),
               ListTile(
@@ -172,7 +172,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   // Profile Image
                   Stack(
-                    alignment: Alignment.bottomRight,
+                    alignment: Alignment.center,
                     children: [
                       Obx(() {
                         final user = controller.userModel.value;
@@ -226,24 +226,210 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         );
                       }),
 
-                      // Uncomment to enable photo update
-                      // GestureDetector(
-                      //   onTap: () async {
-                      //     await controller.updateProfilePicture();
-                      //   },
-                      //   child: Container(
-                      //     padding: const EdgeInsets.all(4),
-                      //     decoration: const BoxDecoration(
-                      //       color: Colors.blue,
-                      //       shape: BoxShape.circle,
-                      //     ),
-                      //     child: const Icon(
-                      //       Icons.camera_alt,
-                      //       color: AppColors.whiteColor,
-                      //       size: 18,
-                      //     ),
-                      //   ),
-                      // ),
+                      // Camera button positioned at bottom-right of the profile image
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                            onTap: () async {
+                      final user = controller.userModel.value;
+                      if (user == null) return;
+
+                      final picker = ImagePicker();
+                      final pickedFile = await picker.pickImage(
+                        source: ImageSource.gallery,
+                        imageQuality: 80,
+                      );
+
+                      if (pickedFile != null) {
+                        final imageFile = File(pickedFile.path);
+
+                        // Show dialog with image preview and save button
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return Dialog(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Header
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text(
+                                          'Preview Profile Picture',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          onPressed:
+                                              () => Navigator.of(context).pop(),
+                                          icon: const Icon(Icons.close),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    // Image Preview
+                                    Container(
+                                      width: 200,
+                                      height: 200,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(
+                                          100,
+                                        ),
+                                        border: Border.all(
+                                          color: Colors.grey.shade300,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(98),
+                                        child: Image.file(
+                                          imageFile,
+                                          width: 200,
+                                          height: 200,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+
+                                    // Action Buttons
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        // Cancel Button
+                                        TextButton(
+                                          onPressed:
+                                              () => Navigator.of(context).pop(),
+                                          child: const Text(
+                                            'Cancel',
+                                            style: TextStyle(
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ),
+
+                                        // Save Button
+                                        ElevatedButton(
+                                          onPressed: () async {
+                                            // // Show loading indicator
+                                            // Navigator.of(context).pop(); // Close dialog first
+
+                                            // // Show loading dialog
+                                            // showDialog(
+                                            //   context: context,
+                                            //   barrierDismissible: false,
+                                            //   builder: (BuildContext context) {
+                                            //     return const Dialog(
+                                            //       child: Padding(
+                                            //         padding: EdgeInsets.all(20),
+                                            //         child: Row(
+                                            //           mainAxisSize: MainAxisSize.min,
+                                            //           children: [
+                                            //             CircularProgressIndicator(),
+                                            //             SizedBox(width: 20),
+                                            //             Text('Updating profile picture...'),
+                                            //           ],
+                                            //         ),
+                                            //       ),
+                                            //     );
+                                            //   },
+                                            // );
+
+                                            try {
+                                              // Update profile picture
+                                              await controller
+                                                  .updateProfilePicture(
+                                                    userId: user.userId,
+                                                    imageFile: imageFile,
+                                                  );
+
+                                              // Close loading dialog
+                                              Navigator.of(context).pop();
+
+                                              // Refresh UI
+
+                                              // Show success message
+                                              // ScaffoldMessenger.of(context).showSnackBar(
+                                              //   const SnackBar(
+                                              //     content: Text('Profile picture updated successfully!'),
+                                              //     backgroundColor: Colors.green,
+                                              //   ),
+                                              // );
+                                            } catch (e) {
+                                              // Close loading dialog
+                                              Navigator.of(context).pop();
+
+                                              // Show error message
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    'Failed to update profile picture: $e',
+                                                  ),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.blue,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 24,
+                                              vertical: 12,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                          child: const Text('Save'),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      }
+                    },
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.blue,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              color: AppColors.whiteColor,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
 
@@ -319,6 +505,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // Profile Actions Section
             Container(
+              
               color: AppColors.whiteColor,
               child: Column(
                 children: [
@@ -623,202 +810,202 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                     ),
-                  const Divider(height: 1),
+                  // const Divider(height: 1),
 
                   // Edit Profile Picture
-                  ListTile(
-                    leading: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        color: AppColors.whiteColor,
-                        size: 20,
-                      ),
-                    ),
-                    title: const Text('Edit Profile Picture'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () async {
-                      final user = controller.userModel.value;
-                      if (user == null) return;
+                  // ListTile(
+                  //   leading: Container(
+                  //     padding: const EdgeInsets.all(6),
+                  //     decoration: BoxDecoration(
+                  //       color: Colors.blue,
+                  //       borderRadius: BorderRadius.circular(4),
+                  //     ),
+                  //     child: const Icon(
+                  //       Icons.camera_alt,
+                  //       color: AppColors.whiteColor,
+                  //       size: 20,
+                  //     ),
+                  //   ),
+                  //   title: const Text('Edit Profile Picture'),
+                  //   trailing: const Icon(Icons.chevron_right),
+                  //   onTap: () async {
+                  //     final user = controller.userModel.value;
+                  //     if (user == null) return;
 
-                      final picker = ImagePicker();
-                      final pickedFile = await picker.pickImage(
-                        source: ImageSource.gallery,
-                        imageQuality: 80,
-                      );
+                  //     final picker = ImagePicker();
+                  //     final pickedFile = await picker.pickImage(
+                  //       source: ImageSource.gallery,
+                  //       imageQuality: 80,
+                  //     );
 
-                      if (pickedFile != null) {
-                        final imageFile = File(pickedFile.path);
+                  //     if (pickedFile != null) {
+                  //       final imageFile = File(pickedFile.path);
 
-                        // Show dialog with image preview and save button
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return Dialog(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    // Header
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text(
-                                          'Preview Profile Picture',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          onPressed:
-                                              () => Navigator.of(context).pop(),
-                                          icon: const Icon(Icons.close),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 16),
+                  //       // Show dialog with image preview and save button
+                  //       showDialog(
+                  //         context: context,
+                  //         builder: (BuildContext context) {
+                  //           return Dialog(
+                  //             shape: RoundedRectangleBorder(
+                  //               borderRadius: BorderRadius.circular(12),
+                  //             ),
+                  //             child: Container(
+                  //               padding: const EdgeInsets.all(16),
+                  //               child: Column(
+                  //                 mainAxisSize: MainAxisSize.min,
+                  //                 children: [
+                  //                   // Header
+                  //                   Row(
+                  //                     mainAxisAlignment:
+                  //                         MainAxisAlignment.spaceBetween,
+                  //                     children: [
+                  //                       const Text(
+                  //                         'Preview Profile Picture',
+                  //                         style: TextStyle(
+                  //                           fontSize: 18,
+                  //                           fontWeight: FontWeight.bold,
+                  //                         ),
+                  //                       ),
+                  //                       IconButton(
+                  //                         onPressed:
+                  //                             () => Navigator.of(context).pop(),
+                  //                         icon: const Icon(Icons.close),
+                  //                       ),
+                  //                     ],
+                  //                   ),
+                  //                   const SizedBox(height: 16),
 
-                                    // Image Preview
-                                    Container(
-                                      width: 200,
-                                      height: 200,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(
-                                          100,
-                                        ),
-                                        border: Border.all(
-                                          color: Colors.grey.shade300,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(98),
-                                        child: Image.file(
-                                          imageFile,
-                                          width: 200,
-                                          height: 200,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
+                  //                   // Image Preview
+                  //                   Container(
+                  //                     width: 200,
+                  //                     height: 200,
+                  //                     decoration: BoxDecoration(
+                  //                       borderRadius: BorderRadius.circular(
+                  //                         100,
+                  //                       ),
+                  //                       border: Border.all(
+                  //                         color: Colors.grey.shade300,
+                  //                         width: 2,
+                  //                       ),
+                  //                     ),
+                  //                     child: ClipRRect(
+                  //                       borderRadius: BorderRadius.circular(98),
+                  //                       child: Image.file(
+                  //                         imageFile,
+                  //                         width: 200,
+                  //                         height: 200,
+                  //                         fit: BoxFit.cover,
+                  //                       ),
+                  //                     ),
+                  //                   ),
+                  //                   const SizedBox(height: 24),
 
-                                    // Action Buttons
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        // Cancel Button
-                                        TextButton(
-                                          onPressed:
-                                              () => Navigator.of(context).pop(),
-                                          child: const Text(
-                                            'Cancel',
-                                            style: TextStyle(
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ),
+                  //                   // Action Buttons
+                  //                   Row(
+                  //                     mainAxisAlignment:
+                  //                         MainAxisAlignment.spaceEvenly,
+                  //                     children: [
+                  //                       // Cancel Button
+                  //                       TextButton(
+                  //                         onPressed:
+                  //                             () => Navigator.of(context).pop(),
+                  //                         child: const Text(
+                  //                           'Cancel',
+                  //                           style: TextStyle(
+                  //                             color: Colors.grey,
+                  //                           ),
+                  //                         ),
+                  //                       ),
 
-                                        // Save Button
-                                        ElevatedButton(
-                                          onPressed: () async {
-                                            // // Show loading indicator
-                                            // Navigator.of(context).pop(); // Close dialog first
+                  //                       // Save Button
+                  //                       ElevatedButton(
+                  //                         onPressed: () async {
+                  //                           // // Show loading indicator
+                  //                           // Navigator.of(context).pop(); // Close dialog first
 
-                                            // // Show loading dialog
-                                            // showDialog(
-                                            //   context: context,
-                                            //   barrierDismissible: false,
-                                            //   builder: (BuildContext context) {
-                                            //     return const Dialog(
-                                            //       child: Padding(
-                                            //         padding: EdgeInsets.all(20),
-                                            //         child: Row(
-                                            //           mainAxisSize: MainAxisSize.min,
-                                            //           children: [
-                                            //             CircularProgressIndicator(),
-                                            //             SizedBox(width: 20),
-                                            //             Text('Updating profile picture...'),
-                                            //           ],
-                                            //         ),
-                                            //       ),
-                                            //     );
-                                            //   },
-                                            // );
+                  //                           // // Show loading dialog
+                  //                           // showDialog(
+                  //                           //   context: context,
+                  //                           //   barrierDismissible: false,
+                  //                           //   builder: (BuildContext context) {
+                  //                           //     return const Dialog(
+                  //                           //       child: Padding(
+                  //                           //         padding: EdgeInsets.all(20),
+                  //                           //         child: Row(
+                  //                           //           mainAxisSize: MainAxisSize.min,
+                  //                           //           children: [
+                  //                           //             CircularProgressIndicator(),
+                  //                           //             SizedBox(width: 20),
+                  //                           //             Text('Updating profile picture...'),
+                  //                           //           ],
+                  //                           //         ),
+                  //                           //       ),
+                  //                           //     );
+                  //                           //   },
+                  //                           // );
 
-                                            try {
-                                              // Update profile picture
-                                              await controller
-                                                  .updateProfilePicture(
-                                                    userId: user.userId,
-                                                    imageFile: imageFile,
-                                                  );
+                  //                           try {
+                  //                             // Update profile picture
+                  //                             await controller
+                  //                                 .updateProfilePicture(
+                  //                                   userId: user.userId,
+                  //                                   imageFile: imageFile,
+                  //                                 );
 
-                                              // Close loading dialog
-                                              Navigator.of(context).pop();
+                  //                             // Close loading dialog
+                  //                             Navigator.of(context).pop();
 
-                                              // Refresh UI
+                  //                             // Refresh UI
 
-                                              // Show success message
-                                              // ScaffoldMessenger.of(context).showSnackBar(
-                                              //   const SnackBar(
-                                              //     content: Text('Profile picture updated successfully!'),
-                                              //     backgroundColor: Colors.green,
-                                              //   ),
-                                              // );
-                                            } catch (e) {
-                                              // Close loading dialog
-                                              Navigator.of(context).pop();
+                  //                             // Show success message
+                  //                             // ScaffoldMessenger.of(context).showSnackBar(
+                  //                             //   const SnackBar(
+                  //                             //     content: Text('Profile picture updated successfully!'),
+                  //                             //     backgroundColor: Colors.green,
+                  //                             //   ),
+                  //                             // );
+                  //                           } catch (e) {
+                  //                             // Close loading dialog
+                  //                             Navigator.of(context).pop();
 
-                                              // Show error message
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                SnackBar(
-                                                  content: Text(
-                                                    'Failed to update profile picture: $e',
-                                                  ),
-                                                  backgroundColor: Colors.red,
-                                                ),
-                                              );
-                                            }
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.blue,
-                                            foregroundColor: Colors.white,
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 24,
-                                              vertical: 12,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                          ),
-                                          child: const Text('Save'),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      }
-                    },
-                  ),
+                  //                             // Show error message
+                  //                             ScaffoldMessenger.of(
+                  //                               context,
+                  //                             ).showSnackBar(
+                  //                               SnackBar(
+                  //                                 content: Text(
+                  //                                   'Failed to update profile picture: $e',
+                  //                                 ),
+                  //                                 backgroundColor: Colors.red,
+                  //                               ),
+                  //                             );
+                  //                           }
+                  //                         },
+                  //                         style: ElevatedButton.styleFrom(
+                  //                           backgroundColor: Colors.blue,
+                  //                           foregroundColor: Colors.white,
+                  //                           padding: const EdgeInsets.symmetric(
+                  //                             horizontal: 24,
+                  //                             vertical: 12,
+                  //                           ),
+                  //                           shape: RoundedRectangleBorder(
+                  //                             borderRadius:
+                  //                                 BorderRadius.circular(8),
+                  //                           ),
+                  //                         ),
+                  //                         child: const Text('Save'),
+                  //                       ),
+                  //                     ],
+                  //                   ),
+                  //                 ],
+                  //               ),
+                  //             ),
+                  //           );
+                  //         },
+                  //       );
+                  //     }
+                  //   },
+                  // ),
                   const Divider(height: 1),
 
                   //   if(controller.userModel.value!.isAdmin == true)
@@ -1185,20 +1372,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
 
             // App Version
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              alignment: Alignment.center,
-              child: Text(
-                'Version 1.0.0',
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
-              ),
-            ),
 
             // Logout Button
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               child: ElevatedButton(
                 onPressed: () {
                   _showLogoutConfirmationDialog();
@@ -1222,6 +1400,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
 
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              alignment: Alignment.center,
+              child: Text(
+                'Version 1.03.0',
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              ),
+            ),
             const SizedBox(height: 24),
           ],
         ),

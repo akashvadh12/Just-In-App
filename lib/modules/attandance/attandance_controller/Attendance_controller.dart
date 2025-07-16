@@ -542,7 +542,7 @@ class GuardAttendanceController extends GetxController {
       dashboardController
           .fetchDashboardData(); // Update dashboard data after clock in
       clockInTime = DateTime.now();
-      lastAction.value = "Clocked IN at ${formatTime(clockInTime!)}";
+      lastAction.value = "Clocked-in at ${formatTime(clockInTime!)}";
 
       _showSuccess("Clock In Successful", "Welcome! Your shift has started");
 
@@ -563,7 +563,7 @@ class GuardAttendanceController extends GetxController {
       profileController.userModel.value?.clockStatus = false;
       clockOutTime = DateTime.now();
       dashboardController.fetchDashboardData();
-      lastAction.value = "Clocked OUT at ${formatTime(clockOutTime!)}";
+      lastAction.value = "Clocked-out at ${formatTime(clockOutTime!)}";
 
       _showSuccess(
         "Clock Out Successful",

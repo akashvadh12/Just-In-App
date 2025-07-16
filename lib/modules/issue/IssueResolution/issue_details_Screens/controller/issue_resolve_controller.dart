@@ -151,12 +151,12 @@ class IssueDetailController extends GetxController {
       );
 
       if (response) {
-        currentIssue.value = currentIssue.value!.copyWith(
-          status: IssueStatus.resolved,
-          resolutionNote: resolutionNote,
-          resolverName: 'Current User', // You can replace with actual name
-          resolvedAt: DateTime.now().toIso8601String(),
-        );
+        // currentIssue.value = currentIssue.value!.copyWith(
+        //   status: IssueStatus.resolved,
+        //   resolutionNote: resolutionNote,
+        //   resolverName: 'Current User', // You can replace with actual name
+        //   resolvedAt: DateTime.now().toIso8601String(),
+        // );
         return true;
       } else {
         throw Exception('Failed to resolve issue');

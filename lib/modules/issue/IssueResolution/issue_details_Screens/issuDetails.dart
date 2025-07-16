@@ -873,10 +873,10 @@ class _IssueDetailScreenState extends State<IssueScreen> {
         text = 'New';
         color = AppColors.error;
         break;
-      case IssueStatus.pending:
-        text = 'Pending';
-        color = Colors.orange;
-        break;
+      // case IssueStatus.pending:
+      //   text = 'Pending';
+      //   color = Colors.orange;
+      //   break;
       case IssueStatus.resolved:
         text = 'Resolved';
         color = AppColors.greenColor;

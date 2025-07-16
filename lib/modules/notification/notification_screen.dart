@@ -318,7 +318,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   fontSize: 12,
                                 ),
                               ),
-                              const SizedBox(width: 16),
+                             
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+
+                          Row(
+                            children: [
+                              
                               Icon(
                                 Icons.pin_drop,
                                 size: 14,
@@ -333,7 +340,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 ),
                               ),
                             ],
-                          ),
+                          )
                         ],
                       ),
                     ),
@@ -412,20 +419,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.photo_library,
-                        size: 14,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${issue.issuePhotos.length} photo${issue.issuePhotos.length > 1 ? 's' : ''}',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
-                    ],
-                  ),
+                  // Row(
+                  //   children: [
+                  //     Icon(
+                  //       Icons.photo_library,
+                  //       size: 14,
+                  //       color: Colors.grey[600],
+                  //     ),
+                  //     const SizedBox(width: 4),
+                  //     Text(
+                  //       '${issue.issuePhotos.length} photo${issue.issuePhotos.length > 1 ? 's' : ''}',
+                  //       style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  //     ),
+                  //   ],
+                  // ),
                 ],
               ],
             ),

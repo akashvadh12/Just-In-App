@@ -50,7 +50,7 @@ class ResolvedIssueScreen extends StatelessWidget {
           Row(
             children: [
               Text(
-                '#${issue.id.toUpperCase()}-2024-0123',
+                'ID: #${issue.id.toUpperCase()}-2024-0123',
                 style: AppTextStyles.hint.copyWith(
                   fontSize: 12,
                   color: Colors.grey[600],
@@ -72,23 +72,23 @@ class ResolvedIssueScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Resolved At: ${issue.resolvedAt}',
+            'Resolved: ${issue.resolvedAt}',
             style: AppTextStyles.hint.copyWith(color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Text(
-            'Creator: ${issue.creatorName}',
+            'Raised by: ${issue.creatorName}',
             style: AppTextStyles.hint.copyWith(color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Text(
-            'Resolver: ${issue.resolverName}',
+            'Resolved by: ${issue.resolverName}',
             style: AppTextStyles.hint.copyWith(color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Text(
             issue.location,
-            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500),
+            style: AppTextStyles.hint.copyWith(color: Colors.grey[600]),
           ),
         ],
       ),
@@ -213,7 +213,7 @@ class ResolvedIssueScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Original Photos',
+            'Issue Photos',
             style: AppTextStyles.heading.copyWith(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -347,7 +347,7 @@ class ResolvedIssueScreen extends StatelessWidget {
 
     showDialog(
       context: context,
-      barrierDismissible: false,
+       barrierDismissible: true,
       builder: (context) {
         return Dialog(
           backgroundColor: Colors.black,
@@ -362,30 +362,30 @@ class ResolvedIssueScreen extends StatelessWidget {
                     color: Colors.black,
                   ),
                   minScale: PhotoViewComputedScale.contained,
-                  maxScale: PhotoViewComputedScale.covered * 2.0,
+                  maxScale: PhotoViewComputedScale.covered * 1.0,
                   controller: controller,
                   scaleStateController: scaleStateController,
                 ),
               ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                      shape: BoxShape.circle,
-                    ),
-                    padding: const EdgeInsets.all(8),
-                    child: const Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                ),
-              ),
+              // Positioned(
+              //   top: 8,
+              //   right: 8,
+              //   child: GestureDetector(
+              //     onTap: () => Navigator.of(context).pop(),
+              //     child: Container(
+              //       decoration: BoxDecoration(
+              //         color: Colors.black.withOpacity(0.5),
+              //         shape: BoxShape.circle,
+              //       ),
+              //       padding: const EdgeInsets.all(8),
+              //       child: const Icon(
+              //         Icons.close,
+              //         color: Colors.white,
+              //         size: 28,
+              //       ),
+              //     ),
+              //   ),
+              // ),
               Positioned(
                 bottom: 16,
                 right: 16,
@@ -468,10 +468,10 @@ class ResolvedIssueScreen extends StatelessWidget {
         text = 'New';
         color = Colors.red;
         break;
-      case IssueStatus.pending:
-        text = 'Pending';
-        color = Colors.orange;
-        break;
+      // case IssueStatus.pending:
+      //   text = 'Pending';
+      //   color = Colors.orange;
+      //   break;
       case IssueStatus.resolved:
         text = 'Resolved';
         color = Colors.green;

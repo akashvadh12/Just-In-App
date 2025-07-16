@@ -66,7 +66,7 @@ class _SplashScreenState extends State<SplashScreen> {
             SizedBox(height: 24),
             // App Title
             Text(
-              'Just IN',
+              'JustIN',
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,

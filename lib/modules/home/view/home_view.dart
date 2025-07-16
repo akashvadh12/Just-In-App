@@ -76,6 +76,7 @@ class HomeView extends GetView<HomeController> {
 
     return AppBar(
       elevation: 0,
+      toolbarHeight: 70,
       backgroundColor: Color(0xFF1E3A8A),
       automaticallyImplyLeading: false,
       title: Row(
@@ -239,7 +240,9 @@ class HomeView extends GetView<HomeController> {
                   ),
                   child: Text(
                     controller.attendanceStatus.value.isNotEmpty
-                        ? controller.attendanceStatus.value
+                        ? controller.attendanceStatus.value == "In" ?
+                            'Clock-in' : 'Clock-out'
+
                         : 'Not Marked',
                     style: TextStyle(
                       color:
@@ -263,7 +266,7 @@ class HomeView extends GetView<HomeController> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Clock In',
+                            'Clock-in',
                             style: TextStyle(color: Colors.grey, fontSize: 14),
                           ),
                           SizedBox(height: 4),
@@ -282,7 +285,7 @@ class HomeView extends GetView<HomeController> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Clock Out',
+                            'Clock-out',
                             style: TextStyle(color: Colors.grey, fontSize: 14),
                           ),
                           SizedBox(height: 4),

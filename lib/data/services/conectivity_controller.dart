@@ -37,21 +37,22 @@ class ConnectivityController extends GetxController {
   void showNoInternetSnackbar() {
 
 
-        Get.snackbar(
-      "No Internet Connection",
-      "Please check your network settings.",
-      backgroundColor: Colors.orange.shade600,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.TOP,
-      margin: const EdgeInsets.all(12),
-      borderRadius: 10,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      icon: const Icon(Icons.warning, color: Colors.white),
-      shouldIconPulse: false,
-      duration: const Duration(seconds: 2),
-      barBlur: 10,
-      overlayBlur: 2,
-    );
+Get.snackbar(
+  "No Internet Connection",
+  "Please check your network settings.",
+  backgroundColor: Colors.orange.shade600,
+  colorText: Colors.white,
+  snackPosition: SnackPosition.BOTTOM,
+  margin: const EdgeInsets.all(12),
+  borderRadius: 10,
+  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  icon: const Icon(Icons.warning, color: Colors.white),
+  shouldIconPulse: false,
+  duration: const Duration(seconds: 2),
+  barBlur: 10,
+  overlayBlur: 2,
+);
+
   }
 
   void showInternetRestoredSnackbar() {

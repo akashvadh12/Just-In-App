@@ -209,7 +209,7 @@ Widget _buildTodayStatusCard(TodayAttendance todayData) {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              'Checked In',
+              'Chock-in',
               style: AppTextStyles.body.copyWith(
                 color: Colors.white,
                 fontSize: 12,
@@ -247,7 +247,7 @@ Widget _buildTodayTimeCard(TodayAttendance todayData) {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('First Clock In', style: AppTextStyles.body),
+                  Text('First Clock-in', style: AppTextStyles.body),
                   Text(
                     todayData.firstCheckInTime ?? '--:--',
                     style: AppTextStyles.subtitle,
@@ -259,7 +259,7 @@ Widget _buildTodayTimeCard(TodayAttendance todayData) {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Last Clock Out', style: AppTextStyles.body),
+                  Text('Last Clock-out', style: AppTextStyles.body),
                   Text(
                     todayData.lastCheckOutTime ?? '--:--',
                     style: AppTextStyles.subtitle,
@@ -352,7 +352,7 @@ Widget _buildSessionCard(AttendanceRecordTwo record, int sessionNumber) {
         
         // Check In Section
         _buildTimeSection(
-          'Check In',
+          'Clock-in',
           record.inTime,
           record.inPhoto,
           record.entryLocation,
@@ -362,7 +362,7 @@ Widget _buildSessionCard(AttendanceRecordTwo record, int sessionNumber) {
         if (record.outTime != null && record.outTime!.isNotEmpty) ...[
           const SizedBox(height: 12),
           _buildTimeSection(
-            'Check Out',
+            'Chock-out',
             record.outTime!,
             record.outPhoto,
             record.exitLocation,
@@ -590,7 +590,7 @@ Widget _buildAttendanceCardHistory(AttendanceRecord record) {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          // const SizedBox(height: 8),
           if (record.inTime != null || record.outTime != null) ...[
             Row(
               children: [
@@ -707,7 +707,7 @@ Widget _buildAttendanceCard(AttendanceRecordThree record) {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          // const SizedBox(height: 8),
           if (record.inTime != null || record.outTime != null) ...[
             Row(
               children: [

@@ -62,6 +62,8 @@ class IssueCard extends StatelessWidget {
           print('User ID retrieved: $userId');
           print('Issue ID saved: [38;5;2m${issue.id}[0m');
           print('Issue title: ${issue.title}');
+          print('issue resolved status: ${issue.resolvedAt}');
+          print('issue resolved status: ${issue.createdAt}');
 
           if (issue.status == IssueStatus.resolved) {
             print('Issue is resolved, navigating to issue details screen');
@@ -195,7 +197,10 @@ class IssueCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              issue.time,
+                              issue.resolvedAt != null &&
+                                      issue.resolvedAt!.isNotEmpty
+                                  ? issue.resolvedAt!
+                                  : issue.time ?? 'N/A',
                               style: AppTextStyles.hint,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -222,10 +227,10 @@ class IssueCard extends StatelessWidget {
         text = 'New';
         color = AppColors.error;
         break;
-      case IssueStatus.pending:
-        text = 'Pending';
-        color = Colors.orange;
-        break;
+      // case IssueStatus.pending:
+      //   text = 'Pending';
+      //   color = Colors.orange;
+      //   break;
       case IssueStatus.resolved:
         text = 'Resolved';
         color = AppColors.greenColor;

@@ -1,7 +1,5 @@
-// Enhanced Issue Model
 
-enum IssueStatus { new_issue, pending, resolved }
-
+// Updated Issue class to handle the new API response structure
 class Issue {
   final String id;
   final String title;
@@ -15,10 +13,14 @@ class Issue {
   final List<String> resolvePhotos;
   final String? creatorName;
   final String? resolverName;
+  final String? creatorPhoto;
+  final String? resolverPhoto;
+  final String? creatorGaurdId;
+  final String? resolverGaurdId;
   final double? latitude;
   final double? longitude;
   final String? resolutionNote;
-  final DateTime? createdAt;
+  final String? createdAt;
   final String? resolvedAt;
 
   Issue({
@@ -34,6 +36,10 @@ class Issue {
     this.resolvePhotos = const [],
     this.creatorName,
     this.resolverName,
+    this.creatorPhoto,
+    this.resolverPhoto,
+    this.creatorGaurdId,
+    this.resolverGaurdId,
     this.latitude,
     this.longitude,
     this.resolutionNote,
@@ -42,16 +48,19 @@ class Issue {
   });
 
   factory Issue.fromApiJson(Map<String, dynamic> json) {
-    // Handle new API fields for images
+    // Handle issuePhotos
     List<String> issuePhotos = [];
-    List<String> resolvePhotos = [];
     if (json['issuePhotos'] != null && json['issuePhotos'] is List) {
       issuePhotos = (json['issuePhotos'] as List).map((e) => e.toString()).toList();
     }
+    
+    // Handle resolvePhotos
+    List<String> resolvePhotos = [];
     if (json['resolvePhotos'] != null && json['resolvePhotos'] is List) {
       resolvePhotos = (json['resolvePhotos'] as List).map((e) => e.toString()).toList();
     }
-    // Fallback for images (legacy)
+    
+    // Fallback for images (legacy support)
     List<String> images = [];
     if (json['images'] != null) {
       if (json['images'] is List) {
@@ -60,6 +69,8 @@ class Issue {
         images = [json['images']];
       }
     }
+    
+    // If no images, try imageUrl or image fields
     if (images.isEmpty) {
       if (json['imageUrl'] != null && json['imageUrl'].toString().isNotEmpty) {
         images = [json['imageUrl'].toString()];
@@ -67,10 +78,12 @@ class Issue {
         images = [json['image'].toString()];
       }
     }
+    
     // Prefer issuePhotos for main image, fallback to images
     final mainImage = issuePhotos.isNotEmpty
         ? issuePhotos.first
         : (images.isNotEmpty ? images.first : '');
+
     return Issue(
       id: json['issueId']?.toString() ?? json['id']?.toString() ?? '',
       title: _generateTitle(json['description']?.toString() ?? json['title']?.toString() ?? ''),
@@ -84,105 +97,21 @@ class Issue {
       resolvePhotos: resolvePhotos,
       creatorName: json['creatorName']?.toString(),
       resolverName: json['resolverName']?.toString(),
+      creatorPhoto: json['creatorPhoto']?.toString(),
+      resolverPhoto: json['resolverPhoto']?.toString(),
+      creatorGaurdId: json['creatorGaurdId']?.toString(),
+      resolverGaurdId: json['resolverGaurdId']?.toString(),
       latitude: _parseDouble(json['latitude']),
       longitude: _parseDouble(json['longitude']),
       resolutionNote: json['resolutionNote']?.toString(),
-      createdAt: _parseDateTime(json['createdAt']),
+      createdAt: _formatDateTime(json['createdAt']?.toString()),
       resolvedAt: _formatDateTime(json['resolvedAt']?.toString()),
     );
   }
+   
+   
 
-  static double? _parseDouble(dynamic value) {
-    if (value == null) return null;
-    if (value is double) return value;
-    if (value is int) return value.toDouble();
-    if (value is String) {
-      return double.tryParse(value);
-    }
-    return null;
-  }
-
-  static DateTime? _parseDateTime(dynamic value) {
-    if (value == null) return null;
-    if (value is DateTime) return value;
-    if (value is String) {
-      return DateTime.tryParse(value);
-    }
-    return null;
-  }
-
-  static String _generateTitle(String description) {
-    if (description.isEmpty) return 'Issue Report';
-    
-    final words = description.trim().split(RegExp(r'\s+'));
-    if (words.length <= 4) return description;
-    
-    return '${words.take(4).join(' ')}...';
-  }
-
-  static String _generateLocation(dynamic latitude, dynamic longitude) {
-    final lat = _parseDouble(latitude);
-    final lng = _parseDouble(longitude);
-    
-    if (lat == null || lng == null || lat == 0 || lng == 0) {
-      return 'Location not specified';
-    }
-    return 'Lat: ${lat.toStringAsFixed(4)}, Lng: ${lng.toStringAsFixed(4)}';
-  }
-
-  static String _formatDateTime(String? dateTimeString) {
-    if (dateTimeString == null || dateTimeString.isEmpty) return 'Unknown time';
-    
-    try {
-      final dateTime = DateTime.parse(dateTimeString);
-      final now = DateTime.now();
-      final difference = now.difference(dateTime);
-
-      if (difference.inMinutes < 60) {
-        return '${difference.inMinutes} minutes ago';
-      } else if (difference.inHours < 24) {
-        return '${difference.inHours} hours ago';
-      } else if (difference.inDays == 1) {
-        return 'Yesterday, ${_formatTime(dateTime)}';
-      } else if (difference.inDays < 7) {
-        return '${difference.inDays} days ago';
-      } else {
-        return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-      }
-    } catch (e) {
-      return dateTimeString;
-    }
-  }
-
-  static String _formatTime(DateTime dateTime) {
-    final hour = dateTime.hour > 12 
-        ? dateTime.hour - 12 
-        : dateTime.hour == 0 ? 12 : dateTime.hour;
-    final minute = dateTime.minute.toString().padLeft(2, '0');
-    final period = dateTime.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:$minute $period';
-  }
-
-  static IssueStatus _parseApiStatus(String? status) {
-    if (status == null) return IssueStatus.new_issue;
-    
-    switch (status.toLowerCase().trim()) {
-      case 'pending':
-      case 'in_progress':
-      case 'inprogress':
-        return IssueStatus.pending;
-      case 'resolved':
-      case 'completed':
-      case 'closed':
-        return IssueStatus.resolved;
-      case 'new':
-      case 'open':
-      case 'reported':
-      default:
-        return IssueStatus.new_issue;
-    }
-  }
-
+  // CopyWith method for creating modified copies of Issue
   Issue copyWith({
     String? id,
     String? title,
@@ -196,10 +125,14 @@ class Issue {
     List<String>? resolvePhotos,
     String? creatorName,
     String? resolverName,
+    String? creatorPhoto,
+    String? resolverPhoto,
+    String? creatorGaurdId,
+    String? resolverGaurdId,
     double? latitude,
     double? longitude,
     String? resolutionNote,
-    DateTime? createdAt,
+    String? createdAt,
     String? resolvedAt,
   }) {
     return Issue(
@@ -215,6 +148,10 @@ class Issue {
       resolvePhotos: resolvePhotos ?? this.resolvePhotos,
       creatorName: creatorName ?? this.creatorName,
       resolverName: resolverName ?? this.resolverName,
+      creatorPhoto: creatorPhoto ?? this.creatorPhoto,
+      resolverPhoto: resolverPhoto ?? this.resolverPhoto,
+      creatorGaurdId: creatorGaurdId ?? this.creatorGaurdId,
+      resolverGaurdId: resolverGaurdId ?? this.resolverGaurdId,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       resolutionNote: resolutionNote ?? this.resolutionNote,
@@ -223,39 +160,65 @@ class Issue {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'issueId': id,
-      'title': title,
-      'description': description,
-      'location': location,
-      'time': time,
-      'status': status.toString().split('.').last,
-      'imageUrl': imageUrl,
-      'images': images,
-      'issuePhotos': issuePhotos,
-      'resolvePhotos': resolvePhotos,
-      'creatorName': creatorName,
-      'resolverName': resolverName,
-      'latitude': latitude,
-      'longitude': longitude,
-      'resolutionNote': resolutionNote,
-      'createdAt': createdAt?.toIso8601String(),
-      'resolvedAt': resolvedAt,
-    };
+
+  static String _generateTitle(String description) {
+    if (description.isEmpty) return 'Issue';
+    // Take first 30 characters or until first sentence
+    final words = description.split(' ');
+    if (words.length <= 5) return description;
+    return '${words.take(5).join(' ')}...';
   }
 
-  @override
-  String toString() {
-    return 'Issue(id: $id, title: $title, status: $status)';
+  static String _generateLocation(dynamic lat, dynamic lng) {
+    if (lat == null || lng == null) return 'Unknown location';
+    return 'Lat: ${lat.toString()}, Lng: ${lng.toString()}';
   }
 
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is Issue && other.id == id;
+  static String _formatDateTime(String? dateTimeStr) {
+    if (dateTimeStr == null || dateTimeStr.isEmpty) return '';
+    try {
+      final dateTime = DateTime.parse(dateTimeStr);
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return dateTimeStr;
+    }
   }
 
-  @override
-  int get hashCode => id.hashCode;
+  static IssueStatus _parseApiStatus(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'new':
+        return IssueStatus.new_issue;
+      case 'resolved':
+        return IssueStatus.resolved;
+      default:
+        return IssueStatus.new_issue;
+    }
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value);
+    }
+    return null;
+  }
+
+  static DateTime? _parseDateTime(dynamic dateTime) {
+    if (dateTime == null) return null;
+    if (dateTime is String) {
+      try {
+        return DateTime.parse(dateTime);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  }
+}
+
+enum IssueStatus {
+  new_issue,
+  resolved,
 }

@@ -54,8 +54,8 @@ class IssuesScreen extends StatelessWidget {
 
                 return TabBarView(
                   children: [
-                    _buildIssuesList(controller, IssueStatus.new_issue),
-                    _buildIssuesList(controller, IssueStatus.resolved),
+                    _buildStatusBasedIssuesList(controller, IssueStatus.new_issue),
+                    _buildStatusBasedIssuesList(controller, IssueStatus.resolved),
                   ],
                 );
               }),
@@ -73,21 +73,219 @@ class IssuesScreen extends StatelessWidget {
       ),
     );
   }
+Widget _buildTabBar(IssuesController controller) {
+  return Container(
+    color: AppColors.whiteColor,
+    child:TabBar(
+        labelStyle: AppTextStyles.body,
+        onTap: (index) {
+          // Reset pagination when switching tabs
+          String status = index == 0 ? 'new' : 'resolved';
+          controller.fetchIssuesByStatus(status);
+        },
+        tabs: [
+          Tab(text: 'New '),
+          Tab(text: 'Resolved'),
+        ],
+      ),
+    
+  );
+}
 
-  Widget _buildTabBar(IssuesController controller) {
-    return Container(
-      color: AppColors.whiteColor,
-      child: Obx(
-        () => TabBar(
-          labelStyle: AppTextStyles.body,
-          tabs: [
-            Tab(text: 'New (${controller.newIssuesCount})'),
-            Tab(text: 'Resolved (${controller.resolvedIssuesCount})'),
-          ],
+// Updated Issues List widget with pagination
+Widget _buildIssuesList(IssuesController controller, IssueStatus status) {
+  return Obx(() {
+    final filteredIssues = controller.getIssuesByStatus(status);
+
+    if (controller.isLoading.value && filteredIssues.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (filteredIssues.isEmpty && !controller.isLoading.value) {
+      return RefreshIndicator(
+        onRefresh: () => controller.refreshIssues(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(
+            height: Get.height * 0.6,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    status == IssueStatus.new_issue
+                        ? Icons.check_circle_outline
+                        : Icons.history,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    status == IssueStatus.new_issue
+                        ? 'No new issues'
+                        : 'No resolved issues',
+                    style: AppTextStyles.body.copyWith(
+                      color: Colors.grey[600],
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Pull down to refresh',
+                    style: AppTextStyles.body.copyWith(
+                      color: Colors.grey[400],
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => controller.refreshIssues(),
+      child: ListView.builder(
+        controller: controller.scrollController,
+        padding: const EdgeInsets.all(24),
+        itemCount: filteredIssues.length + (controller.hasMoreData.value ? 1 : 0),
+        itemBuilder: (context, index) {
+          // Show loading indicator at the end
+          if (index == filteredIssues.length) {
+            return Obx(() => controller.isLoadingMore.value
+                ? const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : const SizedBox.shrink());
+          }
+
+          final issue = filteredIssues[index];
+          print("Issue:🔴🔴🔴 ${issue.title}");
+          
+          return IssueCard(
+            issue: issue,
+            onIssueUpdated: (updatedIssue) => controller.updateIssue(updatedIssue),
+          );
+        },
       ),
     );
-  }
+  });
+}
+
+
+
+
+// Alternative approach: Separate status-based fetching
+Widget _buildStatusBasedIssuesList(IssuesController controller, IssueStatus status) {
+  return Obx(() {
+    // You can implement separate controllers for each status if needed
+    // This would require separate API calls for 'new' and 'resolved' status
+    
+    final filteredIssues = controller.getIssuesByStatus(status);
+    
+    if (controller.isLoading.value && filteredIssues.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (filteredIssues.isEmpty && !controller.isLoading.value) {
+      return RefreshIndicator(
+        onRefresh: () {
+          String apiStatus = status == IssueStatus.new_issue ? 'new' : 'resolved';
+          return controller.fetchIssuesByStatus(apiStatus);
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(
+            height: Get.height * 0.6,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    status == IssueStatus.new_issue
+                        ? Icons.check_circle_outline
+                        : Icons.history,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    status == IssueStatus.new_issue
+                        ? 'No new issues'
+                        : 'No resolved issues',
+                    style: AppTextStyles.body.copyWith(
+                      color: Colors.grey[600],
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Pull down to refresh',
+                    style: AppTextStyles.body.copyWith(
+                      color: Colors.grey[400],
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () {
+        String apiStatus = status == IssueStatus.new_issue ? 'new' : 'resolved';
+        return controller.fetchIssuesByStatus(apiStatus);
+      },
+      child: ListView.builder(
+        controller: controller.scrollController,
+        padding: const EdgeInsets.all(24),
+        itemCount: filteredIssues.length + (controller.hasMoreData.value ? 1 : 0),
+        itemBuilder: (context, index) {
+          // Show loading indicator at the end
+          if (index == filteredIssues.length) {
+            return Obx(() => controller.isLoadingMore.value
+                ? const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : const SizedBox.shrink());
+          }
+
+          final issue = filteredIssues[index];
+          
+          return IssueCard(
+            issue: issue,
+            onIssueUpdated: (updatedIssue) => controller.updateIssue(updatedIssue),
+          );
+        },
+      ),
+    );
+  });
+}
+// Add this widget to show pagination info (optional)
+Widget _buildPaginationInfo(IssuesController controller) {
+  return Obx(() {
+    if (controller.totalCount.value == 0) return const SizedBox.shrink();
+    
+    return Container(
+      padding: const EdgeInsets.all(8),
+      child: Text(
+        'Showing ${controller.issues.length} of ${controller.totalCount.value} issues',
+        style: AppTextStyles.body.copyWith(
+          color: Colors.grey[600],
+          fontSize: 12,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  });
+}
 
   Widget _buildErrorWidget(IssuesController controller) {
     return Center(
@@ -116,69 +314,4 @@ class IssuesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildIssuesList(IssuesController controller, IssueStatus status) {
-    return Obx(() {
-      final filteredIssues = controller.getIssuesByStatus(status);
-
-      if (filteredIssues.isEmpty) {
-        return RefreshIndicator(
-          onRefresh: () => controller.refreshIssues(),
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: SizedBox(
-              height: Get.height * 0.6,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      status == IssueStatus.new_issue
-                          ? Icons.check_circle_outline
-                          : Icons.history,
-                      size: 64,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      status == IssueStatus.new_issue
-                          ? 'No new issues'
-                          : 'No resolved issues',
-                      style: AppTextStyles.body.copyWith(
-                        color: Colors.grey[600],
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Pull down to refresh',
-                      style: AppTextStyles.body.copyWith(
-                        color: Colors.grey[400],
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      }
-
-      return RefreshIndicator(
-        onRefresh: () => controller.refreshIssues(),
-        child: ListView.builder(
-          padding: const EdgeInsets.all(24),
-          itemCount: filteredIssues.length,
-          itemBuilder: (context, index) {
-            print("Issue:🔴🔴🔴 ${filteredIssues[index].title}");
-            return IssueCard(
-              issue: filteredIssues[index],
-              onIssueUpdated:
-                  (updatedIssue) => controller.updateIssue(updatedIssue),
-            );
-          },
-        ),
-      );
-    });
-  }
 }
