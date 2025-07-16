@@ -84,7 +84,8 @@ class LocationController extends GetxController {
       } else {
         Get.snackbar(
           'Error',
-          'Failed to fetch locations: ${response.body}',
+          snackPosition: SnackPosition.BOTTOM,
+          'Failed to fetch locations please try again later',
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
@@ -92,8 +93,9 @@ class LocationController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Failed to fetch locations: $e',
+        'Failed to fetch locations please try again later',
         backgroundColor: Colors.red,
+        snackPosition: SnackPosition.BOTTOM,
         colorText: Colors.white,
       );
     } finally {
@@ -114,6 +116,7 @@ class LocationController extends GetxController {
         'Error',
         'Please fill in all required fields',
         backgroundColor: Colors.red,
+        snackPosition: SnackPosition.BOTTOM,
         colorText: Colors.white,
       );
       return false;
@@ -145,6 +148,7 @@ class LocationController extends GetxController {
           'Success',
           respJson['message'] ?? 'Location added successfully',
           backgroundColor: Colors.green,
+          snackPosition: SnackPosition.BOTTOM,
           colorText: Colors.white,
         );
         await fetchLocations(); // Refresh the list
@@ -154,6 +158,7 @@ class LocationController extends GetxController {
         Get.snackbar(
           'Error',
           'Failed to add location: ${response.body}',
+          snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
@@ -162,8 +167,9 @@ class LocationController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Failed to add location: $e',
+        'Failed to add location please try again later',
         backgroundColor: Colors.red,
+        snackPosition: SnackPosition.BOTTOM,
         colorText: Colors.white,
       );
       return false;
@@ -186,6 +192,7 @@ class LocationController extends GetxController {
         'Error',
         'Location ID and name are required',
         backgroundColor: Colors.red,
+        snackPosition: SnackPosition.BOTTOM,
         colorText: Colors.white,
       );
       return false;
@@ -226,8 +233,9 @@ class LocationController extends GetxController {
       } else {
         Get.snackbar(
           'Error',
-          'Failed to update location: ${response.body}',
+          'Failed to update location',
           backgroundColor: Colors.red,
+          snackPosition: SnackPosition.BOTTOM,
           colorText: Colors.white,
         );
         return false;
@@ -235,8 +243,9 @@ class LocationController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Failed to update location: $e',
+        'Failed to update location: please try again later',
         backgroundColor: Colors.red,
+        snackPosition: SnackPosition.BOTTOM,
         colorText: Colors.white,
       );
       return false;
@@ -252,6 +261,7 @@ class LocationController extends GetxController {
         'Error',
         'Location ID is required',
         backgroundColor: Colors.red,
+        snackPosition: SnackPosition.BOTTOM,
         colorText: Colors.white,
       );
       return false;
@@ -269,6 +279,7 @@ class LocationController extends GetxController {
           'Success',
           respJson['message'] ?? 'Location deleted successfully',
           backgroundColor: Colors.green,
+          snackPosition: SnackPosition.BOTTOM,
           colorText: Colors.white,
         );
         await fetchLocations(); // Refresh the list
@@ -276,7 +287,8 @@ class LocationController extends GetxController {
       } else {
         Get.snackbar(
           'Error',
-          'Failed to delete location: ${response.body}',
+          'Failed to delete location',
+          snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
@@ -285,8 +297,9 @@ class LocationController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Failed to delete location: $e',
+        'Failed to delete location: please try again later',
         backgroundColor: Colors.red,
+        snackPosition: SnackPosition.BOTTOM,
         colorText: Colors.white,
       );
       return false;
@@ -308,8 +321,9 @@ class LocationController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Failed to pick image: $e',
+        'Failed to pick image please try again',
         backgroundColor: Colors.red,
+        snackPosition: SnackPosition.BOTTOM,
         colorText: Colors.white,
       );
     }

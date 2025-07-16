@@ -67,8 +67,12 @@ class IssuesController extends GetxController
   }
 
   List<Issue> getIssuesByStatus(IssueStatus status) {
+    if (status == IssueStatus.resolved) {
+      return _resolvedIssues.where((issue) => issue.status == status).toList();
+    }
     return _issues.where((issue) => issue.status == status).toList();
   }
+
 
   void updateIssue(Issue updatedIssue) {
     final index = _issues.indexWhere((issue) => issue.id == updatedIssue.id);
@@ -150,8 +154,10 @@ class IssuesController extends GetxController
           // Replace existing issues
           if (status == "resolved") {
             _resolvedIssues.value = newIssues;
-          }
+          } else{
+
           _issues.value = newIssues;
+          }
         }
       } else {
         errorMessage.value =
@@ -173,7 +179,11 @@ class IssuesController extends GetxController
   Future<void> fetchIssuesByStatus(String status) async {
     currentPage.value = 1;
     hasMoreData.value = true;
-    _issues.clear();
+    // if (status == "resolved") {
+    //   _resolvedIssues.clear();
+    // } else {
+    //   _issues.clear();
+    // }
     await fetchIssues(status: status);
   }
 

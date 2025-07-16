@@ -7,6 +7,7 @@ import 'package:security_guard/core/theme/app_colors.dart';
 
 import 'package:security_guard/modules/home/view/home_view.dart';
 import 'package:security_guard/modules/issue/report_issue/report_incident_screen.dart';
+import 'package:security_guard/modules/issue/versionUpdateCheck/versionUpdateCheckScreen.dart';
 import 'package:security_guard/modules/petrol/views/patrol_check_in_view.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
@@ -231,183 +232,193 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         bottom: 0,
                         right: 0,
                         child: GestureDetector(
-                            onTap: () async {
-                      final user = controller.userModel.value;
-                      if (user == null) return;
+                          onTap: () async {
+                            final user = controller.userModel.value;
+                            if (user == null) return;
 
-                      final picker = ImagePicker();
-                      final pickedFile = await picker.pickImage(
-                        source: ImageSource.gallery,
-                        imageQuality: 80,
-                      );
-
-                      if (pickedFile != null) {
-                        final imageFile = File(pickedFile.path);
-
-                        // Show dialog with image preview and save button
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return Dialog(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    // Header
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text(
-                                          'Preview Profile Picture',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          onPressed:
-                                              () => Navigator.of(context).pop(),
-                                          icon: const Icon(Icons.close),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 16),
-
-                                    // Image Preview
-                                    Container(
-                                      width: 200,
-                                      height: 200,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(
-                                          100,
-                                        ),
-                                        border: Border.all(
-                                          color: Colors.grey.shade300,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(98),
-                                        child: Image.file(
-                                          imageFile,
-                                          width: 200,
-                                          height: 200,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
-
-                                    // Action Buttons
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        // Cancel Button
-                                        TextButton(
-                                          onPressed:
-                                              () => Navigator.of(context).pop(),
-                                          child: const Text(
-                                            'Cancel',
-                                            style: TextStyle(
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ),
-
-                                        // Save Button
-                                        ElevatedButton(
-                                          onPressed: () async {
-                                            // // Show loading indicator
-                                            // Navigator.of(context).pop(); // Close dialog first
-
-                                            // // Show loading dialog
-                                            // showDialog(
-                                            //   context: context,
-                                            //   barrierDismissible: false,
-                                            //   builder: (BuildContext context) {
-                                            //     return const Dialog(
-                                            //       child: Padding(
-                                            //         padding: EdgeInsets.all(20),
-                                            //         child: Row(
-                                            //           mainAxisSize: MainAxisSize.min,
-                                            //           children: [
-                                            //             CircularProgressIndicator(),
-                                            //             SizedBox(width: 20),
-                                            //             Text('Updating profile picture...'),
-                                            //           ],
-                                            //         ),
-                                            //       ),
-                                            //     );
-                                            //   },
-                                            // );
-
-                                            try {
-                                              // Update profile picture
-                                              await controller
-                                                  .updateProfilePicture(
-                                                    userId: user.userId,
-                                                    imageFile: imageFile,
-                                                  );
-
-                                              // Close loading dialog
-                                              Navigator.of(context).pop();
-
-                                              // Refresh UI
-
-                                              // Show success message
-                                              // ScaffoldMessenger.of(context).showSnackBar(
-                                              //   const SnackBar(
-                                              //     content: Text('Profile picture updated successfully!'),
-                                              //     backgroundColor: Colors.green,
-                                              //   ),
-                                              // );
-                                            } catch (e) {
-                                              // Close loading dialog
-                                              Navigator.of(context).pop();
-
-                                              // Show error message
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                SnackBar(
-                                                  content: Text(
-                                                    'Failed to update profile picture: $e',
-                                                  ),
-                                                  backgroundColor: Colors.red,
-                                                ),
-                                              );
-                                            }
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.blue,
-                                            foregroundColor: Colors.white,
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 24,
-                                              vertical: 12,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                          ),
-                                          child: const Text('Save'),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
+                            final picker = ImagePicker();
+                            final pickedFile = await picker.pickImage(
+                              source: ImageSource.gallery,
+                              imageQuality: 80,
                             );
+
+                            if (pickedFile != null) {
+                              final imageFile = File(pickedFile.path);
+
+                              // Show dialog with image preview and save button
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return Dialog(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          // Header
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              const Text(
+                                                'Preview Profile Picture',
+                                                style: TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              IconButton(
+                                                onPressed:
+                                                    () =>
+                                                        Navigator.of(
+                                                          context,
+                                                        ).pop(),
+                                                icon: const Icon(Icons.close),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 16),
+
+                                          // Image Preview
+                                          Container(
+                                            width: 200,
+                                            height: 200,
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(100),
+                                              border: Border.all(
+                                                color: Colors.grey.shade300,
+                                                width: 2,
+                                              ),
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(98),
+                                              child: Image.file(
+                                                imageFile,
+                                                width: 200,
+                                                height: 200,
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 24),
+
+                                          // Action Buttons
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceEvenly,
+                                            children: [
+                                              // Cancel Button
+                                              TextButton(
+                                                onPressed:
+                                                    () =>
+                                                        Navigator.of(
+                                                          context,
+                                                        ).pop(),
+                                                child: const Text(
+                                                  'Cancel',
+                                                  style: TextStyle(
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
+                                              ),
+
+                                              // Save Button
+                                              ElevatedButton(
+                                                onPressed: () async {
+                                                  // // Show loading indicator
+                                                  // Navigator.of(context).pop(); // Close dialog first
+
+                                                  // // Show loading dialog
+                                                  // showDialog(
+                                                  //   context: context,
+                                                  //   barrierDismissible: false,
+                                                  //   builder: (BuildContext context) {
+                                                  //     return const Dialog(
+                                                  //       child: Padding(
+                                                  //         padding: EdgeInsets.all(20),
+                                                  //         child: Row(
+                                                  //           mainAxisSize: MainAxisSize.min,
+                                                  //           children: [
+                                                  //             CircularProgressIndicator(),
+                                                  //             SizedBox(width: 20),
+                                                  //             Text('Updating profile picture...'),
+                                                  //           ],
+                                                  //         ),
+                                                  //       ),
+                                                  //     );
+                                                  //   },
+                                                  // );
+
+                                                  try {
+                                                    // Update profile picture
+                                                    await controller
+                                                        .updateProfilePicture(
+                                                          userId: user.userId,
+                                                          imageFile: imageFile,
+                                                        );
+
+                                                    // Close loading dialog
+                                                    Navigator.of(context).pop();
+
+                                                    // Refresh UI
+
+                                                    // Show success message
+                                                    // ScaffoldMessenger.of(context).showSnackBar(
+                                                    //   const SnackBar(
+                                                    //     content: Text('Profile picture updated successfully!'),
+                                                    //     backgroundColor: Colors.green,
+                                                    //   ),
+                                                    // );
+                                                  } catch (e) {
+                                                    // Close loading dialog
+                                                    Navigator.of(context).pop();
+
+                                                    // Show error message
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          'Failed to update profile picture: $e',
+                                                        ),
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                      ),
+                                                    );
+                                                  }
+                                                },
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.blue,
+                                                  foregroundColor: Colors.white,
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 24,
+                                                        vertical: 12,
+                                                      ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                  ),
+                                                ),
+                                                child: const Text('Save'),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            }
                           },
-                        );
-                      }
-                    },
                           child: Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
@@ -505,7 +516,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // Profile Actions Section
             Container(
-              
               color: AppColors.whiteColor,
               child: Column(
                 children: [
@@ -1404,9 +1414,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 16),
               alignment: Alignment.center,
-              child: Text(
-                'Version 1.03.0',
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Version 1.03.0',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: () {
+                      // Handle tap - navigate to version screen or check updates
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const VersionUpdateScreen(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.primary.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Text(
+                        'Check Updates',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 24),

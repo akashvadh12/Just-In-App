@@ -158,6 +158,7 @@ class PatrolHistoryController extends GetxController {
             'No patrol history found for the selected date range',
             backgroundColor: AppColors.greyColor,
             colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
             duration: const Duration(seconds: 2),
           );
         }
@@ -167,10 +168,11 @@ class PatrolHistoryController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Failed to load patrol history: ${e.toString()}',
+        'Failed to load patrol history',
         backgroundColor: AppColors.error,
         colorText: Colors.white,
-        duration: const Duration(seconds: 3),
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
       );
       print('Error fetching patrol history: $e');
     } finally {
@@ -206,10 +208,11 @@ class PatrolHistoryController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Failed to load history details: ${e.toString()}',
+        'Failed to load history details',
         backgroundColor: AppColors.error,
         colorText: Colors.white,
-        duration: const Duration(seconds: 3),
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
       );
       print('Error fetching history details: $e');
     } finally {

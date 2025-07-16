@@ -402,7 +402,7 @@ Widget _buildLocationMap(IssueDetailController controller) {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Original Photos',
+            'Issue Photos',
             style: AppTextStyles.heading.copyWith(
               fontSize: 16,
               fontWeight: FontWeight.w600,

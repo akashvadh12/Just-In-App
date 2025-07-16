@@ -176,7 +176,7 @@ class _CompanyLocationEditScreenState extends State<CompanyLocationEditScreen> {
         'Current location updated successfully',
         backgroundColor: Colors.green,
         colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
+        snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 2),
       );
     } catch (e) {
@@ -192,7 +192,7 @@ class _CompanyLocationEditScreenState extends State<CompanyLocationEditScreen> {
         errorMessage,
         backgroundColor: Colors.red,
         colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
+        snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 3),
       );
     } finally {

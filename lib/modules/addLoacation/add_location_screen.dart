@@ -610,6 +610,7 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
           'Location Services Disabled',
           'Please enable location services to get current location',
           backgroundColor: Colors.orange,
+          snackPosition: SnackPosition.BOTTOM,
           colorText: Colors.white,
           icon: Icon(Icons.location_off, color: Colors.white),
         );
@@ -625,6 +626,7 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
             'Location Permission Denied',
             'Location permissions are required to get current location',
             backgroundColor: Colors.orange,
+            snackPosition: SnackPosition.BOTTOM,
             colorText: Colors.white,
             icon: Icon(Icons.location_off, color: Colors.white),
           );
@@ -637,6 +639,7 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
           'Location Permission Denied',
           'Location permissions are permanently denied. Please enable them in settings.',
           backgroundColor: Colors.red,
+          snackPosition: SnackPosition.BOTTOM,
           colorText: Colors.white,
           icon: Icon(Icons.location_off, color: Colors.white),
         );
@@ -659,14 +662,16 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
         'Current location coordinates have been filled',
         backgroundColor: Colors.green,
         colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
         icon: Icon(Icons.gps_fixed, color: Colors.white),
       );
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Failed to get current location: ${e.toString()}',
+        'Failed to get current location: please check your settings and permissions',
         backgroundColor: Colors.red,
         colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
         icon: Icon(Icons.error, color: Colors.white),
       );
     } finally {

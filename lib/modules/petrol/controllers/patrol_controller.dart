@@ -302,6 +302,7 @@ class PatrolCheckInController extends GetxController {
           'User profile not loaded',
           backgroundColor: AppColors.error,
           colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
           duration: const Duration(seconds: 3),
         );
         return;
@@ -372,7 +373,8 @@ class PatrolCheckInController extends GetxController {
         'Failed to load locations from server. Using offline data.',
         backgroundColor: AppColors.error,
         colorText: Colors.white,
-        duration: const Duration(seconds: 3),
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
       );
 
       print('Error fetching patrol locations: $e');
@@ -430,6 +432,7 @@ class PatrolCheckInController extends GetxController {
         'Location permission is required for patrol check-in',
         backgroundColor: AppColors.error,
         colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
       );
       return;
     }
@@ -468,6 +471,7 @@ class PatrolCheckInController extends GetxController {
         'Kindly mark your attendance to proceed.',
         backgroundColor: AppColors.error,
         colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
       );
 
       return;
@@ -528,8 +532,9 @@ class PatrolCheckInController extends GetxController {
         "Please enable location services to continue",
         backgroundColor: Colors.orange,
         colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
         icon: const Icon(Icons.location_off, color: Colors.white),
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 2),
       );
       await Geolocator.openLocationSettings();
       isVerifyingLocation.value = false;
@@ -548,7 +553,8 @@ class PatrolCheckInController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
         icon: const Icon(Icons.error, color: Colors.white),
-        duration: const Duration(seconds: 4),
+        duration: const Duration(seconds: 3),
+        snackPosition: SnackPosition.BOTTOM,
       );
       await Geolocator.openAppSettings();
       isVerifyingLocation.value = false;
@@ -563,7 +569,8 @@ class PatrolCheckInController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
         icon: const Icon(Icons.error, color: Colors.white),
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 2),
+        snackPosition: SnackPosition.BOTTOM,
       );
       isVerifyingLocation.value = false;
       return;
@@ -574,6 +581,7 @@ class PatrolCheckInController extends GetxController {
         'Error',
         'Cannot verify: Current location not available',
         backgroundColor: AppColors.error,
+        snackPosition: SnackPosition.BOTTOM,
         colorText: Colors.white,
       );
       isVerifyingLocation.value = false;
@@ -607,6 +615,7 @@ class PatrolCheckInController extends GetxController {
           'Verified',
           'You are within the checkpoint area',
           backgroundColor: AppColors.greenColor,
+          snackPosition: SnackPosition.BOTTOM,
           colorText: Colors.white,
         );
         isVerifyingLocation.value = false;
@@ -618,6 +627,7 @@ class PatrolCheckInController extends GetxController {
           'Verification Failed',
           'You are not within the checkpoint area (${distance.toStringAsFixed(0)}m away)',
           backgroundColor: AppColors.error,
+          snackPosition: SnackPosition.BOTTOM,
           colorText: Colors.white,
         );
       }
@@ -627,6 +637,7 @@ class PatrolCheckInController extends GetxController {
         'Location Captured',
         'Current location has been recorded',
         backgroundColor: AppColors.greenColor,
+        snackPosition: SnackPosition.BOTTOM,
         colorText: Colors.white,
       );
       isVerifyingLocation.value = false;
@@ -684,7 +695,8 @@ void openQRScanner({VoidCallback? onSuccess}) async {
       'Kindly mark your attendance to proceed.',
       backgroundColor: AppColors.error,
       colorText: Colors.white,
-      duration: const Duration(seconds: 3),
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 2),
     );
     return;
   }
@@ -696,6 +708,7 @@ void openQRScanner({VoidCallback? onSuccess}) async {
       'Camera permission is required for QR scanning',
       backgroundColor: AppColors.error,
       colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
       duration: const Duration(seconds: 3),
     );
     return;
@@ -801,6 +814,7 @@ void openQRScanner({VoidCallback? onSuccess}) async {
             'Success',
             respJson['message'] ?? 'Patrol report submitted successfully',
             backgroundColor: AppColors.greenColor,
+            snackPosition: SnackPosition.BOTTOM,
             colorText: Colors.white,
           );
           if (currentPatrolLocation.value != null) {
@@ -810,16 +824,18 @@ void openQRScanner({VoidCallback? onSuccess}) async {
         } else {
           Get.snackbar(
             'Error',
-            'Failed to submit patrol report: ${response.body}',
+            'Failed to submit patrol report',
             backgroundColor: AppColors.error,
+            snackPosition: SnackPosition.BOTTOM,
             colorText: Colors.white,
           );
         }
       } catch (e) {
         Get.snackbar(
           'Error',
-          'Failed to submit patrol report: $e',
+          'Failed to submit patrol report please try again later',
           backgroundColor: AppColors.error,
+          snackPosition: SnackPosition.BOTTOM,
           colorText: Colors.white,
         );
       }
@@ -828,6 +844,7 @@ void openQRScanner({VoidCallback? onSuccess}) async {
         'Error',
         'Please complete all steps (QR scan and photo required)',
         backgroundColor: AppColors.error,
+        snackPosition: SnackPosition.BOTTOM,
         colorText: Colors.white,
       );
     }
@@ -879,6 +896,7 @@ void openQRScanner({VoidCallback? onSuccess}) async {
           'Success',
           respJson['message'] ?? 'Manual patrol added successfully.',
           backgroundColor: AppColors.greenColor,
+          snackPosition: SnackPosition.BOTTOM,
           colorText: Colors.white,
         );
         // Optionally reset state or update UI
@@ -886,16 +904,18 @@ void openQRScanner({VoidCallback? onSuccess}) async {
       } else {
         Get.snackbar(
           'Error',
-          'Failed to add manual patrol: ${response.body}',
+          'Failed to add manual patrol',
           backgroundColor: AppColors.error,
+          snackPosition: SnackPosition.BOTTOM,
           colorText: Colors.white,
         );
       }
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Failed to add manual patrol: $e',
+        'Failed to add manual patrol please try again',
         backgroundColor: AppColors.error,
+        snackPosition: SnackPosition.BOTTOM,
         colorText: Colors.white,
       );
     } finally {
@@ -950,6 +970,7 @@ void openQRScanner({VoidCallback? onSuccess}) async {
         'Permission Denied',
         'Camera permission is required for taking photos',
         backgroundColor: AppColors.error,
+        snackPosition: SnackPosition.BOTTOM,
         colorText: Colors.white,
       );
       return;
@@ -973,9 +994,10 @@ void openQRScanner({VoidCallback? onSuccess}) async {
     } catch (e) {
       Get.snackbar(
         'Camera Error',
-        'Failed to capture image: $e',
+        'Failed to capture image please try again',
         backgroundColor: AppColors.error,
         colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
       );
     }
   }

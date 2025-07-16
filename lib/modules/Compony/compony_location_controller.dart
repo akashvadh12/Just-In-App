@@ -659,8 +659,8 @@ class CompanyLocationController extends GetxController {
       message,
       backgroundColor: Colors.green,
       colorText: Colors.white,
-      snackPosition: SnackPosition.TOP,
-      duration: const Duration(seconds: 3),
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 2),
     );
   }
 
@@ -671,8 +671,8 @@ class CompanyLocationController extends GetxController {
       message,
       backgroundColor: Colors.red,
       colorText: Colors.white,
-      snackPosition: SnackPosition.TOP,
-      duration: const Duration(seconds: 4),
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 2),
     );
   }
 

@@ -55,7 +55,7 @@ class IssuesScreen extends StatelessWidget {
                 return TabBarView(
                   children: [
                     _buildStatusBasedIssuesList(controller, IssueStatus.new_issue),
-                    _buildStatusBasedIssuesList(controller, IssueStatus.resolved),
+                    _buildStatusBasedIssuesListResolved(controller, IssueStatus.resolved),
                   ],
                 );
               }),
@@ -180,6 +180,95 @@ Widget _buildIssuesList(IssuesController controller, IssueStatus status) {
 
 // Alternative approach: Separate status-based fetching
 Widget _buildStatusBasedIssuesList(IssuesController controller, IssueStatus status) {
+  return Obx(() {
+    // You can implement separate controllers for each status if needed
+    // This would require separate API calls for 'new' and 'resolved' status
+    
+    final filteredIssues = controller.getIssuesByStatus(status);
+    
+    if (controller.isLoading.value && filteredIssues.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (filteredIssues.isEmpty && !controller.isLoading.value) {
+      return RefreshIndicator(
+        onRefresh: () {
+          String apiStatus = status == IssueStatus.new_issue ? 'new' : 'resolved';
+          return controller.fetchIssuesByStatus(apiStatus);
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(
+            height: Get.height * 0.6,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    status == IssueStatus.new_issue
+                        ? Icons.check_circle_outline
+                        : Icons.history,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    status == IssueStatus.new_issue
+                        ? 'No new issues'
+                        : 'No resolved issues',
+                    style: AppTextStyles.body.copyWith(
+                      color: Colors.grey[600],
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Pull down to refresh',
+                    style: AppTextStyles.body.copyWith(
+                      color: Colors.grey[400],
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () {
+        String apiStatus = status == IssueStatus.new_issue ? 'new' : 'resolved';
+        return controller.fetchIssuesByStatus(apiStatus);
+      },
+      child: ListView.builder(
+        controller: controller.scrollController,
+        padding: const EdgeInsets.all(24),
+        itemCount: filteredIssues.length + (controller.hasMoreData.value ? 1 : 0),
+        itemBuilder: (context, index) {
+          // Show loading indicator at the end
+          if (index == filteredIssues.length) {
+            return Obx(() => controller.isLoadingMore.value
+                ? const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : const SizedBox.shrink());
+          }
+
+          final issue = filteredIssues[index];
+          
+          return IssueCard(
+            issue: issue,
+            onIssueUpdated: (updatedIssue) => controller.updateIssue(updatedIssue),
+          );
+        },
+      ),
+    );
+  });
+}
+Widget _buildStatusBasedIssuesListResolved(IssuesController controller, IssueStatus status) {
   return Obx(() {
     // You can implement separate controllers for each status if needed
     // This would require separate API calls for 'new' and 'resolved' status

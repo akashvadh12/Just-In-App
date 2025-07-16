@@ -77,6 +77,8 @@ class IssueDetailController extends GetxController {
           "Please enable location services to continue",
           backgroundColor: Colors.orange,
           colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          
           icon: const Icon(Icons.location_off, color: Colors.white),
           duration: const Duration(seconds: 3),
         );
@@ -96,6 +98,7 @@ class IssueDetailController extends GetxController {
         "Please enable location services to continue",
         backgroundColor: Colors.orange,
         colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
         icon: const Icon(Icons.location_off, color: Colors.white),
         duration: const Duration(seconds: 3),
       );
@@ -120,6 +123,7 @@ class IssueDetailController extends GetxController {
           'No Images Selected',
           'Please select at least one image to resolve the issue.',
           backgroundColor: AppColors.error,
+          snackPosition: SnackPosition.BOTTOM,
           colorText: Colors.white,
         );
         return false;

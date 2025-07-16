@@ -80,6 +80,7 @@ class GuardAttendanceController extends GetxController {
           Get.snackbar(
             'Image Too Large',
             'Please use a smaller one',
+            snackPosition: SnackPosition.BOTTOM,
             backgroundColor: Colors.red,
             colorText: Colors.white,
           );
@@ -93,6 +94,7 @@ class GuardAttendanceController extends GetxController {
             'Error',
             'Could not capture photo',
             backgroundColor: Colors.red,
+            snackPosition: SnackPosition.BOTTOM,
             colorText: Colors.white,
           );
       
@@ -124,9 +126,10 @@ class GuardAttendanceController extends GetxController {
           "Office Location Error",
           "Failed to fetch office location from server.",
           backgroundColor: Colors.red,
+          snackPosition: SnackPosition.BOTTOM,
           colorText: Colors.white,
           icon: const Icon(Icons.error, color: Colors.white),
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 2),
         );
         isLocationVerified.value = false;
         isLoadingLocation.value = false;
@@ -139,8 +142,9 @@ class GuardAttendanceController extends GetxController {
           "No office location data received.",
           backgroundColor: Colors.red,
           colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
           icon: const Icon(Icons.error, color: Colors.white),
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 2),
         );
         isLocationVerified.value = false;
         isLoadingLocation.value = false;
@@ -156,8 +160,9 @@ class GuardAttendanceController extends GetxController {
           "Invalid office coordinates received.",
           backgroundColor: Colors.red,
           colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
           icon: const Icon(Icons.error, color: Colors.white),
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 2),
         );
         isLocationVerified.value = false;
         isLoadingLocation.value = false;
@@ -171,8 +176,9 @@ class GuardAttendanceController extends GetxController {
           "Please enable location services to continue",
           backgroundColor: Colors.orange,
           colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
           icon: const Icon(Icons.location_off, color: Colors.white),
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 2),
         );
         await Geolocator.openLocationSettings();
         return;
@@ -189,8 +195,9 @@ class GuardAttendanceController extends GetxController {
           "Please enable location permission from app settings",
           backgroundColor: Colors.red,
           colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
           icon: const Icon(Icons.error, color: Colors.white),
-          duration: const Duration(seconds: 4),
+          duration: const Duration(seconds: 3),
         );
         await Geolocator.openAppSettings();
         return;
@@ -203,8 +210,9 @@ class GuardAttendanceController extends GetxController {
           "Location permission is required for attendance",
           backgroundColor: Colors.red,
           colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
           icon: const Icon(Icons.error, color: Colors.white),
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 2),
         );
         return;
       }
@@ -240,6 +248,7 @@ class GuardAttendanceController extends GetxController {
           "GPS location verified successfully (within office range)",
           backgroundColor: Colors.green,
           colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
           icon: const Icon(Icons.location_on, color: Colors.white),
           duration: const Duration(seconds: 2),
         );
@@ -250,6 +259,7 @@ class GuardAttendanceController extends GetxController {
           "You are not within the allowed office location range.",
           backgroundColor: Colors.orange,
           colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
           icon: const Icon(Icons.location_off, color: Colors.white),
           duration: const Duration(seconds: 3),
         );
@@ -268,6 +278,7 @@ class GuardAttendanceController extends GetxController {
   "Unable to get your location. Please check settings.",
   backgroundColor: Colors.red,
   colorText: Colors.white,
+  snackPosition: SnackPosition.BOTTOM,
   icon: const Icon(Icons.location_off, color: Colors.white),
   duration: const Duration(seconds: 3),
 );
@@ -512,8 +523,9 @@ class GuardAttendanceController extends GetxController {
       message,
       backgroundColor: Colors.red,
       colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
       icon: const Icon(Icons.error, color: Colors.white),
-      duration: const Duration(seconds: 4),
+      duration: const Duration(seconds: 2),
       margin: const EdgeInsets.all(10),
     );
   }
@@ -524,8 +536,9 @@ class GuardAttendanceController extends GetxController {
       message,
       backgroundColor: Colors.green,
       colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
       icon: const Icon(Icons.check_circle, color: Colors.white),
-      duration: const Duration(seconds: 3),
+      duration: const Duration(seconds: 2),
       margin: const EdgeInsets.all(10),
     );
   }

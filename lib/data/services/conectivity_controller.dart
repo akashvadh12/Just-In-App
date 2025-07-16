@@ -61,7 +61,7 @@ Get.snackbar(
       "You are now connected to the internet.",
       backgroundColor: Colors.green.shade600,
       colorText: Colors.white,
-      snackPosition: SnackPosition.TOP,
+      snackPosition: SnackPosition.BOTTOM,
       margin: const EdgeInsets.all(12),
       borderRadius: 10,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

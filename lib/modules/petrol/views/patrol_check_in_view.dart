@@ -371,6 +371,7 @@ Widget _buildStopPatrolTab() {
                   'Reminder',
                   'Kindly mark your attendance to proceed.',
                   backgroundColor: AppColors.error,
+                  snackPosition: SnackPosition.BOTTOM,
                   colorText: Colors.white,
                 );
 
@@ -383,7 +384,7 @@ Widget _buildStopPatrolTab() {
                   "Please start a patrol first.",
                   backgroundColor: Colors.orange.shade600,
                   colorText: Colors.white,
-                  snackPosition: SnackPosition.TOP,
+               snackPosition: SnackPosition.BOTTOM,
                   margin: const EdgeInsets.all(12),
                   borderRadius: 10,
                   padding: const EdgeInsets.symmetric(
@@ -736,13 +737,13 @@ Widget _buildStopPatrolTab() {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Center(child: Text('📍 Verify Location', style: AppTextStyles.heading)),
-        const SizedBox(height: 6),
-        Center(
-          child: Text(
-            'Ensure you are at the correct location by matching GPS coordinates.',
-            style: AppTextStyles.body.copyWith(fontSize: 14),
-          ),
-        ),
+        // const SizedBox(height: 6),
+        // Center(
+        //   child: Text(
+        //     'Ensure you are at the correct location by matching GPS coordinates.',
+        //     style: AppTextStyles.body.copyWith(fontSize: 14),
+        //   ),
+        // ),
         const SizedBox(height: 12),
 
         // Compact Mini Map
@@ -774,7 +775,7 @@ Widget _buildStopPatrolTab() {
         //     ),
         //   ),
         // ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
         // Buttons Row - Side by side to save vertical space
         Column(
@@ -848,7 +849,7 @@ Widget _buildStopPatrolTab() {
                       ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // Status Message (Optional feedback)
             Obx(
@@ -856,7 +857,7 @@ Widget _buildStopPatrolTab() {
                   controller.isLocationVerified.value
                       ? Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: AppColors.greenColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -998,7 +999,7 @@ Widget _buildStopPatrolTab() {
                     Get.snackbar(
                       'Patrol Canceled',
                       'Your patrol has been canceled successfully',
-                      snackPosition: SnackPosition.TOP,
+                      snackPosition: SnackPosition.BOTTOM,
                       backgroundColor: Colors.green.shade100,
                       colorText: Colors.green.shade800,
                       icon: Icon(
@@ -1351,14 +1352,14 @@ Widget _buildStopPatrolTab() {
                         mainAxisAlignment: MainAxisAlignment.center,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (controller.capturedImage.value != null) ...[
-                            Icon(
-                              Icons.check_circle,
-                              color: AppColors.whiteColor,
-                              size: isTablet ? 20 : 16,
-                            ),
-                            SizedBox(width: 8),
-                          ],
+                          // if (controller.capturedImage.value != null) ...[
+                          //   Icon(
+                          //     Icons.check_circle,
+                          //     color: AppColors.whiteColor,
+                          //     size: isTablet ? 20 : 16,
+                          //   ),
+                          //   SizedBox(width: 8),
+                          // ],
                           Text(
                             controller.capturedImage.value != null
                                 ? 'Continue'

@@ -59,8 +59,9 @@ class AttendanceHistoryController extends GetxController {
       message,
       backgroundColor: Colors.red,
       colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
       icon: const Icon(Icons.error, color: Colors.white),
-      duration: const Duration(seconds: 3),
+      duration: const Duration(seconds: 2),
     );
   }
 
@@ -69,7 +70,7 @@ class AttendanceHistoryController extends GetxController {
     Get.snackbar(
       title,
       message,
-      snackPosition: SnackPosition.TOP,
+     snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.green,
       colorText: Get.theme.colorScheme.onPrimary,
     );
@@ -132,8 +133,9 @@ class AttendanceHistoryController extends GetxController {
           "Internal server error. Please try again later.",
           backgroundColor: Colors.red,
           colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
           icon: const Icon(Icons.error, color: Colors.white),
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 2),
         );
       } else {
         _showError("Error", "Failed to load attendance history");

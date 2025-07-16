@@ -16,7 +16,7 @@ class ForgotPasswordController extends GetxController {
       Get.snackbar(
         'Error',
         'Please enter your email or employee ID',
-        snackPosition: SnackPosition.TOP,
+        snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
@@ -62,10 +62,10 @@ class ForgotPasswordController extends GetxController {
         Get.snackbar(
           'Success',
           message.isNotEmpty ? message : 'Password has been sent to your registered employee ID or email address.',
-          snackPosition: SnackPosition.TOP,
+       snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.green,
           colorText: Colors.white,
-          duration: Duration(seconds: 4),
+          duration: Duration(seconds: 3),
         );
         
         // Show success message and options
@@ -75,7 +75,7 @@ class ForgotPasswordController extends GetxController {
         Get.snackbar(
           'Error',
           'Email or employee ID not found. Please check your email address.',
-          snackPosition: SnackPosition.TOP,
+          snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
@@ -83,7 +83,7 @@ class ForgotPasswordController extends GetxController {
         Get.snackbar(
           'Error',
           'Invalid email or employee ID format.',
-          snackPosition: SnackPosition.TOP,
+          snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
@@ -103,7 +103,7 @@ class ForgotPasswordController extends GetxController {
         Get.snackbar(
           'Error',
           errorMessage,
-          snackPosition: SnackPosition.TOP,
+          snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
@@ -115,7 +115,7 @@ class ForgotPasswordController extends GetxController {
       Get.snackbar(
         'Error',
         'Network error. Please check your internet connection.',
-        snackPosition: SnackPosition.TOP,
+       snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );

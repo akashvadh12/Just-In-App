@@ -759,6 +759,7 @@ class _EditLocationScreenState extends State<EditLocationScreen> {
           'Please enable location services to get current location',
           backgroundColor: Colors.orange,
           colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
           icon: Icon(Icons.location_off, color: Colors.white),
         );
         return;
@@ -772,7 +773,11 @@ class _EditLocationScreenState extends State<EditLocationScreen> {
           Get.snackbar(
             'Location Permission Denied',
             'Location permissions are required to get current location',
+            
             backgroundColor: Colors.orange,
+          snackPosition: SnackPosition.BOTTOM,
+            
+
             colorText: Colors.white,
             icon: Icon(Icons.location_off, color: Colors.white),
           );
@@ -786,6 +791,8 @@ class _EditLocationScreenState extends State<EditLocationScreen> {
           'Location permissions are permanently denied. Please enable them in settings.',
           backgroundColor: Colors.red,
           colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+
           icon: Icon(Icons.location_off, color: Colors.white),
         );
         return;
@@ -807,14 +814,18 @@ class _EditLocationScreenState extends State<EditLocationScreen> {
         'Current location coordinates have been updated',
         backgroundColor: Colors.green,
         colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+
         icon: Icon(Icons.gps_fixed, color: Colors.white),
       );
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Failed to get current location: ${e.toString()}',
+        'Failed to get current location, please check your settings and permissions',
         backgroundColor: Colors.red,
         colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+
         icon: Icon(Icons.error, color: Colors.white),
       );
     } finally {
@@ -945,6 +956,8 @@ class _EditLocationScreenState extends State<EditLocationScreen> {
       'All fields have been reset to original values',
       backgroundColor: Colors.blue,
       colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+
       icon: Icon(Icons.refresh, color: Colors.white),
     );
   }

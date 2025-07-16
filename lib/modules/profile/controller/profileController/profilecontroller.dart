@@ -164,7 +164,7 @@ Future<void> fetchUserProfile(String userId) async {
     Get.snackbar(
       'Error',
       message,
-      snackPosition: SnackPosition.TOP,
+      snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.red,
       colorText: Colors.white,
     );
@@ -174,7 +174,7 @@ Future<void> fetchUserProfile(String userId) async {
     Get.snackbar(
       'Success',
       message,
-      snackPosition: SnackPosition.TOP,
+     snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.green,
       colorText: Colors.white,
     );

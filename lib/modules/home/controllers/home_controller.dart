@@ -198,17 +198,19 @@ class HomeController extends GetxController {
           "Dashboard data not found for user ID: $userId",
           backgroundColor: Colors.orange,
           colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
           icon: const Icon(Icons.error, color: Colors.white),
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 2),
         );
       } else if (response.statusCode == 500) {
         Get.snackbar(
           "Server Error",
           "Internal server error. Please try again later.",
           backgroundColor: Colors.red,
+          snackPosition: SnackPosition.BOTTOM,
           colorText: Colors.white,
           icon: const Icon(Icons.error, color: Colors.white),
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 2),
         );
       } else {
         Get.snackbar(
@@ -216,12 +218,14 @@ class HomeController extends GetxController {
           "Dashboard not loading. Check your internet and try again.",
           backgroundColor: Colors.red,
           colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
           icon: const Icon(Icons.wifi_off, color: Colors.white),
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 2),
         );
       }
     } catch (e) {
-      Get.snackbar('Error', 'Error fetching dashboard data');
+      Get.snackbar('Error', 'Error fetching dashboard data',snackPosition: SnackPosition.BOTTOM,  backgroundColor: Colors.red,
+          colorText: Colors.white,);
       print('Error fetching dashboard data:🔴🔴🔴🐞🐞 $e');
     } finally {
       dashboardLoading.value = false;
