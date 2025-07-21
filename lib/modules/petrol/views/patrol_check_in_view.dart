@@ -1130,11 +1130,11 @@ Widget _buildStopPatrolTab() {
         Center(
           child: Text('📝 Add Patrol Notes', style: AppTextStyles.heading),
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Add any observations or notes about your patrol (optional).',
-          style: AppTextStyles.body,
-        ),
+        // const SizedBox(height: 8),
+        // Text(
+        //   'Add any observations or notes about your patrol (optional).',
+        //   style: AppTextStyles.body,
+        // ),
         const SizedBox(height: 16),
 
         _buildNotesSection(),
@@ -1169,11 +1169,11 @@ Widget _buildStopPatrolTab() {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Center(child: Text('✅ Submit Report', style: AppTextStyles.heading)),
-        const SizedBox(height: 8),
-        Text(
-          'Review your patrol information and submit the report.',
-          style: AppTextStyles.body,
-        ),
+        // const SizedBox(height: 8),
+        // Text(
+        //   'Review your patrol information and submit the report.',
+        //   style: AppTextStyles.body,
+        // ),
         const SizedBox(height: 16),
 
         // Summary Card
@@ -1292,19 +1292,19 @@ Widget _buildStopPatrolTab() {
             ),
             SizedBox(height: headingSpacing),
 
-            // Description with responsive text
-            Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: isTablet ? 40 : 16),
-                child: Text(
-                  'Take a photo to document your patrol visit.',
-                  style: AppTextStyles.body.copyWith(fontSize: bodyFontSize),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
+            // // Description with responsive text
+            // Center(
+            //   child: Padding(
+            //     padding: EdgeInsets.symmetric(horizontal: isTablet ? 40 : 16),
+            //     child: Text(
+            //       'Take a photo to document your patrol visit.',
+            //       style: AppTextStyles.body.copyWith(fontSize: bodyFontSize),
+            //       textAlign: TextAlign.center,
+            //       maxLines: 2,
+            //       overflow: TextOverflow.ellipsis,
+            //     ),
+            //   ),
+            // ),
             SizedBox(height: contentSpacing),
 
             // Photo card with responsive container
@@ -1386,180 +1386,186 @@ Widget _buildStopPatrolTab() {
     );
   }
 
-  Widget _buildPhotoCard() {
-    return Obx(() {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.08),
-              spreadRadius: 0,
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Compact Header
-            Row(
-              children: [
-                Icon(Icons.camera_alt, color: AppColors.primary, size: 16),
-                const SizedBox(width: 6),
-                Expanded(
+Widget _buildPhotoCard() {
+  return Obx(() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.08),
+            spreadRadius: 0,
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Compact Header
+          Row(
+            children: [
+              Icon(Icons.camera_alt, color: AppColors.primary, size: 16),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Photo',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              if (controller.capturedImage.value != null)
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                   child: Text(
-                    'Photo',
+                    '✓',
                     style: TextStyle(
-                      fontSize: 13,
+                      color: Colors.green,
+                      fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
                     ),
                   ),
                 ),
-                if (controller.capturedImage.value != null)
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      '✓',
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
+            ],
+          ),
+          const SizedBox(height: 12),
 
-            // Compact Photo area
-            GestureDetector(
-              onTap: () => controller.takePicture(context),
-              child: Container(
-                width: double.infinity,
-                height: 140, // Reduced from 180
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color:
-                        controller.capturedImage.value != null
-                            ? Colors.green
-                            : Colors.grey.shade300,
-                    width: 1.5,
-                  ),
+          // Compact Photo area with retake button inside
+          GestureDetector(
+            onTap: () => controller.takePicture(context),
+            child: Container(
+              width: double.infinity,
+              height: 140, // Reduced from 180
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: controller.capturedImage.value != null
+                      ? Colors.green
+                      : Colors.grey.shade300,
+                  width: 1.5,
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child:
-                      controller.capturedImage.value != null
-                          ? Stack(
-                            children: [
-                              Image.file(
-                                controller.capturedImage.value!,
-                                fit: BoxFit.contain,
-                                width: double.infinity,
-                                height: double.infinity,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: controller.capturedImage.value != null
+                    ? Stack(
+                        children: [
+                          Image.file(
+                            controller.capturedImage.value!,
+                            fit: BoxFit.contain,
+                            width: double.infinity,
+                            height: double.infinity,
+                          ),
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Container(
+                              padding: EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                shape: BoxShape.circle,
                               ),
-                              Positioned(
-                                top: 6,
-                                right: 6,
-                                child: Container(
-                                  padding: EdgeInsets.all(3),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.check,
-                                    color: Colors.white,
-                                    size: 12,
-                                  ),
-                                ),
+                              child: Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 12,
                               ),
-                            ],
-                          )
-                          : Container(
-                            color: Colors.grey[50],
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withOpacity(0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.camera_alt,
-                                    size: 24,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Tap to capture photo',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Required for patrol documentation',
-                                  style: TextStyle(
-                                    color: Colors.grey[400],
-                                    fontSize: 10,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
                             ),
                           ),
-                ),
+                          // Retake button inside the photo box
+                          Positioned(
+                            bottom: 8,
+                            right: 8,
+                            child: GestureDetector(
+                              onTap: () => controller.retakePhoto(),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.7),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.refresh,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Retake',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Container(
+                        color: Colors.grey[50],
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.camera_alt,
+                                size: 24,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Tap to capture photo',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Required for patrol documentation',
+                              style: TextStyle(
+                                color: Colors.grey[400],
+                                fontSize: 10,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
               ),
             ),
-
-            // Compact Retake option
-            if (controller.capturedImage.value != null) ...[
-              const SizedBox(height: 12),
-              Center(
-                child: TextButton.icon(
-                  onPressed: () => controller.retakePhoto(),
-                  icon: Icon(Icons.refresh, color: AppColors.primary, size: 16),
-                  label: Text(
-                    'Retake Photo',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    backgroundColor: AppColors.primary.withOpacity(0.1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      );
-    });
-  }
+          ),
+        ],
+      ),
+    );
+  });
+}
 
   Widget _buildMiniMap() {
     return Container(

@@ -15,7 +15,7 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
     <application
-        android:label="Just In"
+        android:label="JustIN"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
 

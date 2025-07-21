@@ -140,11 +140,11 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
           //   'Resolver: ${_currentIssue.resolverName}',
           //   style: AppTextStyles.hint.copyWith(color: Colors.grey[600]),
           // ),
-          const SizedBox(height: 8),
-          Text(
-            _currentIssue.location,
-            style: AppTextStyles.hint.copyWith(color: Colors.grey[600]),
-          ),
+          // const SizedBox(height: 8),
+          // Text(
+          //   _currentIssue.location,
+          //   style: AppTextStyles.hint.copyWith(color: Colors.grey[600]),
+          // ),
         ],
       ),
     );
@@ -788,7 +788,7 @@ Widget _buildLocationMap(IssueDetailController controller) {
 
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (context) {
         return Dialog(
           backgroundColor: Colors.black,
@@ -803,30 +803,30 @@ Widget _buildLocationMap(IssueDetailController controller) {
                     color: Colors.black,
                   ),
                   minScale: PhotoViewComputedScale.contained,
-                  maxScale: PhotoViewComputedScale.covered * 2.0,
+                  maxScale: PhotoViewComputedScale.covered * 1.0,
                   controller: controller,
                   scaleStateController: scaleStateController,
                 ),
               ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                      shape: BoxShape.circle,
-                    ),
-                    padding: const EdgeInsets.all(8),
-                    child: const Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                ),
-              ),
+              // Positioned(
+              //   top: 8,
+              //   right: 8,
+              //   child: GestureDetector(
+              //     onTap: () => Navigator.of(context).pop(),
+              //     child: Container(
+              //       decoration: BoxDecoration(
+              //         color: Colors.black.withOpacity(0.5),
+              //         shape: BoxShape.circle,
+              //       ),
+              //       padding: const EdgeInsets.all(8),
+              //       child: const Icon(
+              //         Icons.close,
+              //         color: Colors.white,
+              //         size: 28,
+              //       ),
+              //     ),
+              //   ),
+              // ),
               Positioned(
                 bottom: 16,
                 right: 16,

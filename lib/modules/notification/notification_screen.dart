@@ -1,7 +1,10 @@
 // notifications_screen.dart
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
+import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/notification/notification_controller.dart';
+import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -255,7 +258,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => _controller.markAsRead(issue.issueId),
+          onTap: () {
+            Get.find<BottomNavController>().changeTab(3); // Navigate to HomeController
+            Get.back();
+          },
           borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.all(16),

@@ -1511,7 +1511,7 @@ These Terms shall be governed by and construed in accordance with the laws of th
 
 ## 9. Contact Information
 
-For questions about these Terms, please contact support@securityguard.com.
+For questions about these Terms, please contact vedpal@cairovisions.com.
 ''';
   }
 
@@ -1577,8 +1577,8 @@ We may update our Privacy Policy from time to time. We will notify you of any ch
 ## 8. Contact Us
 
 If you have any questions about this Privacy Policy, please contact us at:
-- Email: privacy@securityguard.com
-- Phone: +1 (800) 123-4567
+- Email: vedpal@cairovisions.com
+- Phone: +91 91086 28001)
 ''';
   }
 }

@@ -314,7 +314,7 @@ class PatrolCheckInController extends GetxController {
 
       if (logId != null && logId.isNotEmpty && !isRefresh) {
         final url =
-            'https://justin.solarvision-cairo.com/api/patrol/history?logId=$logId';
+            'https://justin.solarvision-cairo.com/api/Patrol/history?logId=$logId';
         response = await http
             .get(
               Uri.parse(url),
@@ -328,7 +328,7 @@ class PatrolCheckInController extends GetxController {
         // Otherwise, fetch all patrol locations
         response = await http
             .get(
-              Uri.parse("https://justin.solarvision-cairo.com/api/patrol/history"),
+              Uri.parse("https://justin.solarvision-cairo.com/api/Patrol/history"),
               headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
@@ -575,6 +575,7 @@ class PatrolCheckInController extends GetxController {
       isVerifyingLocation.value = false;
       return;
     }
+   await fetchLocation();
 
     if (currentLatLng.value == null) {
       Get.snackbar(
@@ -600,14 +601,14 @@ class PatrolCheckInController extends GetxController {
         currentPatrolLocation.value!.latitude,
         currentPatrolLocation.value!.longitude,
       );
-      print(
-        'Distance to patrol location: ${distance.toStringAsFixed(0)} meters',
-      );
-      print(" location radius: ${currentPatrolLocation.value!.radius} meters");
       print(" current location: ${currentLatLng.value}");
       print(
         " patrol location: ${currentPatrolLocation.value!.latitude}, ${currentPatrolLocation.value!.longitude}",
       );
+      print(
+        'Distance to patrol location:👍👍 ${distance.toStringAsFixed(0)} meters',
+      );
+      print(" location radius:👍👍 ${currentPatrolLocation.value!.radius} meters");
 
       if (distance <= currentPatrolLocation.value!.radius) {
         isLocationVerified.value = true;

@@ -557,10 +557,12 @@ class GuardAttendanceController extends GetxController {
       clockInTime = DateTime.now();
       lastAction.value = "Clocked-in at ${formatTime(clockInTime!)}";
 
+
       _showSuccess("Clock In Successful", "Welcome! Your shift has started");
 
       // Clear captured image after successful attendance
       capturedImage.value = null;
+      isLocationVerified.value = false;
       print('Clock in completed successfully');
     }
   }
@@ -575,7 +577,9 @@ class GuardAttendanceController extends GetxController {
       isClockedIn.value = false;
       profileController.userModel.value?.clockStatus = false;
       clockOutTime = DateTime.now();
+
       dashboardController.fetchDashboardData();
+
       lastAction.value = "Clocked-out at ${formatTime(clockOutTime!)}";
 
       _showSuccess(
@@ -585,6 +589,7 @@ class GuardAttendanceController extends GetxController {
 
       // Clear captured image after successful attendance
       capturedImage.value = null;
+      isLocationVerified.value = false;
       print('Clock out completed successfully');
     }
   }

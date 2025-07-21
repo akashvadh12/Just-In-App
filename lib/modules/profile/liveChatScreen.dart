@@ -44,15 +44,18 @@ class LegalDocumentScreen extends StatelessWidget {
         title: Text(title, style: const TextStyle(color: Colors.white)),
         elevation: 0,
       ),
-      body: Markdown(
-        data: content,
-        styleSheet: MarkdownStyleSheet(
-          h1: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          h2: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          p: const TextStyle(fontSize: 16),
-          listBullet: const TextStyle(fontSize: 16),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+        child: Markdown(
+          data: content,
+          styleSheet: MarkdownStyleSheet(
+            h1: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            h2: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            p: const TextStyle(fontSize: 16),
+            listBullet: const TextStyle(fontSize: 16),
+          ),
+          padding: const EdgeInsets.all(16),
         ),
-        padding: const EdgeInsets.all(16),
       ),
     );
   }

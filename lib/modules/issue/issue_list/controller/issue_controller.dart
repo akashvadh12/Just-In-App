@@ -47,7 +47,8 @@ class IssuesController extends GetxController
   void onInit() {
     super.onInit();
     _setupScrollListener();
-    fetchIssues();
+    fetchIssues(status: 'new');
+    fetchIssues(status: 'resolved');
   }
 
   @override

@@ -70,7 +70,12 @@ class ResolvedIssueScreen extends StatelessWidget {
             overflow: TextOverflow.visible,
             softWrap: true,
           ),
+            Text(
+            'Reported: ${issue.time}',
+            style: AppTextStyles.hint.copyWith(color: Colors.grey[600]),
+          ),
           const SizedBox(height: 8),
+
           Text(
             'Resolved: ${issue.resolvedAt}',
             style: AppTextStyles.hint.copyWith(color: Colors.grey[600]),
@@ -85,11 +90,11 @@ class ResolvedIssueScreen extends StatelessWidget {
             'Resolved by: ${issue.resolverName}',
             style: AppTextStyles.hint.copyWith(color: Colors.grey[600]),
           ),
-          const SizedBox(height: 8),
-          Text(
-            issue.location,
-            style: AppTextStyles.hint.copyWith(color: Colors.grey[600]),
-          ),
+          // const SizedBox(height: 8),
+          // Text(
+          //   issue.location,
+          //   style: AppTextStyles.hint.copyWith(color: Colors.grey[600]),
+          // ),
         ],
       ),
     );
