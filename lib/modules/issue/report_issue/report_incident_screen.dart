@@ -444,7 +444,7 @@ class IncidentReportScreen extends StatelessWidget {
 
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (context) {
         return Dialog(
           backgroundColor: Colors.black,
@@ -459,31 +459,31 @@ class IncidentReportScreen extends StatelessWidget {
                     color: Colors.black,
                   ),
                   minScale: PhotoViewComputedScale.contained,
-                  maxScale: PhotoViewComputedScale.covered * 2.0,
+                  maxScale: PhotoViewComputedScale.covered * 1.0,
                   controller: controller,
                   scaleStateController: scaleStateController,
                 ),
               ),
               // Close button
-              Positioned(
-                top: 8,
-                right: 8,
-                child: GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                      shape: BoxShape.circle,
-                    ),
-                    padding: const EdgeInsets.all(8),
-                    child: const Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                ),
-              ),
+              // Positioned(
+              //   top: 8,
+              //   right: 8,
+              //   child: GestureDetector(
+              //     onTap: () => Navigator.of(context).pop(),
+              //     child: Container(
+              //       decoration: BoxDecoration(
+              //         color: Colors.black.withOpacity(0.5),
+              //         shape: BoxShape.circle,
+              //       ),
+              //       padding: const EdgeInsets.all(8),
+              //       child: const Icon(
+              //         Icons.close,
+              //         color: Colors.white,
+              //         size: 28,
+              //       ),
+              //     ),
+              //   ),
+              // ),
               // Zoom controls
               Positioned(
                 bottom: 16,

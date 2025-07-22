@@ -21,6 +21,8 @@ import 'package:security_guard/modules/profile/controller/localStorageService/lo
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:security_guard/shared/widgets/Custom_Snackbar/Custom_Snackbar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+
 
 class IncidentReportController extends GetxController {
   final descriptionController = TextEditingController();
@@ -82,30 +84,54 @@ class IncidentReportController extends GetxController {
   }
 
   // Updated method name to match UI call
-  Future<void> pickImage() async {
-    try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 80,
-      );
 
-      if (image != null) {
-        selectedPhotos.add(image);
-        if (kIsWeb) {
-          Uint8List bytes = await image.readAsBytes();
-          imageBytesList.add(bytes);
+Future<void> pickImage() async {
+  try {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 100,
+    );
+
+    if (image != null) {
+      Uint8List? compressedBytes;
+
+      if (kIsWeb) {
+        final originalBytes = await image.readAsBytes();
+        print("Original image size (web): ${originalBytes.lengthInBytes / 1024} KB");
+
+        compressedBytes = originalBytes; // Web compression not applied
+      } else {
+        final originalFile = File(image.path);
+        final originalSize = await originalFile.length();
+        print("Original image size: ${originalSize / 1024} KB");
+
+        final compressed = await FlutterImageCompress.compressWithFile(
+          image.path,
+          minWidth: 800,
+          minHeight: 800,
+          quality: 60,
+          format: CompressFormat.jpeg,
+        );
+
+        if (compressed != null) {
+          print("Compressed image size: ${compressed.length / 1024} KB");
+          compressedBytes = Uint8List.fromList(compressed);
         }
       }
-    } on PlatformException catch (e) {
-      CustomSnackbar.showError(
-        "Image Picker Error",
-        "Failed to pick image: $e",
-      );
-    } catch (e) {
-      CustomSnackbar.showError("Error", "Unexpected error: $e");
+
+      if (compressedBytes != null) {
+        selectedPhotos.add(image);
+        imageBytesList.add(compressedBytes);
+      }
     }
+  } on PlatformException catch (e) {
+    CustomSnackbar.showError("Image Picker Error", "Failed to pick image: $e");
+  } catch (e) {
+    CustomSnackbar.showError("Error", "Unexpected error: $e");
   }
+}
+
 
   // Method to pick multiple images
   Future<void> pickMultipleImages() async {
