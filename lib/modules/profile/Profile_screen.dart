@@ -1516,69 +1516,88 @@ For questions about these Terms, please contact vedpal@cairovisions.com.
   }
 
   // Privacy Policy content
-  String _getPrivacyPolicy() {
-    return '''
-# Privacy Policy for Security Guard App
+String _getPrivacyPolicy() {
+  return '''
+Effective Date: 20-07-2025
 
-Last Updated: May 21, 2025
+Last Updated: 20-07-2025
 
-## 1. Introduction
+App Name: JustIn
 
-This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Security Guard App ("the App"). Please read this Privacy Policy carefully. By using the App, you consent to the data practices described in this policy.
+Developer & Owner: Cairovision Private Limited
 
-## 2. Information Collection
+Contact Email: vedpal@cairovisions.com
 
-We may collect several types of information from and about users of our App, including:
+1. Introduction  
+This Privacy Policy explains how we collect, use, and protect information through our mobile application ("App"). The App is part of a SaaS (Software as a Service) platform developed and owned by Cairovision Private Limited, designed for use by companies to manage their workforce operations, particularly in security and field service industries.  
+The app is not available for public use. Only authorized company administrators can onboard employees. Users (employees) cannot create their own accounts independently.
 
-- Personal Information: Name, email address, phone number, and other identifiers.
-- Employment Information: Job title, work location, shift details, and performance data.
-- Location Data: Real-time geographic location of your device when using patrol features.
-- Device Information: Device type, operating system, unique device identifiers.
-- Usage Data: How you interact with our App.
+2. Platform Access Model  
+Each subscribing company acts as an independent admin (tenant) on the platform.  
+Admins can manage their own employee data, accounts, access, and logs.  
+No public or self-sign-up is allowed. Users are created and managed by their respective company admin.  
+The platform is multi-tenant: each company's data is isolated and secure.
 
-## 3. How We Use Your Information
+3. Permissions and Usage  
+📍 Location  
+Permission: ACCESS_FINE_LOCATION  
+Purpose: To track and log user location for duty verification, attendance, and shift monitoring.  
 
-We use the information we collect to:
+📷 Camera  
+Permissions: CAMERA, FOREGROUND_SERVICE_CAMERA  
+Purpose: Used for image capture in reports, identity validation, and QR scanning.  
 
-- Provide and maintain our services
-- Notify you about changes to our App
-- Allow you to participate in interactive features
-- Monitor and analyze usage patterns and trends
-- Improve our App and user experience
-- Send service-related notifications
+🗂️ Media & Storage  
+Permissions:  
+- READ_EXTERNAL_STORAGE (Android ≤12)  
+- WRITE_EXTERNAL_STORAGE (Android ≤9)  
+- READ_MEDIA_IMAGES (Android 13+)  
+Purpose: To read and upload job-related files and images.  
 
-## 4. Data Security
+🌐 Internet  
+Permission: INTERNET  
+Purpose: Required for syncing, authentication, reporting, and cloud communication.  
 
-We implement appropriate technical and organizational measures to protect the security of your personal information. However, please be aware that no method of transmission over the internet or method of electronic storage is 100% secure.
+💡 Hardware Access  
+Permission: android.hardware.camera.flash  
+Purpose: Enables flashlight for inspections or low-light conditions.
 
-## 5. Data Sharing and Disclosure
+4. Data We Collect  
+- Location logs during duty hours  
+- Incident reports, including images if submitted  
+- Patrol logs, check-ins, task activity, timestamps  
+- Device metadata (e.g., device model, OS version – limited use)  
+- Admin-generated assignments and roles  
+We do not collect any personal data unrelated to official company use.
 
-We may share your information with:
+5. Data Retention & Deactivation  
+Data collected via the app becomes part of the company’s internal job records and is not deleted on user request.  
+If an employee wants to stop using the app, they may request account deactivation by contacting their company admin.  
+Data is retained based on each company’s operational and legal policies.
 
-- Service providers who perform services on our behalf
-- Law enforcement or other government officials, if required by law
-- Your employer, as necessary for employment-related purposes
-- In connection with a business transfer or acquisition
+6. Security  
+- End-to-end encryption  
+- Role-based access controls  
+- Secured cloud infrastructure  
+- Company-wise data segregation  
+- Regular backups and audit logs
 
-## 6. Your Rights
+7. Data Sharing  
+Data is only accessible by the employing company and platform admins (Cairovision Pvt Ltd) for system maintenance or compliance.  
+We do not sell or share data with any third parties.  
+Data may be disclosed to law enforcement or legal authorities when required by law.
 
-Depending on your location, you may have certain rights regarding your personal information, including:
+8. Children’s Privacy  
+This app is intended exclusively for workplace use. It is not directed toward, nor intended for, children under the age of 13.
 
-- Access to your personal information
-- Correction of inaccurate information
-- Deletion of your information
-- Objection to processing
-- Data portability
+9. Policy Changes  
+We may update this Privacy Policy to reflect feature updates, legal compliance, or operational improvements. Material changes will be communicated through the app or via admin announcements.
 
-## 7. Changes to This Privacy Policy
-
-We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last Updated" date.
-
-## 8. Contact Us
-
-If you have any questions about this Privacy Policy, please contact us at:
-- Email: vedpal@cairovisions.com
-- Phone: +91 91086 28001)
+10. Contact Information  
+Developer/Owner: Cairovision Private Limited  
+📧 Support Email: vedpal@cairovisions.com  
+If you are an employee using this app, please contact your company administrator for any data or access-related queries.
 ''';
-  }
+}
+
 }
