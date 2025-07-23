@@ -73,7 +73,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       border: InputBorder.none,
-                      hintText: 'Email or Employee ID',
+                      hintText: 'Email or Username',
                       hintStyle: AppTextStyles.hint,
                       prefixIcon: Icon(Icons.email, color: AppColors.greyColor),
                     ),

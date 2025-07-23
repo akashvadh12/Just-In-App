@@ -114,7 +114,7 @@ class LoginPage extends StatelessWidget {
 
                       // Phone Number / Employee ID Field
                       Text(
-                        'Phone Number / Employee ID',
+                        'Username/Email',
                         style: AppTextStyles.subtitle.copyWith(
                           color: Colors.grey.shade700,
                         ),
@@ -151,7 +151,7 @@ class LoginPage extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Password / OTP',
+                            'Password',
                             style: AppTextStyles.subtitle.copyWith(
                               color: Colors.grey.shade700,
                             ),

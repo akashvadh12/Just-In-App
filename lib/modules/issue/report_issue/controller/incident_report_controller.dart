@@ -23,7 +23,6 @@ import 'package:security_guard/shared/widgets/Custom_Snackbar/Custom_Snackbar.da
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 
-
 class IncidentReportController extends GetxController {
   final descriptionController = TextEditingController();
   final characterCount = 0.obs;
@@ -85,66 +84,98 @@ class IncidentReportController extends GetxController {
 
   // Updated method name to match UI call
 
-Future<void> pickImage() async {
-  try {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 100,
-    );
+  Future<void> pickImage() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 30,
+      );
 
-    if (image != null) {
-      Uint8List? compressedBytes;
+      if (image != null) {
+        Uint8List? compressedBytes;
 
-      if (kIsWeb) {
-        final originalBytes = await image.readAsBytes();
-        print("Original image size (web): ${originalBytes.lengthInBytes / 1024} KB");
+        if (kIsWeb) {
+          final originalBytes = await image.readAsBytes();
+          print(
+            "Original image size (web): ${originalBytes.lengthInBytes / 1024} KB",
+          );
 
-        compressedBytes = originalBytes; // Web compression not applied
-      } else {
-        final originalFile = File(image.path);
-        final originalSize = await originalFile.length();
-        print("Original image size: ${originalSize / 1024} KB");
+          compressedBytes = originalBytes; // Web compression not applied
+        } else {
+          final originalFile = File(image.path);
+          final originalSize = await originalFile.length();
+          print("Original image size: ${originalSize / 1024} KB");
 
-        final compressed = await FlutterImageCompress.compressWithFile(
-          image.path,
-          minWidth: 800,
-          minHeight: 800,
-          quality: 60,
-          format: CompressFormat.jpeg,
-        );
+          final compressed = await FlutterImageCompress.compressWithFile(
+            image.path,
+            minWidth: 800,
+            minHeight: 800,
+            quality: 30, // Previously 60
+            format: CompressFormat.jpeg,
+          );
 
-        if (compressed != null) {
-          print("Compressed image size: ${compressed.length / 1024} KB");
-          compressedBytes = Uint8List.fromList(compressed);
+          if (compressed != null) {
+            print("Compressed image size: ${compressed.length / 1024} KB");
+            compressedBytes = Uint8List.fromList(compressed);
+          }
+        }
+
+        if (compressedBytes != null) {
+          selectedPhotos.add(image);
+          imageBytesList.add(compressedBytes);
         }
       }
-
-      if (compressedBytes != null) {
-        selectedPhotos.add(image);
-        imageBytesList.add(compressedBytes);
-      }
+    } on PlatformException catch (e) {
+      CustomSnackbar.showError(
+        "Image Picker Error",
+        "Failed to pick image: $e",
+      );
+    } catch (e) {
+      CustomSnackbar.showError("Error", "Unexpected error: $e");
     }
-  } on PlatformException catch (e) {
-    CustomSnackbar.showError("Image Picker Error", "Failed to pick image: $e");
-  } catch (e) {
-    CustomSnackbar.showError("Error", "Unexpected error: $e");
   }
-}
-
 
   // Method to pick multiple images
   Future<void> pickMultipleImages() async {
     try {
       final ImagePicker picker = ImagePicker();
-      final List<XFile> images = await picker.pickMultiImage(imageQuality: 80);
+      final List<XFile> images = await picker.pickMultiImage(
+        imageQuality: 30,
+      ); // Use full quality for better control
 
       if (images.isNotEmpty) {
-        selectedPhotos.addAll(images);
-        if (kIsWeb) {
-          for (var image in images) {
-            Uint8List bytes = await image.readAsBytes();
-            imageBytesList.add(bytes);
+        for (var image in images) {
+          Uint8List? compressedBytes;
+
+          if (kIsWeb) {
+            // No compression for web
+            compressedBytes = await image.readAsBytes();
+            print(
+              "Original image size (web): ${compressedBytes.lengthInBytes / 1024} KB",
+            );
+          } else {
+            final originalFile = File(image.path);
+            final originalSize = await originalFile.length();
+            print("Original image size: ${originalSize / 1024} KB");
+
+            final compressed = await FlutterImageCompress.compressWithFile(
+              image.path,
+              minWidth: 800,
+              minHeight: 800,
+              quality: 30, // Previously 60
+              format: CompressFormat.jpeg,
+            );
+
+            if (compressed != null) {
+              compressedBytes = Uint8List.fromList(compressed);
+              print("Compressed image size: ${compressed.length / 1024} KB");
+            }
+          }
+
+          if (compressedBytes != null) {
+            selectedPhotos.add(image); // Used for file name & MIME type
+            imageBytesList.add(compressedBytes); // Used in API call
           }
         }
       }
@@ -184,11 +215,11 @@ Future<void> pickImage() async {
 
   // Updated method name to match UI call
   Future<void> submitIncidentReport() async {
-        final connectivityController = Get.find<ConnectivityController>();
+    final connectivityController = Get.find<ConnectivityController>();
 
     if (connectivityController.isOffline.value) {
       connectivityController.showNoInternetSnackbar();
-      return ;
+      return;
     }
     final description = descriptionController.text.trim();
     final position = currentPosition.value;
@@ -203,11 +234,8 @@ Future<void> pickImage() async {
       return;
     }
 
-    if (selectedPhotos.isEmpty ) {
-      CustomSnackbar.showError(
-        'Validation Error',
-        'Please attach an image',
-      );
+    if (selectedPhotos.isEmpty) {
+      CustomSnackbar.showError('Validation Error', 'Please attach an image');
       return;
     }
 
@@ -259,15 +287,19 @@ Future<void> pickImage() async {
           ..fields['longitude'] = position.longitude.toString()
           ..fields['description'] = description;
 
-    for (var photo in selectedPhotos) {
-      final mimeType = lookupMimeType(photo.path) ?? 'application/octet-stream';
+    for (int i = 0; i < imageBytesList.length; i++) {
+      final photo = selectedPhotos[i];
+      final bytes = imageBytesList[i];
+      final mimeType = lookupMimeType(photo.path) ?? 'image/jpeg';
       final mediaType = MediaType.parse(mimeType);
-      final file = await http.MultipartFile.fromPath(
+
+      final file = http.MultipartFile.fromBytes(
         'images',
-        photo.path,
+        bytes,
         filename: path.basename(photo.path),
         contentType: mediaType,
       );
+
       request.files.add(file);
     }
 
