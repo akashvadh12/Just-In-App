@@ -127,10 +127,13 @@ class IncidentReportController extends GetxController {
         }
       }
     } on PlatformException catch (e) {
-      CustomSnackbar.showError(
-        "Image Picker Error",
-        "Failed to pick image: $e",
-      );
+        Get.snackbar(
+          'Permission Denied',
+          'Please allow camera access to select images.',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
     } catch (e) {
       CustomSnackbar.showError("Error", "Unexpected error: $e");
     }

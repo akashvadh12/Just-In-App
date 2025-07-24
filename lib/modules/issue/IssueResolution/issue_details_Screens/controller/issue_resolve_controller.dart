@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
@@ -47,14 +48,24 @@ class IssueDetailController extends GetxController {
         selectedImages.add(File(pickedFile.path));
       }
     } catch (e) {
-
-       Get.snackbar(
-          "Error",
-          "Failed to pick image: ${e.toString()}",
+      if (e is PlatformException) {
+        Get.snackbar(
+          'Permission Denied',
+          'Please allow camera access to select images.',
           backgroundColor: Colors.red,
           colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM,
+          snackPosition: SnackPosition.BOTTOM,
         );
+      } else {
+        Get.snackbar(
+          'Error',
+          'Failed to pick image: ${e.toString()}',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    
      
     }
   }

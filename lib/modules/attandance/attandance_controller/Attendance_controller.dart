@@ -11,6 +11,7 @@ import 'package:security_guard/modules/profile/controller/profileController/prof
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:camera/camera.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class GuardAttendanceController extends GetxController {
   var capturedImage = Rx<File?>(null);
@@ -47,10 +48,25 @@ class GuardAttendanceController extends GetxController {
     super.dispose();
   }
 
-  Future<void> initializeCamera() async {
-    late CameraController _cameraController;
-    late List<CameraDescription> _cameras;
-    bool _isCameraInitialized = false;
+ Future<void> initializeCamera() async {
+  late CameraController _cameraController;
+  late List<CameraDescription> _cameras;
+  bool _isCameraInitialized = false;
+
+  // Check and request permission
+  final status = await Permission.camera.request();
+  if (!status.isGranted) {
+    Get.snackbar(
+      'Permission Denied',
+      'Camera permission is required to capture photo.',
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+    );
+    return;
+  }
+
+  try {
     _cameras = await availableCameras();
     final frontCamera = _cameras.firstWhere(
       (camera) => camera.lensDirection == CameraLensDirection.front,
@@ -59,10 +75,37 @@ class GuardAttendanceController extends GetxController {
     _cameraController = CameraController(frontCamera, ResolutionPreset.medium);
     await _cameraController.initialize();
     _isCameraInitialized = true;
+  } catch (e) {
+    Get.snackbar(
+      'Error',
+      'Failed to initialize the camera',
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+    );
+    print(e);
   }
+}
 
   Future<void> capturePhoto(BuildContext context) async {
     try {
+      
+      
+        final status = await Permission.camera.status;
+    if (!status.isGranted) {
+      final newStatus = await Permission.camera.request();
+      if (!newStatus.isGranted) {
+        Get.snackbar(
+          'Permission Denied',
+          'Camera permission is required to capture photo.',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+    }
+
       final cameras = await availableCameras();
       final frontCamera = cameras.firstWhere(
         (cam) => cam.lensDirection == CameraLensDirection.front,
