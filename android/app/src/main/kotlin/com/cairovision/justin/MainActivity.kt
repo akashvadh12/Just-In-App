@@ -1,4 +1,4 @@
-package com.example.security_guard
+package com.cairovision.justin
 
 import io.flutter.embedding.android.FlutterActivity
 

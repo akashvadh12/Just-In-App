@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:609155291157:android:2b5cecb6a2144e65fb961c",
+        "android_client_info": {
+          "package_name": "com.cairovision.justin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJVq6CvtWy6K4WXp-glk5eOEO4j7VJ6Es"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:609155291157:android:e0441cf9fd3e8c2dfb961c",
         "android_client_info": {
           "package_name": "com.example.security_guard"

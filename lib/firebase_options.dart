@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDJVq6CvtWy6K4WXp-glk5eOEO4j7VJ6Es',
-    appId: '1:609155291157:android:e0441cf9fd3e8c2dfb961c',
+    appId: '1:609155291157:android:2b5cecb6a2144e65fb961c',
     messagingSenderId: '609155291157',
     projectId: 'just-in-84847',
     storageBucket: 'just-in-84847.firebasestorage.app',
@@ -60,11 +60,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAJZMb6-SzQleYOeaFtnbqdHl5CmwyDF-s',
-    appId: '1:609155291157:ios:03a3e4f655b98cf1fb961c',
+    appId: '1:609155291157:ios:c3a86272741a9b0dfb961c',
     messagingSenderId: '609155291157',
     projectId: 'just-in-84847',
     storageBucket: 'just-in-84847.firebasestorage.app',
-    iosBundleId: 'com.example.securityGuard',
+    iosBundleId: 'com.cairovision.justin',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(

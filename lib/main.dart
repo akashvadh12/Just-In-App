@@ -15,7 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+   
   final prefs = await SharedPreferences.getInstance();
   if (message.data.isNotEmpty) {
     await prefs.setString('pending_notification', jsonEncode(message.data));

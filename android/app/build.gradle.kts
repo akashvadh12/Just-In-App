@@ -16,7 +16,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.security_guard"
+    namespace = "com.cairovision.justin"
     compileSdk = 35
     ndkVersion = "27.0.12077973"
 
@@ -31,7 +31,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.security_guard"
+        applicationId = "com.cairovision.justin"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
