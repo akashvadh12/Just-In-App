@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:security_guard/Data/services/notification_services.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
 import 'package:security_guard/modules/home/view/home_view.dart';
@@ -12,6 +13,7 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authController = Get.find<AuthController>();
+    final NotificationServices notify = NotificationServices();
 
     return Scaffold(
       backgroundColor: AppColors.primary,
@@ -27,16 +29,17 @@ class LoginPage extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                Icons.shield_outlined,
-                color: AppColors.primary,
-                size: 40,
+              child: Image.asset(
+                'lib/assets/Just-IN.jpeg', // Replace with your actual image path
+                height: 50,
+                width: 50,
+                fit: BoxFit.contain,
               ),
             ),
             SizedBox(height: 16),
             // App Title
             Text(
-              'Just IN',
+              'JustIN',
               style: AppTextStyles.heading.copyWith(color: Colors.white),
             ),
             SizedBox(height: 6),
@@ -65,53 +68,53 @@ class LoginPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Login/Signup Tabs
-                      Obx(
-                        () => Row(
-                          children: [
-                            Expanded(
-                              child: CustomButton(
-                                text: 'Login',
-                                backgroundColor:
-                                    authController.isLoginMode.value
-                                        ? AppColors.primary
-                                        : Colors.grey.shade100,
-                                textColor:
-                                    authController.isLoginMode.value
-                                        ? Colors.white
-                                        : Colors.grey.shade800,
-                                onPressed: () {
-                                  if (!authController.isLoginMode.value) {
-                                    authController.toggleMode();
-                                  }
-                                },
-                              ),
-                            ),
-                            Expanded(
-                              child: CustomButton(
-                                text: 'Signup',
-                                backgroundColor:
-                                    !authController.isLoginMode.value
-                                        ? AppColors.primary
-                                        : Colors.grey.shade100,
-                                textColor:
-                                    !authController.isLoginMode.value
-                                        ? Colors.white
-                                        : Colors.grey.shade800,
-                                onPressed: () {
-                                  if (authController.isLoginMode.value) {
-                                    authController.toggleMode();
-                                  }
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      // Obx(
+                      //   () => Row(
+                      //     children: [
+                      //       Expanded(
+                      //         child: CustomButton(
+                      //           text: 'Login',
+                      //           backgroundColor:
+                      //               authController.isLoginMode.value
+                      //                   ? AppColors.primary
+                      //                   : Colors.grey.shade100,
+                      //           textColor:
+                      //               authController.isLoginMode.value
+                      //                   ? Colors.white
+                      //                   : Colors.grey.shade800,
+                      //           onPressed: () {
+                      //             if (!authController.isLoginMode.value) {
+                      //               authController.toggleMode();
+                      //             }
+                      //           },
+                      //         ),
+                      //       ),
+                      //       Expanded(
+                      //         child: CustomButton(
+                      //           text: 'Signup',
+                      //           backgroundColor:
+                      //               !authController.isLoginMode.value
+                      //                   ? AppColors.primary
+                      //                   : Colors.grey.shade100,
+                      //           textColor:
+                      //               !authController.isLoginMode.value
+                      //                   ? Colors.white
+                      //                   : Colors.grey.shade800,
+                      //           onPressed: () {
+                      //             if (authController.isLoginMode.value) {
+                      //               authController.toggleMode();
+                      //             }
+                      //           },
+                      //         ),
+                      //       ),
+                      //     ],
+                      //   ),
+                      // ),
                       SizedBox(height: 24),
 
                       // Phone Number / Employee ID Field
                       Text(
-                        'Phone Number / Employee ID',
+                        'Username/Email',
                         style: AppTextStyles.subtitle.copyWith(
                           color: Colors.grey.shade700,
                         ),
@@ -148,36 +151,36 @@ class LoginPage extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Password / OTP',
+                            'Password',
                             style: AppTextStyles.subtitle.copyWith(
                               color: Colors.grey.shade700,
                             ),
                           ),
-                          Obx(
-                            () => TextButton(
-                              onPressed:
-                                  authController.isSendingOTP.value
-                                      ? null
-                                      : () => authController.sendOTP(),
-                              child:
-                                  authController.isSendingOTP.value
-                                      ? SizedBox(
-                                        height: 16,
-                                        width: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: AppColors.greenColor,
-                                        ),
-                                      )
-                                      : Text(
-                                        'Send OTP',
-                                        style: TextStyle(
-                                          color: AppColors.greenColor,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                            ),
-                          ),
+                          // Obx(
+                          //   () => TextButton(
+                          //     onPressed:
+                          //         authController.isSendingOTP.value
+                          //             ? null
+                          //             : () => authController.sendOTP(),
+                          //     child:
+                          //         authController.isSendingOTP.value
+                          //             ? SizedBox(
+                          //               height: 16,
+                          //               width: 16,
+                          //               child: CircularProgressIndicator(
+                          //                 strokeWidth: 2,
+                          //                 color: AppColors.greenColor,
+                          //               ),
+                          //             )
+                          //             : Text(
+                          //               'Send OTP',
+                          //               style: TextStyle(
+                          //                 color: AppColors.greenColor,
+                          //                 fontWeight: FontWeight.w500,
+                          //               ),
+                          //             ),
+                          //   ),
+                          // ),
                         ],
                       ),
                       SizedBox(height: 8),
@@ -249,7 +252,7 @@ class LoginPage extends StatelessWidget {
                                   : 'Signup',
                           onPressed: () {
                             authController.login();
-                            authController.clearFields();
+                            // authController.clearFields();
                           },
                           isLoading: authController.isLoading.value,
                         ),
@@ -302,16 +305,16 @@ class LoginPage extends StatelessWidget {
                       SizedBox(height: 40),
 
                       // Bottom indicator
-                      Center(
-                        child: Container(
-                          width: 40,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade300,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
+                      // Center(
+                      //   child: Container(
+                      //     width: 40,
+                      //     height: 4,
+                      //     decoration: BoxDecoration(
+                      //       color: Colors.grey.shade300,
+                      //       borderRadius: BorderRadius.circular(2),
+                      //     ),
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),

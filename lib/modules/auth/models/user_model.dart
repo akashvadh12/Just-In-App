@@ -1,7 +1,9 @@
+// ==================== UPDATED USER MODEL ====================
 import 'dart:convert';
 
 class UserModel {
   final String userId;
+   String? gaurdId;
   final String userName;
   final String name;
   final String photoPath;
@@ -11,6 +13,18 @@ class UserModel {
   final String? deviceToken;
   final String? deviceId;
   final String? email;
+  final String? phone;
+  final String? token;
+  final String? clockIn;
+  final String? clockOut;
+  var clockStatus;
+  final String? todayPatrolStatus;
+  final String? attendanceStatus;
+  final Map<String, dynamic>? issuesCount;
+   String? logId;
+   String? issue_radius;
+   var isAdmin;
+
 
   UserModel({
     required this.userId,
@@ -20,25 +34,87 @@ class UserModel {
     required this.roleId,
     required this.siteId,
     required this.companyId,
+    this.gaurdId,
     this.deviceToken,
     this.deviceId,
     this.email,
+    this.phone,
+    this.token,
+    this.clockIn,
+    this.clockOut,
+    this.clockStatus,
+    this.todayPatrolStatus,
+    this.attendanceStatus,
+    this.issuesCount,
+    this.logId,
+    this.issue_radius,
+    this.isAdmin = false, // Default value for isAdmin
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      userId: json['userID'] ?? '',
-      userName: json['userName'] ?? '',
-      name: json['name'] ?? '',
-      photoPath: json['photoPath'] ?? '',
-      roleId: json['roleID'] ?? '',
-      siteId: json['siteId'] ?? '',
-      companyId: json['companyId'] ?? '',
-      deviceToken: json['deviceToken'],
-      deviceId: json['deviceID'],
-      email: json['email'],
+      userId: json['userID']?.toString() ?? json['userId']?.toString() ?? '',
+      userName: json['userName']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      photoPath: json['photoPath']?.toString() ?? '',
+      roleId: json['roleID']?.toString() ?? json['roleId']?.toString() ?? '',
+      siteId: json['siteId']?.toString() ?? '',
+      companyId: json['companyId']?.toString() ?? '',
+      deviceToken: json['deviceToken']?.toString() ?? json['token']?.toString(),
+      deviceId: json['deviceID']?.toString() ?? json['deviceId']?.toString(),
+      email: json['email']?.toString() ?? json['email_No']?.toString(),
+      phone: json['phone']?.toString() ?? json['mobile_No']?.toString() ?? json['mobileNo']?.toString(),
+      token: json['token']?.toString() ?? json['deviceToken']?.toString(),
+      clockIn: json['clockIn']?.toString(),
+      clockOut: json['clockOut']?.toString(),
+      clockStatus: json['clockStatus'] is bool
+    ? json['clockStatus']
+    : json['clockStatus']?.toString().toLowerCase() == 'true',
+      todayPatrolStatus: json['todayPatrolStatus']?.toString(),
+      attendanceStatus: json['attendanceStatus']?.toString(),
+      issuesCount: json['issuesCount'] != null ? Map<String, dynamic>.from(json['issuesCount']) : null,
+      logId: json['logID']?.toString() ?? json['logId']?.toString() ?? '',
+      isAdmin: json['isadmin'] == true || json['isadmin']?.toString().toLowerCase() == 'true',
+      gaurdId: json['gaurdId']?.toString() ?? json['gaurdID']?.toString() ?? '', // Added gaurdId
+      issue_radius: json['issue_radius']?.toString() ?? '500', // Added issue_radius
     );
   }
+
+
+// Add this method to your UserModel class
+
+UserModel updateWith(Map<String, dynamic> json) {
+  return UserModel(
+    userId: json['userID']?.toString() ?? json['userId']?.toString() ?? this.userId,
+    gaurdId: json['gaurdId']?.toString() ?? json['gaurdID']?.toString() ?? this.gaurdId,
+    userName: json['userName']?.toString() ?? this.userName,
+    name: json['name']?.toString() ?? this.name,
+    photoPath: json['photoPath']?.toString() ?? this.photoPath,
+    roleId: json['roleID']?.toString() ?? json['roleId']?.toString() ?? this.roleId,
+    siteId: json['siteId']?.toString() ?? this.siteId,
+    companyId: json['companyId']?.toString() ?? this.companyId,
+    deviceToken: json['deviceToken']?.toString() ?? json['token']?.toString() ?? this.deviceToken,
+    deviceId: json['deviceID']?.toString() ?? json['deviceId']?.toString() ?? this.deviceId,
+    email: json['email']?.toString() ?? json['email_No']?.toString() ?? this.email,
+    phone: json['phone']?.toString() ?? json['mobile_No']?.toString() ?? json['mobileNo']?.toString() ?? this.phone,
+    token: json['token']?.toString() ?? json['deviceToken']?.toString() ?? this.token,
+    clockIn: json['clockIn']?.toString() ?? this.clockIn,
+    clockOut: json['clockOut']?.toString() ?? this.clockOut,
+    clockStatus: json['clockStatus'] != null 
+        ? (json['clockStatus'] is bool 
+            ? json['clockStatus'] 
+            : json['clockStatus']?.toString().toLowerCase() == 'true')
+        : this.clockStatus,
+    todayPatrolStatus: json['todayPatrolStatus']?.toString() ?? this.todayPatrolStatus,
+    attendanceStatus: json['attendanceStatus']?.toString() ?? this.attendanceStatus,
+    issuesCount: json['issuesCount'] != null 
+        ? Map<String, dynamic>.from(json['issuesCount']) 
+        : this.issuesCount,
+    logId: json['logID']?.toString() ?? json['logId']?.toString() ?? this.logId,
+    issue_radius: json['issue_radius']?.toString() ?? this.issue_radius,
+    isAdmin: json['isadmin'] == true || json['isadmin']?.toString().toLowerCase() == 'true' || this.isAdmin,
+  );
+}
 
   Map<String, dynamic> toJson() {
     return {
@@ -52,15 +128,25 @@ class UserModel {
       'deviceToken': deviceToken,
       'deviceID': deviceId,
       'email': email,
+      'phone': phone,
+      'token': token,
+      'clockIn': clockIn,
+      'clockOut': clockOut,
+      'clockStatus': clockStatus,
+      'todayPatrolStatus': todayPatrolStatus,
+      'attendanceStatus': attendanceStatus,
+      'issuesCount': issuesCount,
+      'logID': logId,
+      'isAdmin': isAdmin,
+      'gaurdId': gaurdId,
+      'issue_radius': issue_radius,
     };
   }
 
-  // Convert user model to JSON string for storage
   String toJsonString() {
     return jsonEncode(toJson());
   }
 
-  // Create user model from JSON string from storage
   static UserModel? fromJsonString(String? jsonString) {
     if (jsonString == null || jsonString.isEmpty) return null;
     try {
@@ -70,5 +156,67 @@ class UserModel {
       print('Error parsing user data: $e');
       return null;
     }
+  }
+UserModel copyWith({
+  String? userId,
+  String? userName,
+  String? name,
+  String? photoPath,
+  String? roleId,
+  String? siteId,
+  String? companyId,
+  String? deviceToken,
+  String? deviceId,
+  String? email,
+  String? phone,
+  String? token,
+  String? clockIn,
+  String? clockOut,
+  dynamic clockStatus, // Changed to dynamic to handle bool/null
+  String? todayPatrolStatus,
+  String? attendanceStatus,
+  Map<String, dynamic>? issuesCount,
+  String? logId, // Added missing logId
+  bool? isAdmin, // Added missing isAdmin
+  String? gaurdId,
+  String? issue_radius
+}) {
+  return UserModel(
+    userId: userId ?? this.userId,
+    gaurdId: gaurdId ?? this.gaurdId,
+    userName: userName ?? this.userName,
+    name: name ?? this.name,
+    photoPath: photoPath ?? this.photoPath,
+    roleId: roleId ?? this.roleId,
+    siteId: siteId ?? this.siteId,
+    companyId: companyId ?? this.companyId,
+    deviceToken: deviceToken ?? this.deviceToken,
+    deviceId: deviceId ?? this.deviceId,
+    email: email ?? this.email,
+    phone: phone ?? this.phone,
+    token: token ?? this.token,
+    clockIn: clockIn ?? this.clockIn,
+    clockOut: clockOut ?? this.clockOut,
+    clockStatus: clockStatus ?? this.clockStatus, // Added missing clockStatus
+    todayPatrolStatus: todayPatrolStatus ?? this.todayPatrolStatus,
+    attendanceStatus: attendanceStatus ?? this.attendanceStatus,
+    issuesCount: issuesCount ?? this.issuesCount,
+    logId: logId ?? this.logId, // Added missing logId
+    isAdmin: isAdmin ?? this.isAdmin, // Added missing isAdmin
+    issue_radius: issue_radius ?? this.issue_radius, // Added missing issue_radius
+  );
+}
+
+  bool get isValid => userId.isNotEmpty && name.isNotEmpty;
+
+  @override
+  String toString() {
+    return 'UserModel{'
+        'userId: $userId, '
+        'userName: $userName, '
+        'name: $name, '
+        'email: $email, '
+        'phone: $phone'
+        '}';
   }
 }

@@ -1,77 +1,148 @@
 // File: lib/modules/home/views/home_view.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:security_guard/modules/attandance/GuardAttendanceScreen.dart';
+import 'package:security_guard/modules/Compony/compony_location_list.dart';
+import 'package:security_guard/modules/addLoacation/location_list_screen.dart';
+
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
+import 'package:security_guard/modules/issue/issue_list/controller/issue_controller.dart';
+import 'package:security_guard/modules/issue/issue_list/issue_view/issue_screen.dart';
 import 'package:security_guard/modules/issue/report_issue/report_incident_screen.dart';
 import 'package:security_guard/modules/notification/notification_screen.dart';
-
-import 'package:security_guard/modules/petrol/views/patrol_check_in_view.dart';
-import 'package:security_guard/modules/profile/Profile_screen.dart';
+import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
 
 class HomeView extends GetView<HomeController> {
   const HomeView({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final BottomNavController bottomNavController =
+        Get.find<BottomNavController>();
+
     if (!Get.isRegistered<HomeController>()) {
       Get.lazyPut(() => HomeController());
     }
 
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
-      appBar: _buildAppBar(),
-      body: _buildBody(),
+      appBar: _buildAppBar(bottomNavController),
+      body: _buildBody(bottomNavController),
     );
   }
 
-  AppBar _buildAppBar() {
+  AppBar _buildAppBar(bottomNavController) {
+    String _weekday(int weekday) {
+      const days = [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+      ];
+      return days[weekday - 1];
+    }
+
+    String _month(int month) {
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return months[month - 1];
+    }
+
+    String _getGreeting() {
+      final hour = DateTime.now().hour;
+      if (hour < 12) return 'Good Morning';
+      if (hour < 17) return 'Good Afternoon';
+      return 'Good Evening';
+    }
+
+    final today = DateTime.now();
+    final greeting = _getGreeting();
+    final dateString =
+        "${_weekday(today.weekday)}, ${today.day} ${_month(today.month)}, ${today.year}";
+
     return AppBar(
       elevation: 0,
+      toolbarHeight: 70,
       backgroundColor: Color(0xFF1E3A8A),
       automaticallyImplyLeading: false,
       title: Row(
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-              image: DecorationImage(
-                image: NetworkImage(
-                  "https://randomuser.me/api/portraits/men/32.jpg",
+          Obx(
+            () => GestureDetector(
+              onTap: () {
+                bottomNavController.changeTab(4); // Navigate to Profile tab
+              },
+              child: Container(
+                width: 42,
+                height: 42,
+                padding: EdgeInsets.all(0),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                  image: DecorationImage(
+                    image: NetworkImage(
+                      controller
+                                  .profileController
+                                  .userModel
+                                  .value
+                                  ?.photoPath
+                                  .isNotEmpty ==
+                              true
+                          ? controller
+                              .profileController
+                              .userModel
+                              .value!
+                              .photoPath
+                          : 'https://cdn-icons-png.flaticon.com/512/1053/1053244.png',
+                    ),
+                    fit: BoxFit.cover,
+                  ),
                 ),
-                fit: BoxFit.cover,
               ),
             ),
           ),
           SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Obx(
-                () => Text(
-                  'Good Morning, ${controller.userName.value}',
+          Expanded(
+            // this is important
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "$greeting, ${controller.profileController.userModel.value?.name.toString().split(" ").first ?? ''}",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              Obx(
-                () => Text(
-                  controller.formattedDate,
+
+                Text(
+                  dateString,
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.8),
                     fontSize: 14,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          Spacer(),
+
           Stack(
             children: [
               IconButton(
@@ -80,27 +151,27 @@ class HomeView extends GetView<HomeController> {
                   Get.to(() => NotificationsScreen());
                 },
               ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Obx(
-                  () => Container(
-                    padding: EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      '${controller.notificationCount}',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              // Positioned(
+              //   right: 8,
+              //   top: 8,
+              //   child: Obx(
+              //     () => Container(
+              //       padding: EdgeInsets.all(4),
+              //       decoration: BoxDecoration(
+              //         color: Colors.red,
+              //         shape: BoxShape.circle,
+              //       ),
+              //       child: Text(
+              //         '${controller.notificationCount}',
+              //         style: TextStyle(
+              //           color: Colors.white,
+              //           fontSize: 10,
+              //           fontWeight: FontWeight.bold,
+              //         ),
+              //       ),
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ],
@@ -108,9 +179,9 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(bottomNavController) {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -118,106 +189,141 @@ class HomeView extends GetView<HomeController> {
           SizedBox(height: 24),
           _buildSectionTitle('Quick Actions'),
           SizedBox(height: 12),
-          _buildQuickActions(),
+          _buildQuickActions(bottomNavController),
           SizedBox(height: 24),
           _buildSectionTitle('Today\'s Overview'),
           SizedBox(height: 12),
-          _buildOverviewCards(),
+          _buildOverviewCards(bottomNavController),
           SizedBox(height: 24),
-          _buildSectionTitle('Recent Activities'),
-          SizedBox(height: 12),
-          _buildRecentActivities(),
+          // _buildSectionTitle('Recent Activities'),
+          // SizedBox(height: 12),
+          // _buildRecentActivities(),
         ],
       ),
     );
   }
 
   Widget _buildAttendanceCard() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Attendance Status',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Color(0xFFE6F7EE),
-                  borderRadius: BorderRadius.circular(12),
+    return Obx(
+      () => Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Attendance Status',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
-                child: Text(
-                  'IN',
-                  style: TextStyle(
-                    color: Color(0xFF4CAF50),
-                    fontWeight: FontWeight.bold,
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color:
+                        controller.attendanceStatus.value == 'In'
+                            ? Color(0xFFE6F7EE)
+                            : Color(0xFFFFE6E6),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Clock In',
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
-                  ),
-                  SizedBox(height: 4),
-                  Obx(
-                    () => Text(
-                      controller.clockInTime.value,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  child: Text(
+                    controller.attendanceStatus.value.isNotEmpty
+                        ? controller.attendanceStatus.value == "In" ?
+                            'Clock-in' : 'Clock-out'
+
+                        : 'Not Marked',
+                    style: TextStyle(
+                      color:
+                          controller.attendanceStatus.value == 'In'
+                              ? Color(0xFF4CAF50)
+                              : Colors.red,
+                      fontWeight: FontWeight.bold,
                     ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  controller.attendanceStatus.value != 'Out'
+                      ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Clock-in',
+                            style: TextStyle(color: Colors.grey, fontSize: 14),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            controller
+                                .clockInTime
+                                .value, // You can bind actual clock in time if available from API
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      )
+                      : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Clock-out',
+                            style: TextStyle(color: Colors.grey, fontSize: 14),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            controller
+                                .clockOutTime
+                                .value ?? '-' , // You can bind actual clock in time if available from API
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Today Patrol',
+                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        controller.todayPatrolStatus.value.isNotEmpty
+                            ? controller.todayPatrolStatus.value
+                            : '-',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Hours Today',
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
-                  ),
-                  SizedBox(height: 4),
-                  Obx(
-                    () => Text(
-                      controller.hoursToday.value,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -233,29 +339,110 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  Widget _buildQuickActions() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _buildActionButton(
-          icon: Icons.directions_walk,
-          label: 'Start\nPatrol',
-          color: Color(0xFF4285F4),
-          onTap: () => Get.to(() => PatrolCheckInScreen()),
-        ),
-        _buildActionButton(
-          icon: Icons.fingerprint,
-          label: 'Mark\nAttendance',
-          color: Color(0xFF4285F4),
-          onTap: () => Get.to(() => GuardAttendanceScreen()),
-        ),
-        _buildActionButton(
-          icon: Icons.warning,
-          label: 'Raise\nIssue',
-          color: Color(0xFF4285F4),
-          onTap: () => Get.to(() => IncidentReportScreen()),
-        ),
-      ],
+  Widget _buildQuickActions(bottomNavController) {
+    return Obx(
+      () => controller.profileController.userModel.value?.isAdmin == true
+          ? _buildAdminQuickActions(bottomNavController)
+          : _buildNonAdminQuickActions(bottomNavController),
+    );
+  }
+
+  Widget _buildAdminQuickActions(bottomNavController) {
+    return Container(
+      child: 
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+                Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(right: 4),
+                  child: _buildActionButton(
+                    icon: Icons.add_location,
+                    label: 'Add\nLocation',
+                    color: Color.fromARGB(255, 30, 107, 231),
+                    onTap: () => Get.to(LocationsListScreen()),
+                  ),
+                ),
+              ),
+          
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4),
+                  
+                  child: _buildActionButton(
+                    icon: Icons.business,
+                    label: 'Company\nLocation',
+                    color: Color.fromARGB(255, 30, 107, 231),
+                    onTap: () {
+                      Get.to(CompanyLocationsListScreen());
+                    },
+                  ),
+                ),
+              ),
+                  Expanded(
+                child: Padding(
+                 padding: EdgeInsets.only(left: 4),
+                  child: _buildActionButton(
+                    icon: Icons.warning,
+                    label: 'Issues',
+                    color: Color.fromARGB(255, 30, 107, 231),
+                    onTap: () => bottomNavController.changeTab(3)
+                  ),
+                ),
+              ),
+            ],
+          ),
+     
+    );
+  }
+
+  Widget _buildNonAdminQuickActions(bottomNavController) {
+    return Container(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(right: 4),
+              child: _buildActionButton(
+                icon: Icons.fingerprint,
+                label: 'Mark\nAttendance',
+                color: Color.fromARGB(255, 30, 107, 231),
+                onTap: () => bottomNavController.changeTab(1),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4),
+              child: _buildActionButton(
+                icon: Icons.directions_walk,
+                label: 'Start\nPatrol',
+                color: Color.fromARGB(255, 30, 107, 231),
+                onTap: () => bottomNavController.changeTab(2),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(left: 4),
+              child: _buildActionButton(
+                icon: Icons.warning,
+                label: 'Raise\nIssue',
+                color: Color.fromARGB(255, 30, 107, 231),
+                onTap: () {
+                  Get.to(
+                    () => IncidentReportScreen(),
+                    binding: BindingsBuilder(() {
+                      Get.put(IssuesController());
+                    }),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -268,7 +455,6 @@ class HomeView extends GetView<HomeController> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 100,
         height: 100,
         decoration: BoxDecoration(
           color: color,
@@ -294,111 +480,131 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  Widget _buildOverviewCards() {
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Completed Patrols',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                ),
-                SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Obx(
-                      () => Text(
-                        '${controller.completedPatrols}/${controller.totalPatrols}',
+  Widget _buildOverviewCards(bottomNavController) {
+    return Obx(
+      () => Column(
+        children: [
+          // New Issues Card
+          InkWell(
+            onTap: () => bottomNavController.changeTab(3),
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'New Issues',
                         style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[600],
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.green[100],
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.check, color: Colors.green, size: 16),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        SizedBox(width: 16),
-        Expanded(
-          child: Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Active Issues',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                ),
-                SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Obx(
-                      () => Text(
-                        '${controller.activeIssues}',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                      Container(
+                        padding: EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.green[100],
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.fiber_new,
+                          color: Colors.green[600],
+                          size: 18,
                         ),
                       ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    '${controller.issuesNew}',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
-                    Container(
-                      padding: EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.orange[100],
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.warning,
-                        color: Colors.orange,
-                        size: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
+
+          SizedBox(height: 12),
+
+          // Resolved Issues Card
+          InkWell(
+            onTap: () => {Get.to(() => IssuesScreen(initialTabIndex: 1))},
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Resolved Issues',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[100],
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.check_circle,
+                          color: Colors.blue[600],
+                          size: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    '${controller.issuesResolved}',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

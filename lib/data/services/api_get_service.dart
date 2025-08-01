@@ -1,57 +1,51 @@
 
+import 'dart:convert';
+import 'dart:developer';
+import 'package:http/http.dart' as http;
 import 'package:security_guard/core/api/api_client.dart';
+import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 
 class ApiGetServices {
   final ApiClient _client = ApiClient();
+  static const String _logTag = '🛜 API_GET_SERVICE';
 
-
-  void _logResponse(String endpoint, dynamic response, {dynamic error}) {
-    if (error != null) {
-      print('📡 API Error [$endpoint]: $error');
-      return;
+  Future<Map<String, dynamic>?> getProfileAPI(String userId) async {
+    const endpoint = 'profile';
+    final params = {'UserId': userId};
+    final headers = await _getAuthenticatedHeaders();
+    try {
+      final response = await _client.getWithParams(endpoint, params, headers: headers);
+      return _parseResponse(response);
+    } catch (e) {
+      log('$_logTag Get profile error: $e');
+      return {'status': false, 'message': 'Failed to get profile'};
     }
-
-    print('📡 API Response [$endpoint]: ${response.statusCode}');
-    print('📄 Response Body: ${response.body}');
   }
 
-  Future<UserModel?> getCurrentUser(String firebaseToken) async {
+  Future<Map<String, String>> _getAuthenticatedHeaders() async {
+    final deviceToken = LocalStorageService.instance.getDeviceToken();
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (deviceToken != null) 'Device-Token': deviceToken,
+    };
+  }
 
-
-    final response = await _client
-        .get(MY_PROFILE, headers: {"Authorization": "Bearer $firebaseToken"});
-
-    if (response.statusCode == 503) return null; // Avoid extra error message
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-
-      // Check if the user account is marked for deletion
-      if (data['success'] == true && data['user'] != null) {
-        final userData = data['user'];
-
-        // Check for deletion markers
-        if ((userData['delete_request'] != null && userData['delete_request'] == 1) ||
-            (userData['deleted_at'] != null && userData['deleted_at'].toString().isNotEmpty)) {
-
-          // Sign out the user from Firebase
-          final authController = Get.find<AuthController>();
-          authController.signOut();
-
-          // Show error message
-          CustomSnackbar.showError(
-            'Account Deletion in Progress',
-            'This account has been marked for deletion and cannot be used. Please contact support if you need assistance.'
-          );
-
-          return null;
-        }
-
-        return UserModel.fromJson(userData);
+    Map<String, dynamic> _parseResponse(http.Response response) {
+    try {
+      if (response.body.isEmpty) {
+        return {'status': false, 'message': 'Empty response body'};
       }
-      return null;
+      
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (e) {
+      log('$_logTag Error parsing response: $e');
+      log('$_logTag Response body: ${response.body}');
+      return {
+        'status': false,
+        'message': 'Failed to parse response',
+        'error': e.toString(),
+      };
     }
-    _logResponse(MY_PROFILE, response);
-    return null;
   }
 }

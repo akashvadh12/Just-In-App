@@ -1,40 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:security_guard/Data/services/notification_services.dart';
+import 'package:security_guard/data/services/conectivity_controller.dart';
+import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:security_guard/modules/auth/models/user_model.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 
 class HomeController extends GetxController {
-  // User data
-  final userName = 'User'.obs;
-  final userPhotoUrl = ''.obs;
-  final userId = ''.obs;
+  // User data from ProfileController
+  final ProfileController profileController = Get.find<ProfileController>();
+  final NotificationServices notify = NotificationServices();
+
+  String get userName => profileController.userModel.value?.name ?? 'User';
+  String get userPhotoUrl => profileController.userModel.value?.photoPath ?? '';
+  String get userId => profileController.userModel.value?.userId ?? '';
+
   final notificationCount = 1.obs;
   final currentDate = DateTime.now().obs;
 
   @override
   void onInit() {
     super.onInit();
-    loadUserData();
-  }
+    fetchDashboardData();
 
-  void loadUserData() {
-    try {
-      final storage = LocalStorageService.instance;
-      final user = storage.getUserModel();
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   final context = Get.context;
+    //   if (context != null) {
+    //     // Initialize notification services
+    //     notify.initialize();
 
-      if (user != null) {
-        userName.value = user.name;
-        userPhotoUrl.value = user.photoPath;
-        userId.value = user.userId;
-      }
-    } catch (e) {
-      print('Error loading user data in HomeController: $e');
-    }
+    //     notify.getDeviceToken().then((value) {
+    //       // Use a logger instead of print in production
+    //       // print("The token ========> $value");
+    //     });
+
+    //     // Check profile completion after initialization
+    //   } else {
+    //     // Use a logger instead of print in production
+    //     // print("Context is null");
+    //   }
+    // });
   }
 
   // Attendance data
-  final isClockIn = true.obs;
-  final clockInTime = '07:45 AM'.obs;
   final hoursToday = '6h 15m'.obs;
 
   // Patrol data
@@ -69,6 +79,16 @@ class HomeController extends GetxController {
 
   // Navigation index
   final selectedIndex = 0.obs;
+
+  // Dashboard data
+  final attendanceStatus = ''.obs;
+  final clockInTime = 'Not clocked in'.obs;
+  final clockOutTime = ''.obs;
+  final todayPatrolStatus = ''.obs;
+  final issuesNew = 0.obs;
+  final issuesPending = 0.obs;
+  final issuesResolved = 0.obs;
+  final dashboardLoading = false.obs;
 
   // Formatting logic for the date
   String get formattedDate {
@@ -129,5 +149,86 @@ class HomeController extends GetxController {
   void navigateTo(int index) {
     selectedIndex.value = index;
     // Implementation for navigation
+  }
+
+  final LocalStorageService _storage = LocalStorageService.instance;
+
+  Future<void> fetchDashboardData() async {
+    final connectivityController = Get.find<ConnectivityController>();
+
+    if (connectivityController.isOffline.value) {
+      connectivityController.showNoInternetSnackbar();
+      return;
+    }
+    dashboardLoading.value = true;
+    try {
+      // Get userId from LocalStorageService
+      String? userId = await _storage.getUserId();
+      print('User ID from storage🔴🔴: $userId');
+      if (userId == null || userId.isEmpty) {
+        userId = profileController.userModel.value?.userId ?? '';
+      }
+      if (userId.isEmpty) {
+        dashboardLoading.value = false;
+        return;
+      }
+      final url = Uri.parse(
+        'https://justin.solarvision-cairo.com/api/Dashboard/dashboard?userId=$userId',
+      );
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        attendanceStatus.value = data['attendanceStatus']?.toString() ?? '';
+        todayPatrolStatus.value = data['todayPatrolStatus']?.toString() ?? '';
+        issuesNew.value = data['issuesCount']?['new'] ?? 0;
+        issuesPending.value = data['issuesCount']?['pending'] ?? 0;
+        issuesResolved.value = data['issuesCount']?['resolved'] ?? 0;
+        clockInTime.value = data['clockIn']?.toString() ?? 'Not clocked in';
+        clockOutTime.value = data['clockOut']?.toString() ?? '';
+
+        print('Dashboard data fetched successfully: $data');
+        // Update user info/photo if present in dashboard response
+        if (data['userID'] != null) {
+          profileController.userModel.value = UserModel.fromJson(data);
+          profileController.fetchUserProfile(userId);
+        }
+      } else if (response.statusCode == 404) {
+        Get.snackbar(
+          "Not Found",
+          "Dashboard data not found for user ID: $userId",
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          icon: const Icon(Icons.error, color: Colors.white),
+          duration: const Duration(seconds: 2),
+        );
+      } else if (response.statusCode == 500) {
+        Get.snackbar(
+          "Server Error",
+          "Internal server error. Please try again later.",
+          backgroundColor: Colors.red,
+          snackPosition: SnackPosition.BOTTOM,
+          colorText: Colors.white,
+          icon: const Icon(Icons.error, color: Colors.white),
+          duration: const Duration(seconds: 2),
+        );
+      } else {
+        Get.snackbar(
+          "Oops!",
+          "Dashboard not loading. Check your internet and try again.",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          icon: const Icon(Icons.wifi_off, color: Colors.white),
+          duration: const Duration(seconds: 2),
+        );
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Error fetching dashboard data',snackPosition: SnackPosition.BOTTOM,  backgroundColor: Colors.red,
+          colorText: Colors.white,);
+      print('Error fetching dashboard data:🔴🔴🔴🐞🐞 $e');
+    } finally {
+      dashboardLoading.value = false;
+    }
   }
 }

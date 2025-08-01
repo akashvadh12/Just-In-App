@@ -1,181 +1,183 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:security_guard/modules/auth/controllers/auth_controller.dart';
-import 'package:security_guard/modules/auth/login/login_page.dart';
+import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/modules/auth/models/user_model.dart';
+import 'package:security_guard/data/services/api_post_service.dart';
+import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
+import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
 
 class ProfileController extends GetxController {
-  var selectedIndex = 4.obs;
-  var userName = "John Anderson".obs;
-  var userEmail = "john.anderson@security.com".obs;
-  var userPhone = "+1 (555) 123-4567".obs;
-  var userId = "GU-2024-0123".obs;
-  var profileImage = "https://randomuser.me/api/portraits/men/32.jpg".obs;
+  final Rx<UserModel?> userModel = Rx<UserModel?>(null);
+  final RxBool isLoading = false.obs;
+
+  // Only device token is stored in SharedPreferences
+  final LocalStorageService _storage = LocalStorageService.instance;
+  final ApiPostServices _apiPostService = ApiPostServices();
+  final ApiGetServices _apiGetService = ApiGetServices();
+  
 
   @override
   void onInit() {
     super.onInit();
-    // Load user data from storage when controller initializes
-    loadUserData();
+    // You may want to load userId from an AuthController or similar
+    // For demo, you can set userModel.value = ...
+    
   }
 
-  void loadUserData() {
-    try {
-      final storage = LocalStorageService.instance;
-
-      // Try to load from complete user model first
-      final user = storage.getUserModel();
-      if (user != null) {
-        userName.value = user.name;
-        userEmail.value = user.email ?? '';
-        userId.value = user.userId;
-        profileImage.value = user.photoPath;
-        return;
+Future<void> fetchUserProfile(String userId) async {
+  isLoading.value = true;
+  try {
+    final response = await _apiGetService.getProfileAPI(userId);
+    if (response != null) {
+      if (userModel.value != null) {
+        // Update existing user data, preserving fields not in the response
+        userModel.value = userModel.value!.updateWith(response);
+      } else {
+        // Create new user if none exists
+        userModel.value = UserModel.fromJson(response);
       }
+    } else {
+      _showErrorSnackbar(response?['message'] ?? 'Failed to fetch profile');
+    }
+  } catch (e) {
+    _showErrorSnackbar('Failed to fetch profile data');
+  } finally {
+    isLoading.value = false;
+  }
+}
 
-      // Fallback to individual fields for backward compatibility
-      final savedName = storage.getUserName();
-      final savedEmail = storage.getUserEmail();
-      final savedPhone = storage.getUserPhone();
-      final savedUserId = storage.getUserId();
-      final savedProfileImage = storage.getProfileImage();
-
-      if (savedName != null) userName.value = savedName;
-      if (savedEmail != null) userEmail.value = savedEmail;
-      if (savedPhone != null) userPhone.value = savedPhone;
-      if (savedUserId != null) userId.value = savedUserId;
-      if (savedProfileImage != null) profileImage.value = savedProfileImage;
+  Future<void> updateProfile({
+    required String userId,
+    required String name,
+    required String email,
+    required String phone,
+  }) async {
+    if (name.trim().isEmpty) {
+      _showErrorSnackbar('Name cannot be empty');
+      return;
+    }
+    isLoading.value = true;
+    try {
+      final response = await _apiPostService.updateProfileAPI(
+        userId: userId,
+        name: name,
+        email: email,
+        phone: phone,
+      );
+      if (response != null) {
+        print('Profile updated successfully: ${response["user"]}');
+        userModel.value = userModel.value?.copyWith(
+          userId: userId,
+          gaurdId: response['user']['gaurdID'] ?? userModel.value?.gaurdId,
+          name: name,
+          email: email,
+          phone: phone,
+        );
+        _showSuccessSnackbar('Profile updated successfully');
+      } else {
+        _showErrorSnackbar(response?['message'] ?? 'Failed to update profile');
+      }
     } catch (e) {
-      print('Error loading user data: $e');
+      _showErrorSnackbar('Failed to update profile');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> updatePassword({
+    required String userId,
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    if (oldPassword.isEmpty || newPassword.isEmpty) {
+      _showErrorSnackbar('Password fields cannot be empty');
+      return;
+    }
+    if (newPassword.length < 6) {
+      _showErrorSnackbar('New password must be at least 6 characters');
+      return;
+    }
+    isLoading.value = true;
+    try {
+      final response = await _apiPostService.updatePasswordAPI(
+        userId: userId,
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
+
+      // Fixed: Use .contains() instead of .includes(), and fix the logic
+      if (response!["message"].toString().contains(
+        "Old password is incorrect.",
+      )) {
+        // This should show ERROR message, not success
+        _showErrorSnackbar('Old password is incorrect.');
+      } else {
+        // If no error message, then it's successful
+        _showSuccessSnackbar('Password updated successfully');
+      }
+    } catch (e) {
+      _showErrorSnackbar('Failed to update password');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> updateProfilePicture({
+    required String userId,
+    required File imageFile,
+  }) async {
+    isLoading.value = true;
+    try {
+      final response = await _apiPostService.uploadProfileImageAPI(
+        userId: userId,
+        imageFile: imageFile,
+      );
+      if (response != null &&
+         
+          response['photoUrl'] != null) {
+        userModel.value = userModel.value?.copyWith(
+          photoPath: response['photoUrl'],
+        );
+        _showSuccessSnackbar('Profile picture updated');
+      } else {
+        _showErrorSnackbar(
+          response?['message'] ?? 'Failed to update profile picture',
+        );
+      }
+    } catch (e) {
+      _showErrorSnackbar('Failed to update profile picture');
+    } finally {
+      isLoading.value = false;
     }
   }
 
   Future<void> logout() async {
-    try {
-      final storage = LocalStorageService.instance;
-
-      await storage.clearUserData();
-      await storage.saveLoginStatus(false);
-
-      // Update reactive variable if needed
-      final authController = Get.find<AuthController>();
-      authController.setLoggedIn(false);
-
-      Get.snackbar(
-        'Logged out',
-        'You have been successfully logged out',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-
-      Get.offAll(() => LoginPage());
-    } catch (e) {
-      print('Error during logout: $e');
-
-      Get.snackbar(
-        'Error',
-        'Logout failed. Redirecting to login...',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-
-      Get.offAll(() => LoginPage());
-    }
+    userModel.value = null;
+    await _storage.removeDeviceToken();
+  Get.find<BottomNavController>().changeTab(0);
+    Get.offAllNamed('/login');
   }
 
-  void updateProfile({String? name, String? email, String? phone}) async {
-    try {
-      // Update observable values
-      if (name != null) userName.value = name;
-      if (email != null) userEmail.value = email;
-      if (phone != null) userPhone.value = phone;
-
-      // Save to local storage
-      final storage = LocalStorageService.instance;
-      await storage.saveUserData(
-        name: name ?? userName.value,
-        email: email ?? userEmail.value,
-        phone: phone ?? userPhone.value,
-        userId: userId.value,
-        profileImage: profileImage.value,
-      );
-
-      Get.snackbar(
-        'Success',
-        'Profile updated successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-    } catch (e) {
-      print('Error updating profile: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to update profile',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    }
-  }
-
-  void updatePassword(String currentPassword, String newPassword) {
-    // Show loading dialog
-    Get.dialog(
-      const Center(child: CircularProgressIndicator()),
-      barrierDismissible: false,
+  // Snackbar helpers
+  void _showErrorSnackbar(String message) {
+    Get.snackbar(
+      'Error',
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
     );
-
-    // Simulate API call
-    Future.delayed(const Duration(seconds: 2), () {
-      Get.back(); // Close loading dialog
-
-      // In a real app, you would validate the current password and update it
-      // For now, we'll just show success
-      Get.snackbar(
-        'Success',
-        'Password updated successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-    });
   }
 
-  Future<void> updateProfilePicture() async {
-    try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-
-      if (image != null) {
-        // Update the profile image
-        profileImage.value = image.path;
-
-        // Save to storage
-        final storage = LocalStorageService.instance;
-        await storage.saveString('profile_image', image.path);
-
-        Get.snackbar(
-          'Success',
-          'Profile picture updated successfully',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
-      }
-    } catch (e) {
-      print('Error updating profile picture: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to update profile picture',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    }
+  void _showSuccessSnackbar(String message) {
+    Get.snackbar(
+      'Success',
+      message,
+     snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+    );
   }
 }

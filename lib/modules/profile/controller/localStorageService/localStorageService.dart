@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:security_guard/modules/auth/models/user_model.dart';
 
 class LocalStorageService extends GetxService {
   static LocalStorageService get instance => Get.find<LocalStorageService>();
@@ -20,109 +19,55 @@ class LocalStorageService extends GetxService {
     }
   }
 
-  // User data methods
-  Future<void> saveUserData({
-    String? name,
-    String? email,
-    String? phone,
-    String? userId,
-    String? profileImage,
-  }) async {
-    if (name != null) await _prefs.setString('user_name', name);
-    if (email != null) await _prefs.setString('user_email', email);
-    if (phone != null) await _prefs.setString('user_phone', phone);
-    if (userId != null) await _prefs.setString('user_id', userId);
-    if (profileImage != null)
-      await _prefs.setString('profile_image', profileImage);
-  }
-
-  // Get user data
-  String? getUserName() => _prefs.getString('user_name');
-  String? getUserEmail() => _prefs.getString('user_email');
-  String? getUserPhone() => _prefs.getString('user_phone');
-  String? getUserId() => _prefs.getString('user_id');
-  String? getProfileImage() => _prefs.getString('profile_image');
-
-  // Authentication methods
-  Future<void> saveToken(String token) async {
-    await _prefs.setString('auth_token', token);
-  }
-
-  String? getToken() => _prefs.getString('auth_token');
-
-  Future<void> saveLoginStatus(bool isLoggedIn) async {
-    await _prefs.setBool('is_logged_in', isLoggedIn);
-  }
-
-  bool isLoggedIn() => _prefs.getBool('is_logged_in') ?? false;
-
-  // Save complete user model
-  Future<void> saveUserModel(UserModel user) async {
+  Future<void> saveDeviceToken(String deviceToken) async {
     try {
-      await _prefs.setString('user_data', user.toJsonString());
-
-      // Also save individual fields for backward compatibility
-      await saveUserData(
-        name: user.name,
-        email: user.email,
-        userId: user.userId,
-        profileImage: user.photoPath,
-      );
-
-      print('User model saved successfully');
+      await _prefs.setString('device_token', deviceToken);
+      print('Device token saved successfully');
     } catch (e) {
-      print('Error saving user model: $e');
+      print('Error saving device token: $e');
+    }
+  }
+  Future<void> saveUserId(String userId) async {
+    try {
+      await _prefs.setString('user_id', userId);
+      print('user Id  saved successfully for user: $userId');
+    } catch (e) {
+      print('Error saving User Id: $e');
     }
   }
 
-  // Get complete user model
-  UserModel? getUserModel() {
-    final userDataString = _prefs.getString('user_data');
-    return UserModel.fromJsonString(userDataString);
-  }
-
-  // Clear all user data (for logout)
-  Future<void> clearUserData() async {
+  Future<String?> getUserId() async {
     try {
-      await _prefs.remove('user_name');
-      await _prefs.remove('user_email');
-      await _prefs.remove('user_phone');
-      await _prefs.remove('user_id');
-      await _prefs.remove('profile_image');
-      await _prefs.remove('auth_token');
-      await _prefs.remove('is_logged_in');
-      await _prefs.remove('user_data');
-      await _prefs.remove('deviceToken');
-
-      // Remove any other user-specific data
-      print('User data cleared successfully');
+      return _prefs.getString('user_id');
     } catch (e) {
-      print('Error clearing user data: $e');
+      print('Error retrieving user Id: $e');
+      return null;
     }
   }
 
-  // Generic methods for any key-value storage
-  Future<void> saveString(String key, String value) async {
-    await _prefs.setString(key, value);
+  String? getDeviceToken() {
+    try {
+      return _prefs.getString('device_token');
+    } catch (e) {
+      print('Error retrieving device token: $e');
+      return null;
+    }
   }
 
-  Future<void> saveBool(String key, bool value) async {
-    await _prefs.setBool(key, value);
-  }
-
-  Future<void> saveInt(String key, int value) async {
-    await _prefs.setInt(key, value);
-  }
-
-  String? getString(String key) => _prefs.getString(key);
-  bool? getBool(String key) => _prefs.getBool(key);
-  int? getInt(String key) => _prefs.getInt(key);
-
-  Future<void> remove(String key) async {
-    await _prefs.remove(key);
+  Future<void> removeDeviceToken() async {
+    try {
+      await _prefs.remove('device_token');
+    } catch (e) {
+      print('Error removing device token: $e');
+    }
   }
 
   Future<void> clearAll() async {
-    await _prefs.clear();
+    try {
+      await _prefs.clear();
+      print('All preferences cleared successfully');
+    } catch (e) {
+      print('Error clearing all preferences: $e');
+    }
   }
 }

@@ -1,73 +1,65 @@
-import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
-import 'api_constants.dart';
+import 'package:http_parser/http_parser.dart'; // For contentType
+import 'package:path/path.dart'; // For basename
 
 class ApiService {
-  final String baseUrl;
-  final LocalStorageService _storage = LocalStorageService.instance;
-  
-  ApiService({this.baseUrl = BASE_URL});
-  
-  // Get auth token from storage
-  Future<String?> _getAuthToken() async {
-    return _storage.getToken();
-  }
-  
-  // Get headers with auth token
-  Future<Map<String, String>> _getHeaders() async {
-    final token = await _getAuthToken();
-    final headers = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (token != null) {
-      headers['Authorization'] = 'Bearer $token';
+  static const String baseUrl = "https://justin.solarvision-cairo.com/api/";
+  static const String resolveIssueEndpoint = 'IssuesRecord/resolve';
+
+  Future<bool> resolveIssue({
+    required String token,
+    required String issueId,
+    required String userId,
+    required double latitude,
+    required double longitude,
+    required String resolutionNote,
+    required List<File> imageFiles,
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl$resolveIssueEndpoint');
+
+      var request = http.MultipartRequest('POST', url);
+      request.headers.addAll({
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      });
+
+      // Add regular fields
+      request.fields['issueId'] = issueId;
+      request.fields['userId'] = userId;
+      request.fields['latitude'] = latitude.toString();
+      request.fields['longitude'] = longitude.toString();
+      request.fields['resolutionNote'] = resolutionNote;
+
+      // Add image files
+      for (File imageFile in imageFiles) {
+        final fileName = basename(imageFile.path);
+        final mimeType = 'image/jpeg'; // Or detect with lookupMimeType()
+
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'images', // This must match your API's expected key
+            imageFile.path,
+            filename: fileName,
+            contentType: MediaType('image', 'jpeg'),
+          ),
+        );
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        print("✅ Issue resolved successfully.");
+        return true;
+      } else {
+        print("❌ Failed to resolve issue: ${response.statusCode} - ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print('❗ Exception in resolveIssue: $e');
+      return false;
     }
-    
-    return headers;
-  }
-  
-  // POST request with auth token
-  Future<http.Response> post(String endpoint, Map<String, dynamic> body) async {
-    final url = Uri.parse("$baseUrl$endpoint");
-    final headers = await _getHeaders();
-    
-    print("🛜 API calling => $baseUrl$endpoint");
-    return await http.post(
-      url, 
-      headers: headers, 
-      body: jsonEncode(body)
-    );
-  }
-  
-  // GET request with auth token
-  Future<http.Response> get(String endpoint) async {
-    final url = Uri.parse("$baseUrl$endpoint");
-    final headers = await _getHeaders();
-    
-    print("🛜 API calling => $baseUrl$endpoint");
-    return await http.get(url, headers: headers);
-  }
-  
-  // GET request with parameters and auth token
-  Future<http.Response> getWithParams(String endpoint, Map<String, dynamic> params) async {
-    final encodedParams = params.map((key, value) => MapEntry(key, value.toString().replaceAll('+', ' ')));
-    final uri = Uri.parse("$baseUrl$endpoint").replace(queryParameters: encodedParams);
-    final headers = await _getHeaders();
-    
-    print("🛜 API calling => $uri");
-    return await http.get(uri, headers: headers);
-  }
-  
-  // Helper method to log API responses
-  void logResponse(String endpoint, dynamic response, {dynamic error}) {
-    if (error != null) {
-      print('📡 API Error [$endpoint]: $error');
-      return;
-    }
-    
-    print('📡 API Response [$endpoint]: ${response.statusCode}');
-    print('📄 Response Body: ${response.body}');
   }
 }

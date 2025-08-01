@@ -1,130 +1,129 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:security_guard/core/theme/app_colors.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 // Controller for the Forgot Password screen
 class ForgotPasswordController extends GetxController {
-  final phoneOrEmployeeId = ''.obs;
-  final newPassword = ''.obs;
-  final confirmPassword = ''.obs;
-  final countdown = 30.obs;
-  final isCodeSent = false.obs;
-  final verificationCode = ['', '', '', '', '', ''].obs;
-  final isPasswordVisible = false.obs;
-  final isConfirmPasswordVisible = false.obs;
+  // Observable variables
+  var phoneOrEmployeeId = ''.obs;
+  var isPasswordSent = false.obs;
+  var isLoading = false.obs;
 
-  // Text editing controllers for the verification code fields
-  final List<TextEditingController> codeControllers = 
-      List.generate(6, (_) => TextEditingController());
-
-  // Focus nodes for the verification code fields
-  final List<FocusNode> codeFocusNodes = 
-      List.generate(6, (_) => FocusNode());
-
-  @override
-  void onClose() {
-    // Dispose of controllers and focus nodes
-    for (var controller in codeControllers) {
-      controller.dispose();
-    }
-    for (var focusNode in codeFocusNodes) {
-      focusNode.dispose();
-    }
-    super.onClose();
-  }
-
-  void sendResetCode() {
+  // Method to send reset code via API
+  Future<void> sendResetCode() async {
     if (phoneOrEmployeeId.value.isEmpty) {
       Get.snackbar(
-        'Error', 
-        'Please enter your phone number or employee ID',
-        backgroundColor: AppColors.error,
-        colorText: AppColors.whiteColor,
+        'Error',
+        'Please enter your email or employee ID',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
       return;
     }
-    
-    // Send reset code logic would go here
-    isCodeSent.value = true;
-    
-    // Reset and start countdown
-    countdown.value = 30;
-    startCountdown();
-  }
 
-  void startCountdown() {
-    Future.delayed(Duration(seconds: 1), () {
-      if (countdown.value > 0) {
-        countdown.value--;
-        startCountdown();
+    // // Validate email format (basic validation)
+    // if (!phoneOrEmployeeId.value.contains('@') && 
+    //     !phoneOrEmployeeId.value.contains('.')) {
+    //   Get.snackbar(
+    //     'Error',
+    //     'Please enter a valid email address',
+    //     snackPosition: SnackPosition.TOP,
+    //     backgroundColor: Colors.red,
+    //     colorText: Colors.white,
+    //   );
+    //   return;
+    // }
+
+    try {
+      isLoading.value = true;
+      
+      // Encode email for URL
+      String encodedEmail = Uri.encodeComponent(phoneOrEmployeeId.value);
+      
+      // API endpoint
+      String apiUrl = 'https://justin.solarvision-cairo.com/api/Auth/forgot-password?email=$encodedEmail';
+      
+      // Make API call
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      isLoading.value = false;
+
+      if (response.statusCode == 200) {
+        // Success response
+        String message = response.body;
+        
+        Get.snackbar(
+          'Success',
+          message.isNotEmpty ? message : 'Password has been sent to your registered employee ID or email address.',
+       snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          duration: Duration(seconds: 3),
+        );
+        
+        // Show success message and options
+        isPasswordSent.value = true;
+        
+      } else if (response.statusCode == 404) {
+        Get.snackbar(
+          'Error',
+          'Email or employee ID not found. Please check your email address.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      } else if (response.statusCode == 400) {
+        Get.snackbar(
+          'Error',
+          'Invalid email or employee ID format.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      } else {
+        // Handle other error cases
+        String errorMessage = 'Failed to send reset code. Please try again.';
+        
+        try {
+          var errorData = json.decode(response.body);
+          if (errorData['message'] != null) {
+            errorMessage = errorData['message'];
+          }
+        } catch (e) {
+          // If response is not JSON, use default message
+        }
+        
+        Get.snackbar(
+          'Error',
+          errorMessage,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
       }
-    });
-  }
-
-  void resendCode() {
-    if (countdown.value > 0) return;
-    
-    // Logic to resend the code
-    countdown.value = 30;
-    startCountdown();
-  }
-
-  void updateVerificationCode(int index, String value) {
-    final newCode = [...verificationCode];
-    newCode[index] = value;
-    verificationCode.value = newCode;
-    
-    // Auto-focus to next field
-    if (value.isNotEmpty && index < 5) {
-      codeFocusNodes[index + 1].requestFocus();
-    }
-  }
-
-  bool validatePassword() {
-    return newPassword.value.length >= 8 &&
-           RegExp(r'[A-Z]').hasMatch(newPassword.value) &&
-           RegExp(r'[0-9]').hasMatch(newPassword.value) &&
-           RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(newPassword.value);
-  }
-
-  bool validatePasswords() {
-    return validatePassword() && 
-           confirmPassword.value == newPassword.value;
-  }
-
-  void setNewPassword() {
-    if (!validatePasswords()) {
+      
+    } catch (e) {
+      isLoading.value = false;
+      
       Get.snackbar(
-        'Error', 
-        'Please check your password requirements',
-        backgroundColor: AppColors.error,
-        colorText: AppColors.whiteColor,
-        snackPosition: SnackPosition.BOTTOM,
+        'Error',
+        'Network error. Please check your internet connection.',
+       snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
-      return;
     }
-    
-    // Set new password logic would go here
-    Get.snackbar(
-      'Success', 
-      'Your password has been reset successfully',
-      backgroundColor: AppColors.greenColor,
-      colorText: AppColors.whiteColor,
-      snackPosition: SnackPosition.BOTTOM,
-    );
-    
-    // Navigate back to login
-    Future.delayed(Duration(seconds: 2), () {
-      Get.back();
-    });
   }
 
-  void togglePasswordVisibility() {
-    isPasswordVisible.value = !isPasswordVisible.value;
-  }
-
-  void toggleConfirmPasswordVisibility() {
-    isConfirmPasswordVisible.value = !isConfirmPasswordVisible.value;
+  // Method to resend password to email
+  void resendPassword() {
+    sendResetCode();
   }
 }

@@ -31,32 +31,35 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
               // Security shield icon
               Container(
                 width: 100,
                 height: 100,
-                decoration: BoxDecoration(
-                  color: AppColors.lightGrey,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Icon(Icons.shield, color: AppColors.primary, size: 50),
-                ),
+                // decoration: BoxDecoration(
+                //   color: AppColors.lightGrey,
+                //   shape: BoxShape.circle,
+                // ),
+                child: Image.asset(
+                'lib/assets/Just-IN.jpeg', // Replace with your actual image path
+                height: 50,
+                width: 50,
+                fit: BoxFit.contain,
               ),
-              const SizedBox(height: 20),
+              ),
+              const SizedBox(height: 8),
 
               // Instructions text
               Text(
-                'Enter your registered phone number or employee ID to reset your password',
+                'Enter your registered email to get your password',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.body,
               ),
               const SizedBox(height: 20),
 
-              // Phone/Employee ID input field
+              // Email/Employee ID input field
               Container(
                 decoration: BoxDecoration(
                   color: AppColors.lightGrey,
@@ -67,271 +70,147 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                   child: TextField(
                     onChanged:
                         (value) => controller.phoneOrEmployeeId.value = value,
+                    keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       border: InputBorder.none,
-                      hintText: 'Phone Number or Employee ID',
+                      hintText: 'Email or Username',
                       hintStyle: AppTextStyles.hint,
-                      prefixIcon: Icon(
-                        Icons.phone_android,
-                        color: AppColors.greyColor,
-                      ),
+                      prefixIcon: Icon(Icons.email, color: AppColors.greyColor),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
-              // Send Reset Code button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: controller.sendResetCode,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              // Send Reset Code button with loading state
+              Obx(
+                () => SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed:
+                        controller.isLoading.value
+                            ? null
+                            : controller.sendResetCode,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    'Send Reset Code',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    child:
+                        controller.isLoading.value
+                            ? Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Sending...',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            )
+                            : Text(
+                              'Get Your Password',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                   ),
                 ),
               ),
               const SizedBox(height: 12),
 
-              // Verification info text
-              Text(
-                'You will receive a 6-digit code to verify your identity',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.hint,
-              ),
-              const SizedBox(height: 20),
-
-              // Verification code fields
+              // Success message and resend option
               Obx(
                 () => Visibility(
-                  visible: controller.isCodeSent.value,
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: List.generate(
-                          6,
-                          (index) => SizedBox(
-                            width: 50,
-                            height: 50,
-                            child: TextField(
-                              controller: controller.codeControllers[index],
-                              focusNode: controller.codeFocusNodes[index],
-                              onChanged: (value) {
-                                if (value.length <= 1) {
-                                  controller.updateVerificationCode(
-                                    index,
-                                    value,
-                                  );
-                                }
-                              },
-                              textAlign: TextAlign.center,
-                              keyboardType: TextInputType.number,
-                              maxLength: 1,
-                              decoration: InputDecoration(
-                                counterText: '',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(
-                                    color: AppColors.greyColor,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(
-                                    color: AppColors.primary,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
+                  visible: controller.isPasswordSent.value,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    margin: const EdgeInsets.only(top: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.green.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.green, size: 50),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Password Sent Successfully!',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green.shade700,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Your password has been sent to your ${controller.phoneOrEmployeeId.value} ${controller.phoneOrEmployeeId.value.contains('mail') ? 'email address' : 'employee ID'}. Please check your inbox and spam folder.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Resend button
+                        TextButton.icon(
+                          onPressed:
+                              controller.isLoading.value
+                                  ? null
+                                  : controller.resendPassword,
+                          icon: Icon(
+                            Icons.refresh,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
+                          label: Text(
+                            'Resend Password',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
 
-                      // Resend code countdown
-                      Obx(
-                        () => Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('Resend code in ', style: AppTextStyles.hint),
-                            Text(
-                              '${controller.countdown.value.toString().padLeft(2, '0')}:00',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
-              ),
-
-              // New Password input field
-              Obx(
-                () => Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.lightGrey,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: TextField(
-                      onChanged:
-                          (value) => controller.newPassword.value = value,
-                      obscureText: !controller.isPasswordVisible.value,
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        hintText: 'New Password',
-                        hintStyle: AppTextStyles.hint,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            controller.isPasswordVisible.value
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: AppColors.greyColor,
+                        const SizedBox(height: 8),
+                        Text(
+                          'Didn\'t receive the email?',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade500,
                           ),
-                          onPressed: controller.togglePasswordVisibility,
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
 
-              // Confirm Password input field
-              Obx(
-                () => Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.lightGrey,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: TextField(
-                      onChanged:
-                          (value) => controller.confirmPassword.value = value,
-                      obscureText: !controller.isConfirmPasswordVisible.value,
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        hintText: 'Confirm Password',
-                        hintStyle: AppTextStyles.hint,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            controller.isConfirmPasswordVisible.value
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: AppColors.greyColor,
-                          ),
-                          onPressed: controller.toggleConfirmPasswordVisibility,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Password requirements
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.lightGrey,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Password must contain:',
-                      style: TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Text(
-                          '• ',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text('At least 8 characters'),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          '• ',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text('One uppercase letter'),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          '• ',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text('One number'),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          '• ',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text('One special character'),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              // Set New Password button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: controller.setNewPassword,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    'Set New Password',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
               const SizedBox(height: 20),
-
-              // Back to Login button
               TextButton(
                 onPressed: () => Get.back(),
                 child: Text(
