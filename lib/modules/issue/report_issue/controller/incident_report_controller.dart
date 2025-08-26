@@ -13,6 +13,7 @@ import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as path;
+import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/controller/issue_controller.dart';
@@ -37,6 +38,8 @@ class IncidentReportController extends GetxController {
   final HomeController dashboardController = Get.find<HomeController>();
 
   final IssuesController issuesController = Get.find<IssuesController>();
+  final ApiGetServices _apiService = Get.find<ApiGetServices>();
+
 
   @override
   void onInit() {
@@ -261,13 +264,10 @@ class IncidentReportController extends GetxController {
 
     isLoading.value = true;
 
-    final uri = Uri.parse(
-      "https://justin.solarvision-cairo.com/api/IssuesRecord/create",
-    );
-    final headers = {'Authorization': 'Bearer $token'};
+
 
     try {
-      await _submitWithImages(uri, headers, userId, position, description);
+      await _submitWithImages( userId, position, description);
     } catch (e) {
       CustomSnackbar.showError("Error", "Something went wrong: $e");
     } finally {
@@ -276,38 +276,19 @@ class IncidentReportController extends GetxController {
   }
 
   Future<void> _submitWithImages(
-    Uri uri,
-    Map<String, String> headers,
     String userId,
     LatLng position,
     String description,
   ) async {
-    final request =
-        http.MultipartRequest("POST", uri)
-          ..headers.addAll(headers)
-          ..fields['userId'] = userId
-          ..fields['latitude'] = position.latitude.toString()
-          ..fields['longitude'] = position.longitude.toString()
-          ..fields['description'] = description;
+     final response = await _apiService.submitIncidentReportRaw(
+      userId: userId,
+      latitude: position.latitude.toString(),
+      longitude: position.longitude.toString(),
+      description: description,
+      photos: selectedPhotos,
+      imageBytesList: imageBytesList,
+    );
 
-    for (int i = 0; i < imageBytesList.length; i++) {
-      final photo = selectedPhotos[i];
-      final bytes = imageBytesList[i];
-      final mimeType = lookupMimeType(photo.path) ?? 'image/jpeg';
-      final mediaType = MediaType.parse(mimeType);
-
-      final file = http.MultipartFile.fromBytes(
-        'images',
-        bytes,
-        filename: path.basename(photo.path),
-        contentType: mediaType,
-      );
-
-      request.files.add(file);
-    }
-
-    final streamedResponse = await request.send();
-    final response = await http.Response.fromStream(streamedResponse);
 
     _handleResponse(response);
   }

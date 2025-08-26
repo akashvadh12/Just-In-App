@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:security_guard/Data/services/notification_services.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
+import 'package:security_guard/data/services/session_service.dart';
+import 'package:security_guard/modules/issue/versionUpdateCheck/versionUpdateCheckScreen.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -20,28 +22,24 @@ class HomeController extends GetxController {
   final notificationCount = 1.obs;
   final currentDate = DateTime.now().obs;
 
+   @override
+  void onReady() {
+    super.onReady();
+  
+  print(
+      'User ID from storage🔴🔴: ${profileController.userModel.value?.userId}');
+  
+    // called after widget is built and mounted
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      VersionChecker.checkForUpdate(Get.context!);
+    });
+  }
+
   @override
   void onInit() {
     super.onInit();
     fetchDashboardData();
 
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   final context = Get.context;
-    //   if (context != null) {
-    //     // Initialize notification services
-    //     notify.initialize();
-
-    //     notify.getDeviceToken().then((value) {
-    //       // Use a logger instead of print in production
-    //       // print("The token ========> $value");
-    //     });
-
-    //     // Check profile completion after initialization
-    //   } else {
-    //     // Use a logger instead of print in production
-    //     // print("Context is null");
-    //   }
-    // });
   }
 
   // Attendance data
@@ -189,6 +187,11 @@ class HomeController extends GetxController {
         print('Dashboard data fetched successfully: $data');
         // Update user info/photo if present in dashboard response
         if (data['userID'] != null) {
+          final session = Get.find<SessionService>();
+          session.setSession(
+            company: data['companyId'].toString(),
+            site: data['siteId'].toString(),
+          );
           profileController.userModel.value = UserModel.fromJson(data);
           profileController.fetchUserProfile(userId);
         }
@@ -224,8 +227,13 @@ class HomeController extends GetxController {
         );
       }
     } catch (e) {
-      Get.snackbar('Error', 'Error fetching dashboard data',snackPosition: SnackPosition.BOTTOM,  backgroundColor: Colors.red,
-          colorText: Colors.white,);
+      Get.snackbar(
+        'Error',
+        'Error fetching dashboard data',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       print('Error fetching dashboard data:🔴🔴🔴🐞🐞 $e');
     } finally {
       dashboardLoading.value = false;

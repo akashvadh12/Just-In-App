@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,9 +11,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 class IssuesController extends GetxController
     with SingleGetTickerProviderMixin {
   // API Constants
-  static const String BASE_URL = "https://justin.solarvision-cairo.com/api/";
-  static const String UPSERT_INCIDENT_REPORT = 'Admin/UpsertIncidentReport';
-  static const String ISSUES_RECORD = 'IssuesRecord';
 
   // Observable variables
   final RxList<Issue> _issues = <Issue>[].obs;
@@ -20,6 +18,9 @@ class IssuesController extends GetxController
   final RxBool isLoading = false.obs;
   final RxString errorMessage = ''.obs;
   final RxInt selectedTabIndex = 0.obs;
+
+  final ApiGetServices _apiService = Get.find<ApiGetServices>();
+
 
   // Getters
   List<Issue> get issues => _issues;
@@ -118,12 +119,10 @@ class IssuesController extends GetxController
       }
       errorMessage.value = '';
 
-      final headers = await _getHeaders();
-      final url = Uri.parse(
-        '${BASE_URL}${ISSUES_RECORD}?status=$status&page=${currentPage.value}',
+     final response = await _apiService.fetchIssuesRaw(
+        status: status,
+        page: currentPage.value,
       );
-
-      final response = await http.get(url, headers: headers);
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);
@@ -212,55 +211,6 @@ class IssuesController extends GetxController
     };
   }
 
-  // // Fetch issues from API
-  // Future<void> fetchIssues({String status = 'all'}) async {
-  //   final connectivityController = Get.find<ConnectivityController>();
-
-  //   if (connectivityController.isOffline.value) {
-  //     connectivityController.showNoInternetSnackbar();
-  //     return;
-  //   }
-
-  //   try {
-  //     isLoading.value = true;
-  //     errorMessage.value = '';
-
-  //     final headers = await _getHeaders();
-  //     final url = Uri.parse('${BASE_URL}${ISSUES_RECORD}?status=$status');
-
-  //     final response = await http.get(url, headers: headers);
-
-  //     if (response.statusCode == 200) {
-  //       final List<dynamic> jsonData = json.decode(response.body);
-  //       _issues.value =
-  //           jsonData
-  //               .cast<Map<String, dynamic>>()
-  //               .map((json) => Issue.fromApiJson(json))
-  //               .toList();
-  //     } else {
-  //       errorMessage.value =
-  //           'Failed to load issues. Status: ${response.statusCode}';
-  //     }
-  //   } catch (e) {
-  //     errorMessage.value = 'Server error please try again later';
-  //   } finally {
-  //     isLoading.value = false;
-  //   }
-  // }
-
-  // // Refresh issues
-  // Future<void> refreshIssues() async {
-  //   await fetchIssues();
-  // }
-
-  // // Update issue locally
-  // void updateIssue(Issue updatedIssue) {
-  //   final index = _issues.indexWhere((issue) => issue.id == updatedIssue.id);
-  //   if (index != -1) {
-  //     _issues[index] = updatedIssue;
-  //   }
-  // }
-
   // Upsert incident report
   Future<void> upsertIncidentReport(Map<String, dynamic> data) async {
     final connectivityController = Get.find<ConnectivityController>();
@@ -272,14 +222,7 @@ class IssuesController extends GetxController
     try {
       isLoading.value = true;
 
-      final headers = await _getHeaders();
-      final url = Uri.parse('$BASE_URL$UPSERT_INCIDENT_REPORT');
-
-      final response = await http.post(
-        url,
-        headers: headers,
-        body: json.encode(data),
-      );
+     final response = await _apiService.upsertIncidentReportRaw(data: data);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Refresh issues after successful update

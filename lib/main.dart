@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:security_guard/core/api/api_service.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
+import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
+import 'package:security_guard/data/services/session_service.dart';
 import 'package:security_guard/firebase_options.dart';
 import 'package:security_guard/modules/auth/controllers/auth_controller.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
@@ -32,6 +34,9 @@ void main() async {
 
   await Get.putAsync(() => LocalStorageService().init());
   await initServices();
+  Get.put(SessionService());
+  Get.put(ApiGetServices());
+
   Get.put(ConnectivityController());
   Get.put(ProfileController());
   Get.put(AuthController());

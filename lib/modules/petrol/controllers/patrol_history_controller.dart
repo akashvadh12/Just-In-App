@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 
@@ -106,11 +107,11 @@ class PatrolHistoryController extends GetxController {
   final Rx<DateTime> startDate = DateTime.now().obs;
   final Rx<DateTime> endDate = DateTime.now().obs;
   final ProfileController profileController = Get.find<ProfileController>();
+  final ApiGetServices _apiService = Get.find<ApiGetServices>();
   
   // Replace with actual user logic
   // final String userId = '202408056';
-  
-  static const String _baseUrl = 'https://justin.solarvision-cairo.com/api/patrol';
+
 
   @override
   void onInit() {
@@ -128,20 +129,19 @@ class PatrolHistoryController extends GetxController {
     try {
       isLoadingHistory.value = true;
       
-      final startDateStr = '${startDate.value.year}%2F${startDate.value.month.toString().padLeft(2, '0')}%2F${startDate.value.day.toString().padLeft(2, '0')}';
-      final endDateStr = '${endDate.value.year}%2F${endDate.value.month.toString().padLeft(2, '0')}%2F${endDate.value.day.toString().padLeft(2, '0')}';
-      
+ final startDateStr =
+    '${startDate.value.year}-${startDate.value.month.toString().padLeft(2, '0')}-${startDate.value.day.toString().padLeft(2, '0')}';
+
+final endDateStr =
+    '${endDate.value.year}-${endDate.value.month.toString().padLeft(2, '0')}-${endDate.value.day.toString().padLeft(2, '0')}';
+
        
       final userId = profileController.userModel.value?.userId ?? '';
-      final url = '$_baseUrl/Userhistory?start=$startDateStr&end=$endDateStr&UserId=$userId';
-      
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 30));
+        final response = await _apiService.fetchUserPatrolHistory(
+      userId: userId,
+      startDate: startDateStr,
+      endDate: endDateStr,
+    );
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = json.decode(response.body);
@@ -184,15 +184,7 @@ class PatrolHistoryController extends GetxController {
     try {
       isLoadingDetails.value = true;
       
-      final url = '$_baseUrl/history?logId=$logID';
-      
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 30));
+     final response = await _apiService.fetchHistoryDetails(logID);
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = json.decode(response.body);

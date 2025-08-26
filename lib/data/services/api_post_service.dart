@@ -421,26 +421,36 @@ class ApiPostServices {
   }
 
   /// Upload profile image
-  Future<Map<String, dynamic>?> uploadProfileImageAPI({
-    required String userId,
-    required File imageFile,
-  }) async {
-    const endpoint = 'profile/update-photo';
-    final headers = await _getAuthenticatedHeaders();
-    final uri = Uri.parse('${_client.baseUrl}$endpoint');
-    final request = http.MultipartRequest('POST', uri);
-    request.headers.addAll(headers..remove('Content-Type'));
-    request.fields['userId'] = userId;
-    request.files.add(
-      await http.MultipartFile.fromPath('photo', imageFile.path),
+/// Upload profile image
+Future<Map<String, dynamic>?> uploadProfileImageAPI({
+  required String userId,
+  required File imageFile,
+}) async {
+  const endpoint = 'profile/update-photo';
+  final fields = {
+    'userId': userId,
+  };
+
+  try {
+    final file = await http.MultipartFile.fromPath(
+      'photo', // <-- must match backend param name
+      imageFile.path,
     );
-    try {
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-      return _parseResponse(response);
-    } catch (e) {
-      log('$_logTag Upload profile image error: $e');
-      return {'status': false, 'message': 'Failed to upload profile image'};
-    }
+
+    final response = await _client.postMultipart(
+      endpoint,
+      fields,
+      [file],
+    );
+
+    return _parseResponse(response);
+  } catch (e) {
+    log('$_logTag Upload profile image error: $e');
+    return {
+      'status': false,
+      'message': 'Failed to upload profile image',
+    };
   }
+}
+
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -17,10 +18,9 @@ class AttendanceHistoryController extends GetxController {
   var fromDate = DateTime.now().obs;
   var toDate = DateTime.now().obs;
   final ProfileController profileController = Get.find<ProfileController>();
+  final ApiGetServices _apiService = Get.find<ApiGetServices>();
 
-  // Base URL
-  final String baseUrl =
-      "https://justin.solarvision-cairo.com/api/AttendanceRecord";
+
 
   @override
   void onInit() {
@@ -70,7 +70,7 @@ class AttendanceHistoryController extends GetxController {
     Get.snackbar(
       title,
       message,
-     snackPosition: SnackPosition.BOTTOM,
+      snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.green,
       colorText: Get.theme.colorScheme.onPrimary,
     );
@@ -93,14 +93,10 @@ class AttendanceHistoryController extends GetxController {
       }
 
       final monthStr = DateFormat('yyyy-MM').format(currentMonth.value);
-      final url = '$baseUrl/attendance/history?userId=$userId&month=$monthStr';
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          if (authToken != null) 'Authorization': 'Bearer $authToken',
-        },
+      final response = await _apiService.getAttendanceHistoryRaw(
+        userId: userId,
+        month: monthStr,
       );
 
       if (response.statusCode == 200) {
@@ -150,40 +146,32 @@ class AttendanceHistoryController extends GetxController {
 
   // Fetch today's attendance
 
-Future<void> fetchTodayAttendance() async {
-  try {
-    isLoading.value = true;
+  Future<void> fetchTodayAttendance() async {
+    try {
+      isLoading.value = true;
 
-    final userId = profileController.userModel.value?.userId;
-    final authToken = await getAuthToken();
+      final userId = profileController.userModel.value?.userId;
+      // final authToken = await getAuthToken();
 
-    if (userId == null || userId.isEmpty) {
-      return;
+      if (userId == null || userId.isEmpty) {
+        return;
+      }
+
+      final response = await _apiService.getTodayAttendanceRaw(userId: userId);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        todayAttendance.value = TodayAttendance.fromJson(data);
+      } else {
+        _showError("Error", "Failed to load today's attendance");
+      }
+    } catch (e) {
+      _showError("Network Error", "Please check your internet connection");
+      print('Error fetching today attendance: $e');
+    } finally {
+      isLoading.value = false;
     }
-
-    final url = '$baseUrl/attendance/today/$userId';
-
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {
-        'Content-Type': 'application/json',
-        if (authToken != null) 'Authorization': 'Bearer $authToken',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      todayAttendance.value = TodayAttendance.fromJson(data);
-    } else {
-      _showError("Error", "Failed to load today's attendance");
-    }
-  } catch (e) {
-    _showError("Network Error", "Please check your internet connection");
-    print('Error fetching today attendance: $e');
-  } finally {
-    isLoading.value = false;
   }
-}
 
   // Fetch attendance report
   Future<void> fetchAttendanceReport() async {
@@ -205,15 +193,10 @@ Future<void> fetchTodayAttendance() async {
       final fromDateStr = DateFormat('yyyy-MM-dd').format(fromDate.value);
       final toDateStr = DateFormat('yyyy-MM-dd').format(toDate.value);
 
-      final url =
-          '$baseUrl/attendance/report?userId=$userId&fromDate=$fromDateStr&toDate=$toDateStr';
-
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          if (authToken != null) 'Authorization': 'Bearer $authToken',
-        },
+      final response = await _apiService.getAttendanceReportRaw(
+        userId: userId,
+        fromDate: fromDateStr,
+        toDate: toDateStr,
       );
 
       if (response.statusCode == 200) {
@@ -235,20 +218,22 @@ Future<void> fetchTodayAttendance() async {
 
   // Change month
   void changeMonth(bool isNext) {
-  final now = DateTime.now();
-  final current = currentMonth.value;
+    final now = DateTime.now();
+    final current = currentMonth.value;
 
-  if (isNext) {
-    // Prevent moving to future months beyond the current real month
-    if (current.year < now.year || (current.year == now.year && current.month < now.month)) {
-      currentMonth.value = DateTime(current.year, current.month + 1, 1);
+    if (isNext) {
+      // Prevent moving to future months beyond the current real month
+      if (current.year < now.year ||
+          (current.year == now.year && current.month < now.month)) {
+        currentMonth.value = DateTime(current.year, current.month + 1, 1);
+      }
+    } else {
+      currentMonth.value = DateTime(current.year, current.month - 1, 1);
     }
-  } else {
-    currentMonth.value = DateTime(current.year, current.month - 1, 1);
+
+    fetchAttendanceHistory();
   }
 
-  fetchAttendanceHistory();
-}
   // Change tab
   void changeTab(int index) {
     selectedTab.value = index;
@@ -349,9 +334,11 @@ class AttendanceRecordThree {
   factory AttendanceRecordThree.fromJson(Map<String, dynamic> json) {
     return AttendanceRecordThree(
       date: json['date'] ?? '',
-      records: (json['records'] as List<dynamic>?)
-          ?.map((record) => AttendanceSession.fromJson(record))
-          .toList() ?? [],
+      records:
+          (json['records'] as List<dynamic>?)
+              ?.map((record) => AttendanceSession.fromJson(record))
+              .toList() ??
+          [],
       totalDuration: json['totalDuration'],
       status: json['status'] ?? 'Absent',
     );
@@ -389,14 +376,16 @@ class AttendanceSession {
       inPhoto: json['inPhoto'],
       outPhoto: json['outPhoto'],
       entryLocation: LocationData.fromJson(json['entryLocation'] ?? {}),
-      exitLocation: json['exitLocation'] != null && 
-                   json['exitLocation']['lat'] != null &&
-                   json['exitLocation']['lng'] != null
-          ? LocationData.fromJson(json['exitLocation'])
-          : null,
+      exitLocation:
+          json['exitLocation'] != null &&
+                  json['exitLocation']['lat'] != null &&
+                  json['exitLocation']['lng'] != null
+              ? LocationData.fromJson(json['exitLocation'])
+              : null,
     );
   }
 }
+
 class TodayAttendance {
   final String date;
   final List<AttendanceRecordTwo> records;
@@ -411,9 +400,11 @@ class TodayAttendance {
   factory TodayAttendance.fromJson(Map<String, dynamic> json) {
     return TodayAttendance(
       date: json['date'] ?? '',
-      records: (json['records'] as List<dynamic>?)
-          ?.map((record) => AttendanceRecordTwo.fromJson(record))
-          .toList() ?? [],
+      records:
+          (json['records'] as List<dynamic>?)
+              ?.map((record) => AttendanceRecordTwo.fromJson(record))
+              .toList() ??
+          [],
       status: json['status'] ?? '',
     );
   }
@@ -467,11 +458,12 @@ class AttendanceRecordTwo {
       inPhoto: json['inPhoto'] ?? '',
       outPhoto: json['outPhoto'] ?? '',
       entryLocation: LocationData.fromJson(json['entryLocation'] ?? {}),
-      exitLocation: json['exitLocation'] != null && 
-                   json['exitLocation']['lat'] != null &&
-                   json['exitLocation']['lng'] != null
-          ? LocationData.fromJson(json['exitLocation'])
-          : null,
+      exitLocation:
+          json['exitLocation'] != null &&
+                  json['exitLocation']['lat'] != null &&
+                  json['exitLocation']['lng'] != null
+              ? LocationData.fromJson(json['exitLocation'])
+              : null,
     );
   }
 }

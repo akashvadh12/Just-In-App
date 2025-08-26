@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:security_guard/core/api/api_constants.dart';
+import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/attandance/AttendanceScreen/capture_image.dart';
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
@@ -25,10 +27,7 @@ class GuardAttendanceController extends GetxController {
   var isProcessingAttendance = false.obs;
   final ProfileController profileController = Get.find<ProfileController>();
   final HomeController dashboardController = Get.put(HomeController());
-
-  // API endpoint
-  static const String attendanceApiUrl =
-      'https://justin.solarvision-cairo.com/api/AttendanceRecord/attendance/mark';
+  final ApiGetServices _apiService = Get.find<ApiGetServices>();
 
   @override
   void onInit() {
@@ -48,63 +47,64 @@ class GuardAttendanceController extends GetxController {
     super.dispose();
   }
 
- Future<void> initializeCamera() async {
-  late CameraController _cameraController;
-  late List<CameraDescription> _cameras;
-  bool _isCameraInitialized = false;
+  Future<void> initializeCamera() async {
+    late CameraController _cameraController;
+    late List<CameraDescription> _cameras;
+    bool _isCameraInitialized = false;
 
-  // Check and request permission
-  final status = await Permission.camera.request();
-  if (!status.isGranted) {
-    Get.snackbar(
-      'Permission Denied',
-      'Camera permission is required to capture photo.',
-      backgroundColor: Colors.red,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
-    );
-    return;
+    // Check and request permission
+    final status = await Permission.camera.request();
+    if (!status.isGranted) {
+      Get.snackbar(
+        'Permission Denied',
+        'Camera permission is required to capture photo.',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    try {
+      _cameras = await availableCameras();
+      final frontCamera = _cameras.firstWhere(
+        (camera) => camera.lensDirection == CameraLensDirection.front,
+      );
+
+      _cameraController = CameraController(
+        frontCamera,
+        ResolutionPreset.medium,
+      );
+      await _cameraController.initialize();
+      _isCameraInitialized = true;
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to initialize the camera',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      print(e);
+    }
   }
-
-  try {
-    _cameras = await availableCameras();
-    final frontCamera = _cameras.firstWhere(
-      (camera) => camera.lensDirection == CameraLensDirection.front,
-    );
-
-    _cameraController = CameraController(frontCamera, ResolutionPreset.medium);
-    await _cameraController.initialize();
-    _isCameraInitialized = true;
-  } catch (e) {
-    Get.snackbar(
-      'Error',
-      'Failed to initialize the camera',
-      backgroundColor: Colors.red,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
-    );
-    print(e);
-  }
-}
 
   Future<void> capturePhoto(BuildContext context) async {
     try {
-      
-      
-        final status = await Permission.camera.status;
-    if (!status.isGranted) {
-      final newStatus = await Permission.camera.request();
-      if (!newStatus.isGranted) {
-        Get.snackbar(
-          'Permission Denied',
-          'Camera permission is required to capture photo.',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-        );
-        return;
+      final status = await Permission.camera.status;
+      if (!status.isGranted) {
+        final newStatus = await Permission.camera.request();
+        if (!newStatus.isGranted) {
+          Get.snackbar(
+            'Permission Denied',
+            'Camera permission is required to capture photo.',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
+          );
+          return;
+        }
       }
-    }
 
       final cameras = await availableCameras();
       final frontCamera = cameras.firstWhere(
@@ -133,15 +133,14 @@ class GuardAttendanceController extends GetxController {
         capturedImage.value = image;
       }
     } catch (e) {
-       Get.snackbar(
-            'Error',
-            'Could not capture photo',
-            backgroundColor: Colors.red,
-            snackPosition: SnackPosition.BOTTOM,
-            colorText: Colors.white,
-          );
-      
-    
+      Get.snackbar(
+        'Error',
+        'Could not capture photo',
+        backgroundColor: Colors.red,
+        snackPosition: SnackPosition.BOTTOM,
+        colorText: Colors.white,
+      );
+
       print(e);
     }
   }
@@ -159,11 +158,7 @@ class GuardAttendanceController extends GetxController {
 
     try {
       // 1. Fetch office location from API
-      final officeResponse = await http.get(
-        Uri.parse(
-          'https://justin.solarvision-cairo.com/api/CompanyConfig/GetOfficeLoc?CompanyId=1',
-        ),
-      );
+      final officeResponse = await _apiService.getOfficeLocRaw();
       if (officeResponse.statusCode != 200) {
         Get.snackbar(
           "Office Location Error",
@@ -317,14 +312,14 @@ class GuardAttendanceController extends GetxController {
       currentPosition.value = null;
 
       Get.snackbar(
-  "Location Error",
-  "Unable to get your location. Please check settings.",
-  backgroundColor: Colors.red,
-  colorText: Colors.white,
-  snackPosition: SnackPosition.BOTTOM,
-  icon: const Icon(Icons.location_off, color: Colors.white),
-  duration: const Duration(seconds: 3),
-);
+        "Location Error",
+        "Unable to get your location. Please check settings.",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        icon: const Icon(Icons.location_off, color: Colors.white),
+        duration: const Duration(seconds: 3),
+      );
     } finally {
       isLoadingLocation.value = false;
     }
@@ -463,53 +458,16 @@ class GuardAttendanceController extends GetxController {
       }
 
       // Create multipart request
-      var request = http.MultipartRequest('POST', Uri.parse(attendanceApiUrl));
-
-      // Add headers
-      if (authToken != null && authToken.isNotEmpty) {
-        request.headers['Authorization'] = 'Bearer $authToken';
-        print('Authorization token added');
-      }
-      request.headers['Accept'] = 'application/json';
-
-      // Add form fields
-      request.fields['UserId'] = userId;
-      request.fields['Type'] = type;
-      request.fields['Latitude'] = currentPosition.value!.latitude.toString();
-      request.fields['Longitude'] = currentPosition.value!.longitude.toString();
-      request.fields['SelfieBase64'] = imageBase64;
-      if (type == 'in') {
-        request.fields['EntryTimestamp'] = DateTime.now().toIso8601String();
-      }
-      if (type == 'out') {
-        request.fields['ExitTimestamp'] = DateTime.now().toIso8601String();
-      }
-
-      // Add file upload
-      var multipartFile = await http.MultipartFile.fromPath(
-        'SelfieFile',
-        capturedImage.value!.path,
-        filename: 'selfie_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      final response = await _apiService.markAttendanceRaw(
+        userId: userId,
+        type: type,
+        latitude: currentPosition.value!.latitude.toString(),
+        longitude: currentPosition.value!.longitude.toString(),
+        selfieBase64: imageBase64,
+        selfieFile: capturedImage.value!,
+        entryTimestamp: type == 'in' ? DateTime.now().toIso8601String() : null,
+        exitTimestamp: type == 'out' ? DateTime.now().toIso8601String() : null,
       );
-      request.files.add(multipartFile);
-
-      print('=== Attendance Request ===');
-      print('User ID: $userId');
-      print('Type: $type');
-      print('Latitude: ${currentPosition.value!.latitude}');
-      print('Longitude: ${currentPosition.value!.longitude}');
-      print('Base64 length: ${imageBase64.length}');
-      print('File path: ${capturedImage.value!.path}');
-      print('Entry Timestamp: ${request.fields['EntryTimestamp']}');
-      if (type == 'out') {
-        print('Exit Timestamp: ${request.fields['ExitTimestamp']}');
-      }
-
-      // Send request
-      final streamedResponse = await request.send().timeout(
-        const Duration(seconds: 30),
-      );
-      final response = await http.Response.fromStream(streamedResponse);
 
       print('=== API Response ===');
       print('Status Code: ${response.statusCode}');
@@ -599,7 +557,6 @@ class GuardAttendanceController extends GetxController {
           .fetchDashboardData(); // Update dashboard data after clock in
       clockInTime = DateTime.now();
       lastAction.value = "Clocked-in at ${formatTime(clockInTime!)}";
-
 
       _showSuccess("Clock In Successful", "Welcome! Your shift has started");
 

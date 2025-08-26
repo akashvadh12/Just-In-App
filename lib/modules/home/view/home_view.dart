@@ -14,6 +14,9 @@ import 'package:security_guard/shared/widgets/bottomnavigation/navigation_contro
 class HomeView extends GetView<HomeController> {
   const HomeView({Key? key}) : super(key: key);
 
+
+
+
   @override
   Widget build(BuildContext context) {
     final BottomNavController bottomNavController =
@@ -22,6 +25,8 @@ class HomeView extends GetView<HomeController> {
     if (!Get.isRegistered<HomeController>()) {
       Get.lazyPut(() => HomeController());
     }
+
+  
 
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),

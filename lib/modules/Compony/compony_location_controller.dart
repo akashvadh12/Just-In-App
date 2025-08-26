@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/data/services/api_post_service.dart';
 import 'dart:io';
 import 'dart:convert';
@@ -9,6 +10,7 @@ import 'dart:convert';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 
 class CompanyLocation {
+  final String id;
   final String companyID;
   final String companyName;
   final String industry;
@@ -20,6 +22,7 @@ class CompanyLocation {
   final String radius;
 
   CompanyLocation({
+    required this.id,
     required this.companyID,
     required this.companyName,
     required this.industry,
@@ -33,6 +36,7 @@ class CompanyLocation {
 
   factory CompanyLocation.fromJson(Map<String, dynamic> json) {
     return CompanyLocation(
+      id: json['id']?.toString() ?? '',
       companyID: json['companyID']?.toString() ?? '',
       companyName: json['companyName']?.toString() ?? '',
       industry: json['industry']?.toString() ?? '',
@@ -47,6 +51,7 @@ class CompanyLocation {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'companyID': companyID,
       'companyName': companyName,
       'industry': industry,
@@ -61,6 +66,7 @@ class CompanyLocation {
 
   // Copy with method for easy updates
   CompanyLocation copyWith({
+    String? id,
     String? companyID,
     String? companyName,
     String? industry,
@@ -72,6 +78,7 @@ class CompanyLocation {
     String? radius,
   }) {
     return CompanyLocation(
+      id: id ?? this.id,
       companyID: companyID ?? this.companyID,
       companyName: companyName ?? this.companyName,
       industry: industry ?? this.industry,
@@ -103,10 +110,10 @@ class CompanyLocationController extends GetxController {
   RxString selectedIndustry = ''.obs;
   RxString selectedHeadquarters = ''.obs;
   RxBool showActiveOnly = false.obs;
+  final ApiGetServices _apiService = Get.find<ApiGetServices>();
 
   // API URLs
-  final String getAllCompaniesUrl =
-      'https://justin.solarvision-cairo.com/api/CompanyConfig/GetCompanyLoc';
+
   final String baseUrl = 'https://justin.solarvision-cairo.com/api/Loaction';
 
   @override
@@ -128,20 +135,13 @@ class CompanyLocationController extends GetxController {
     try {
       isLoading(true);
 
-      final url = Uri.parse(getAllCompaniesUrl);
-      final response = await http.get(url);
+      final locations = await _apiService.getCompanyLocations();
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        companyLocations.value =
-            data.map((json) => CompanyLocation.fromJson(json)).toList();
-        _applyFilters(); // Apply current filters to the new data
+      companyLocations
+        ..clear()
+        ..addAll(locations);
 
-      } else {
-        _showErrorMessage(
-          'Failed to fetch company locations: ${response.body}',
-        );
-      }
+      _applyFilters(); // keep your existing filtering logic
     } catch (e) {
       _showErrorMessage('Failed to fetch company locations: $e');
     } finally {
@@ -182,26 +182,38 @@ class CompanyLocationController extends GetxController {
     try {
       isSubmitting(true);
 
-      final url = Uri.parse('$baseUrl/add');
-      final request =
-          http.MultipartRequest('POST', url)
-            ..fields['Company_Name'] = companyName
-            ..fields['Industry'] = industry
-            ..fields['Headquarters'] = headquarters
-            ..fields['Location_Name'] = locationName
-            ..fields['Latitude'] = latitude
-            ..fields['Longitude'] = longitude
-            ..fields['Radius'] = radius
-            ..fields['UserId'] = userId;
+      // final url = Uri.parse('$baseUrl/add');
+      // final request =
+      //     http.MultipartRequest('POST', url)
+      //       ..fields['Company_Name'] = companyName
+      //       ..fields['Industry'] = industry
+      //       ..fields['Headquarters'] = headquarters
+      //       ..fields['Location_Name'] = locationName
+      //       ..fields['Latitude'] = latitude
+      //       ..fields['Longitude'] = longitude
+      //       ..fields['Radius'] = radius
+      //       ..fields['UserId'] = userId;
 
-      if (photo != null) {
-        request.files.add(
-          await http.MultipartFile.fromPath('Photos', photo.path),
-        );
-      }
+      // if (photo != null) {
+      //   request.files.add(
+      //     await http.MultipartFile.fromPath('Photos', photo.path),
+      //   );
+      // }
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+      // final streamedResponse = await request.send();
+      // final response = await http.Response.fromStream(streamedResponse);
+
+      final response = await _apiService.addCompanyLocation(
+        companyName: companyName,
+        industry: industry,
+        headquarters: headquarters,
+        locationName: locationName,
+        latitude: latitude,
+        longitude: longitude,
+        radius: radius,
+        userId: userId,
+        photo: photo,
+      );
 
       if (response.statusCode == 200) {
         final respJson = json.decode(response.body);
@@ -294,28 +306,19 @@ class CompanyLocationController extends GetxController {
         }
       } else {
         // If photo is provided, use multipart request to handle photo upload
-        final url = Uri.parse('$baseUrl/update');
-        final request =
-            http.MultipartRequest('PUT', url)
-              ..fields['Company_ID'] = companyID
-              ..fields['Company_Name'] = companyName
-              ..fields['Industry'] = industry
-              ..fields['Headquarters'] = headquarters
-              ..fields['Location_Name'] = locationName
-              ..fields['Latitude'] = finalLatitude
-              ..fields['Longitude'] = finalLongitude
-              ..fields['Radius'] = finalRadius
-              ..fields['UserId'] = userId
-              ..fields['Status'] = finalStatus.toString();
-
-        // Add photo to the request
-        request.files.add(
-          await http.MultipartFile.fromPath('Photos', photo.path),
-        );
-
-        final streamedResponse = await request.send();
-        final response = await http.Response.fromStream(streamedResponse);
-
+      final response = await _apiService.updateLocationRaw(
+  companyID: companyID,
+  companyName: companyName,
+  industry: industry,
+  headquarters: headquarters,
+  locationName: locationName,
+  finalLatitude: finalLatitude,
+  finalLongitude: finalLongitude,
+  finalRadius: finalRadius,
+  userId: userId,
+  finalStatus: finalStatus,
+  photo: photo,
+);
         if (response.statusCode == 200) {
           final respJson = json.decode(response.body);
           _showSuccessMessage(

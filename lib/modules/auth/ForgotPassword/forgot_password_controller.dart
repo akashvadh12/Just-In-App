@@ -3,12 +3,16 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'package:security_guard/data/services/api_get_service.dart';
+
 // Controller for the Forgot Password screen
 class ForgotPasswordController extends GetxController {
   // Observable variables
   var phoneOrEmployeeId = ''.obs;
   var isPasswordSent = false.obs;
   var isLoading = false.obs;
+  final ApiGetServices _apiService = Get.find<ApiGetServices>();
+
 
   // Method to send reset code via API
   Future<void> sendResetCode() async {
@@ -40,28 +44,22 @@ class ForgotPasswordController extends GetxController {
       isLoading.value = true;
       
       // Encode email for URL
-      String encodedEmail = Uri.encodeComponent(phoneOrEmployeeId.value);
+      // String encodedEmail = Uri.encodeComponent(phoneOrEmployeeId.value);
       
       // API endpoint
-      String apiUrl = 'https://justin.solarvision-cairo.com/api/Auth/forgot-password?email=$encodedEmail';
-      
-      // Make API call
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+       final response = await _apiService.forgotPasswordRaw(
+        phoneOrEmployeeId: phoneOrEmployeeId.value,
       );
 
       isLoading.value = false;
 
       if (response.statusCode == 200) {
         // Success response
-        String message = response.body;
+        // String message = response.body;
         
         Get.snackbar(
           'Success',
-          message.isNotEmpty ? message : 'Password has been sent to your registered employee ID or email address.',
+          'Password has been sent to your registered employee ID or email address.',
        snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.green,
           colorText: Colors.white,

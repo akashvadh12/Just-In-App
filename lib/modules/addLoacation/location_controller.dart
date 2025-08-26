@@ -2,10 +2,13 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:security_guard/core/api/api_constants.dart';
+import 'package:security_guard/data/services/api_get_service.dart';
 import 'dart:io';
 import 'dart:convert';
 
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
+
 class Location {
   final int id;
   final String locationId;
@@ -54,16 +57,16 @@ class Location {
 class LocationController extends GetxController {
   final ImagePicker _picker = ImagePicker();
   final String userId = Get.find<ProfileController>().userModel.value!.userId;
-  
+
   // Observable variables
   RxList<Location> locations = <Location>[].obs;
   RxBool isLoading = false.obs;
   RxBool isSubmitting = false.obs;
   Rx<File?> selectedImage = Rx<File?>(null);
-  
-  // Base URL
-  final String baseUrl = 'https://justin.solarvision-cairo.com/api/Loaction';
-  
+
+  final ApiGetServices _apiService = Get.find<ApiGetServices>();
+
+
   @override
   void onInit() {
     super.onInit();
@@ -74,10 +77,9 @@ class LocationController extends GetxController {
   Future<void> fetchLocations() async {
     try {
       isLoading(true);
-      
-      final url = Uri.parse('$baseUrl/all');
-      final response = await http.get(url);
-      
+
+      final response = await _apiService.fetchLocationsRaw();
+
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         locations.value = data.map((json) => Location.fromJson(json)).toList();
@@ -111,7 +113,10 @@ class LocationController extends GetxController {
     required String radius,
     File? photo,
   }) async {
-    if (locationName.isEmpty || latitude.isEmpty || longitude.isEmpty || radius.isEmpty) {
+    if (locationName.isEmpty ||
+        latitude.isEmpty ||
+        longitude.isEmpty ||
+        radius.isEmpty) {
       Get.snackbar(
         'Error',
         'Please fill in all required fields',
@@ -124,23 +129,15 @@ class LocationController extends GetxController {
 
     try {
       isSubmitting(true);
-      
-      final url = Uri.parse('$baseUrl/add');
-      final request = http.MultipartRequest('POST', url)
-        ..fields['Location_Name'] = locationName
-        ..fields['Latitude'] = latitude
-        ..fields['Longitude'] = longitude
-        ..fields['Radius'] = radius
-        ..fields['UserId'] = userId;
 
-      if (photo != null) {
-        request.files.add(
-          await http.MultipartFile.fromPath('Photos', photo.path),
-        );
-      }
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+      final response = await _apiService.addLocationRaw(
+        locationName: locationName,
+        latitude: latitude,
+        longitude: longitude,
+        radius: radius,
+        userId: userId,
+        photo: photo,
+      );
 
       if (response.statusCode == 200) {
         final respJson = json.decode(response.body);
@@ -200,24 +197,16 @@ class LocationController extends GetxController {
 
     try {
       isSubmitting(true);
-      
-      final url = Uri.parse('$baseUrl/update');
-      final request = http.MultipartRequest('PUT', url)
-        ..fields['Location_Id'] = locationId
-        ..fields['Location_Name'] = locationName
-        ..fields['Latitude'] = latitude ?? ''
-        ..fields['Longitude'] = longitude ?? ''
-        ..fields['Radius'] = radius ?? ''
-        ..fields['UserId'] = userId ?? '';
 
-      if (photo != null) {
-        request.files.add(
-          await http.MultipartFile.fromPath('Photos', photo.path),
-        );
-      }
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+      final response = await _apiService.updateLocationRawByAdmin(
+        locationId: locationId,
+        locationName: locationName,
+        latitude: latitude,
+        longitude: longitude,
+        radius: radius,
+        userId: userId,
+        photo: photo,
+      );
 
       if (response.statusCode == 200) {
         final respJson = json.decode(response.body);
@@ -269,9 +258,8 @@ class LocationController extends GetxController {
 
     try {
       isSubmitting(true);
-      
-      final url = Uri.parse('$baseUrl/delete/$locationId');
-      final response = await http.delete(url);
+
+      final response = await _apiService.deleteLocationRaw(locationId);
 
       if (response.statusCode == 200) {
         final respJson = json.decode(response.body);
@@ -342,7 +330,9 @@ class LocationController extends GetxController {
   // Get location by ID
   Location? getLocationById(String locationId) {
     try {
-      return locations.firstWhere((location) => location.locationId == locationId);
+      return locations.firstWhere(
+        (location) => location.locationId == locationId,
+      );
     } catch (e) {
       return null;
     }

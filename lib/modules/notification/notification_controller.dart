@@ -1,7 +1,10 @@
 // notifications_controller.dart
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+import 'package:security_guard/data/services/api_get_service.dart';
 
 class Issue {
   final String issueId;
@@ -50,6 +53,8 @@ class NotificationsController extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   String _selectedFilter = 'All';
+  final ApiGetServices _apiService = Get.find<ApiGetServices>();
+
 
   List<Issue> get issues => _filteredIssues;
   bool get isLoading => _isLoading;
@@ -85,10 +90,7 @@ class NotificationsController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await http.get(
-        Uri.parse('https://justin.solarvision-cairo.com/api/Notification/top-list'),
-        headers: {'Content-Type': 'application/json'},
-      );
+         final response = await _apiService.fetchNotificationsRaw();
 
       if (response.statusCode == 200) {
         final List<dynamic> issuesData = jsonDecode(response.body);
