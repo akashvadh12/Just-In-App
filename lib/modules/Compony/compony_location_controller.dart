@@ -291,17 +291,17 @@ class CompanyLocationController extends GetxController {
           status: finalStatus,
         );
 
-        if (response != null && response['success'] == true) {
+        if (response != null && response['status'] == true) {
           _showSuccessMessage(
             response['message'] ?? 'Company location updated successfully',
           );
           await fetchCompanyLocations(); // Refresh the list
           return true;
         } else {
-          _showSuccessMessage(
-            response?['message'] ?? 'Company location updated successfully',
-          );
-          // _showErrorMessage(response?['message'] ?? 'Failed to update company location');
+          // _showSuccessMessage(
+          //   response?['message'] ?? 'Company location updated successfully',
+          // );
+          _showErrorMessage('Failed to update company location');
           return false;
         }
       } else {

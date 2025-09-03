@@ -746,8 +746,10 @@ class _CompanyLocationEditScreenState extends State<CompanyLocationEditScreen> {
     );
 
     if (success) {
-
-    Get.back(canPop: true);
+    Future.delayed(const Duration(seconds: 1), () {
+      
+    Get.back(closeOverlays: true);
+    });
 
     }
   }
