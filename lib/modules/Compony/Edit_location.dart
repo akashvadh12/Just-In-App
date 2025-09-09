@@ -9,12 +9,12 @@ import 'package:security_guard/core/theme/app_text_styles.dart';
 import 'package:security_guard/modules/Compony/compony_location_controller.dart';
 
 class CompanyLocationEditScreen extends StatefulWidget {
-  final String companyID;
+  final String? companyID;
   final CompanyLocation? existingCompany;
-
+  
   const CompanyLocationEditScreen({
     Key? key,
-    required this.companyID,
+    this.companyID,
     this.existingCompany,
   }) : super(key: key);
 
@@ -52,7 +52,9 @@ class _CompanyLocationEditScreenState extends State<CompanyLocationEditScreen> {
   void _initializeControllers() {
     CompanyLocation? company =
         widget.existingCompany ??
-        controller.getCompanyLocationById(widget.companyID);
+        (widget.companyID != null
+            ? controller.getCompanyLocationById(widget.companyID!)
+            : null);
 
     _companyNameController = TextEditingController(
       text: company?.companyName ?? '',
@@ -185,7 +187,7 @@ class _CompanyLocationEditScreenState extends State<CompanyLocationEditScreen> {
         errorMessage = 'Location services are disabled';
       } else if (e is PermissionDeniedException) {
         errorMessage = 'Location permission denied';
-      } 
+      }
 
       Get.snackbar(
         'Error',
@@ -318,20 +320,23 @@ class _CompanyLocationEditScreenState extends State<CompanyLocationEditScreen> {
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: _isLoadingLocation ? null : _getCurrentLocation,
-            icon: _isLoadingLocation
-                ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppColors.whiteColor,
+            icon:
+                _isLoadingLocation
+                    ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.whiteColor,
+                        ),
                       ),
-                    ),
-                  )
-                : Icon(Icons.my_location, size: 18),
+                    )
+                    : Icon(Icons.my_location, size: 18),
             label: Text(
-              _isLoadingLocation ? 'Getting Location...' : 'Use Current Location',
+              _isLoadingLocation
+                  ? 'Getting Location...'
+                  : 'Use Current Location',
               style: AppTextStyles.body.copyWith(
                 color: AppColors.whiteColor,
                 fontWeight: FontWeight.w500,
@@ -360,7 +365,8 @@ class _CompanyLocationEditScreenState extends State<CompanyLocationEditScreen> {
         const SizedBox(height: 8),
 
         // Coordinates Info
-        if (_latitudeController.text.isNotEmpty && _longitudeController.text.isNotEmpty)
+        if (_latitudeController.text.isNotEmpty &&
+            _longitudeController.text.isNotEmpty)
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -369,11 +375,7 @@ class _CompanyLocationEditScreenState extends State<CompanyLocationEditScreen> {
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.info_outline,
-                  size: 16,
-                  color: AppColors.primary,
-                ),
+                Icon(Icons.info_outline, size: 16, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -653,35 +655,63 @@ class _CompanyLocationEditScreenState extends State<CompanyLocationEditScreen> {
         const SizedBox(width: 16),
         Expanded(
           child: Obx(
-            () => ElevatedButton(
-              onPressed: (controller.isSubmitting.value || _isLoadingLocation) ? null : _submitForm,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.whiteColor,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child:
-                  controller.isSubmitting.value
-                      ? SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.whiteColor,
-                          ),
-                        ),
-                      )
-                      : Text(
-                        'Update Company',
-                        style: AppTextStyles.subtitle.copyWith(
-                          color: AppColors.whiteColor,
-                        ),
-                      ),
-            ),
+            () =>ElevatedButton(
+  onPressed: (controller.isSubmitting.value || _isLoadingLocation)
+      ? null
+      : () async {
+          final companyName = _companyNameController.text.trim();
+          final industry = _industryController.text.trim();
+          final headquarters = _headquartersController.text.trim();
+          final locationName = _locationNameController.text.trim();
+          final latitude = _latitudeController.text.trim();
+          final longitude = _longitudeController.text.trim();
+          final radius = _radiusController.text.trim();
+
+          if (widget.companyID == null) {
+            // ADD COMPANY
+            final success = await controller.addCompanyLocation(
+              companyName: companyName,
+              industry: industry,
+              headquarters: headquarters,
+              locationName: locationName,
+              latitude: latitude,
+              longitude: longitude,
+              radius: radius,
+              
+            );
+
+            if (success) {
+              Get.back(); // close the screen after success
+            }
+          } else {
+            // UPDATE COMPANY
+            _submitForm(); // keep your existing update logic
+          }
+        },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: AppColors.primary,
+    foregroundColor: AppColors.whiteColor,
+    padding: const EdgeInsets.symmetric(vertical: 12),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8),
+    ),
+  ),
+  child: controller.isSubmitting.value
+      ? const SizedBox(
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.whiteColor),
+          ),
+        )
+      : Text(
+          widget.companyID == null ? 'Add Company' : 'Update Company',
+          style: AppTextStyles.subtitle.copyWith(
+            color: AppColors.whiteColor,
+          ),
+        ),
+)
           ),
         ),
       ],
@@ -726,7 +756,7 @@ class _CompanyLocationEditScreenState extends State<CompanyLocationEditScreen> {
     }
 
     final success = await controller.updateCompanyLocation(
-      companyID: widget.companyID,
+      companyID: widget.companyID ?? '',
       companyName: _companyNameController.text.trim(),
       industry: _industryController.text.trim(),
       headquarters: _headquartersController.text.trim(),
@@ -746,9 +776,7 @@ class _CompanyLocationEditScreenState extends State<CompanyLocationEditScreen> {
     );
 
     if (success) {
-
-    Get.back(canPop: true);
-
+      Get.back(canPop: true);
     }
   }
 }

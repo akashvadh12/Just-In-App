@@ -23,8 +23,8 @@ class CompanyLocationsListScreen extends StatelessWidget {
         foregroundColor: AppColors.whiteColor,
         actions: [
           IconButton(
-            onPressed: () => controller.refreshCompanyLocations(),
-            icon: const Icon(Icons.refresh),
+            onPressed: () => Get.to(CompanyLocationEditScreen()),
+            icon: const Icon(Icons.add, size: 30,),
           ),
         ],
       ),

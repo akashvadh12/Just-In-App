@@ -182,26 +182,6 @@ class CompanyLocationController extends GetxController {
     try {
       isSubmitting(true);
 
-      // final url = Uri.parse('$baseUrl/add');
-      // final request =
-      //     http.MultipartRequest('POST', url)
-      //       ..fields['Company_Name'] = companyName
-      //       ..fields['Industry'] = industry
-      //       ..fields['Headquarters'] = headquarters
-      //       ..fields['Location_Name'] = locationName
-      //       ..fields['Latitude'] = latitude
-      //       ..fields['Longitude'] = longitude
-      //       ..fields['Radius'] = radius
-      //       ..fields['UserId'] = userId;
-
-      // if (photo != null) {
-      //   request.files.add(
-      //     await http.MultipartFile.fromPath('Photos', photo.path),
-      //   );
-      // }
-
-      // final streamedResponse = await request.send();
-      // final response = await http.Response.fromStream(streamedResponse);
 
       final response = await _apiService.addCompanyLocation(
         companyName: companyName,
@@ -251,7 +231,8 @@ class CompanyLocationController extends GetxController {
     bool? status,
     String? userId,
   }) async {
-    if (companyID.isEmpty ||
+    if (
+      // companyID.isEmpty ||
         companyName.isEmpty ||
         industry.isEmpty ||
         headquarters.isEmpty ||
