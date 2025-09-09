@@ -1,7 +1,6 @@
 // notifications_controller.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:security_guard/data/services/api_get_service.dart';
@@ -114,7 +113,7 @@ class NotificationsController extends ChangeNotifier {
  
 
   void markAsRead(String issueId) {
-    final issue = _issues.firstWhere((issue) => issue.issueId == issueId);
+    // final issue = _issues.firstWhere((issue) => issue.issueId == issueId);
     // issue.isRead = true;
     notifyListeners();
   }

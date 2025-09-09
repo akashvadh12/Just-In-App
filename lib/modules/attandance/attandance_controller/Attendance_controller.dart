@@ -227,7 +227,7 @@ class GuardAttendanceController extends GetxController {
       print(
         'Office Radius: [33m${officeRadius.toStringAsFixed(2)} meters[0m',
       );
-      if (distance <= officeRadius!) {
+      if (distance <= officeRadius) {
         isLocationVerified.value = true;
         Get.snackbar(
           "Location Verified",
@@ -387,7 +387,7 @@ class GuardAttendanceController extends GetxController {
 
       // Get user credentials
       final userId = profileController.userModel.value?.userId;
-      final authToken = await getAuthToken();
+      // final authToken = await getAuthToken();
 
       if (userId == null || userId.isEmpty) {
         _showError(

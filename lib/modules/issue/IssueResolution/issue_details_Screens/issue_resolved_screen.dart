@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';

@@ -1,8 +1,6 @@
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:security_guard/core/api/api_constants.dart';
 import 'package:security_guard/data/services/api_get_service.dart';
 import 'dart:io';
 import 'dart:convert';

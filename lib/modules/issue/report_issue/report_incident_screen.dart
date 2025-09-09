@@ -2,15 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
-import 'package:security_guard/core/theme/app_text_styles.dart';
-import 'package:security_guard/modules/issue/issue_list/controller/issue_controller.dart';
-import 'package:security_guard/modules/issue/issue_list/issue_view/issue_screen.dart'
-    hide AppColors;
 import 'package:security_guard/modules/issue/report_issue/controller/incident_report_controller.dart';
 import 'package:photo_view/photo_view.dart';
 
@@ -47,77 +41,77 @@ class IncidentReportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primary.withOpacity(0.1),
-                    AppColors.primary.withOpacity(0.05),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.report_problem,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Security Incident Report',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Help us maintain safety by reporting incidents',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildHeader() {
+  //   return Container(
+  //     width: double.infinity,
+  //     decoration: const BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.only(
+  //         bottomLeft: Radius.circular(24),
+  //         bottomRight: Radius.circular(24),
+  //       ),
+  //     ),
+  //     child: Padding(
+  //       padding: const EdgeInsets.all(24),
+  //       child: Column(
+  //         children: [
+  //           Container(
+  //             padding: const EdgeInsets.all(16),
+  //             decoration: BoxDecoration(
+  //               gradient: LinearGradient(
+  //                 colors: [
+  //                   AppColors.primary.withOpacity(0.1),
+  //                   AppColors.primary.withOpacity(0.05),
+  //                 ],
+  //                 begin: Alignment.topLeft,
+  //                 end: Alignment.bottomRight,
+  //               ),
+  //               borderRadius: BorderRadius.circular(16),
+  //               border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+  //             ),
+  //             child: Row(
+  //               children: [
+  //                 Container(
+  //                   padding: const EdgeInsets.all(12),
+  //                   decoration: BoxDecoration(
+  //                     color: AppColors.primary,
+  //                     borderRadius: BorderRadius.circular(12),
+  //                   ),
+  //                   child: const Icon(
+  //                     Icons.report_problem,
+  //                     color: Colors.white,
+  //                     size: 24,
+  //                   ),
+  //                 ),
+  //                 const SizedBox(width: 16),
+  //                 const Expanded(
+  //                   child: Column(
+  //                     crossAxisAlignment: CrossAxisAlignment.start,
+  //                     children: [
+  //                       Text(
+  //                         'Security Incident Report',
+  //                         style: TextStyle(
+  //                           fontSize: 16,
+  //                           fontWeight: FontWeight.w600,
+  //                           color: Colors.black87,
+  //                         ),
+  //                       ),
+  //                       SizedBox(height: 4),
+  //                       Text(
+  //                         'Help us maintain safety by reporting incidents',
+  //                         style: TextStyle(fontSize: 12, color: Colors.grey),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildLoadingState() {
     return Center(
@@ -846,42 +840,42 @@ class IncidentReportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildViewReportsButton() {
-    return Container(
-      width: double.infinity,
-      height: 56,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-        color: Colors.white,
-      ),
-      child: ElevatedButton(
-        onPressed: () => Get.to(() => const IssuesScreen()),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.list_alt, color: AppColors.primary, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              'View Submitted Reports',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildViewReportsButton() {
+  //   return Container(
+  //     width: double.infinity,
+  //     height: 56,
+  //     decoration: BoxDecoration(
+  //       borderRadius: BorderRadius.circular(16),
+  //       border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+  //       color: Colors.white,
+  //     ),
+  //     child: ElevatedButton(
+  //       onPressed: () => Get.to(() => const IssuesScreen()),
+  //       style: ElevatedButton.styleFrom(
+  //         backgroundColor: Colors.transparent,
+  //         shadowColor: Colors.transparent,
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(16),
+  //         ),
+  //       ),
+  //       child: Row(
+  //         mainAxisAlignment: MainAxisAlignment.center,
+  //         children: [
+  //           Icon(Icons.list_alt, color: AppColors.primary, size: 20),
+  //           const SizedBox(width: 8),
+  //           Text(
+  //             'View Submitted Reports',
+  //             style: TextStyle(
+  //               fontSize: 16,
+  //               fontWeight: FontWeight.w600,
+  //               color: AppColors.primary,
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   void _showImagePickerOptions(
     BuildContext context,
@@ -1006,41 +1000,41 @@ class IncidentReportScreen extends StatelessWidget {
     );
   }
 
-  void _showHelpDialog() {
-    Get.dialog(
-      AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.help, color: Colors.blue),
-            ),
-            const SizedBox(width: 12),
-            const Text('Help & Tips'),
-          ],
-        ),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('📍 Location: Automatically detected'),
-            SizedBox(height: 8),
-            Text('📸 Photos: Optional but recommended'),
-            SizedBox(height: 8),
-            Text('📝 Description: Required field with details'),
-            SizedBox(height: 8),
-            Text('✅ All reports are reviewed by security team'),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Got it')),
-        ],
-      ),
-    );
-  }
+  // void _showHelpDialog() {
+  //   Get.dialog(
+  //     AlertDialog(
+  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+  //       title: Row(
+  //         children: [
+  //           Container(
+  //             padding: const EdgeInsets.all(8),
+  //             decoration: BoxDecoration(
+  //               color: Colors.blue.withOpacity(0.1),
+  //               borderRadius: BorderRadius.circular(8),
+  //             ),
+  //             child: const Icon(Icons.help, color: Colors.blue),
+  //           ),
+  //           const SizedBox(width: 12),
+  //           const Text('Help & Tips'),
+  //         ],
+  //       ),
+  //       content: const Column(
+  //         mainAxisSize: MainAxisSize.min,
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Text('📍 Location: Automatically detected'),
+  //           SizedBox(height: 8),
+  //           Text('📸 Photos: Optional but recommended'),
+  //           SizedBox(height: 8),
+  //           Text('📝 Description: Required field with details'),
+  //           SizedBox(height: 8),
+  //           Text('✅ All reports are reviewed by security team'),
+  //         ],
+  //       ),
+  //       actions: [
+  //         TextButton(onPressed: () => Get.back(), child: const Text('Got it')),
+  //       ],
+  //     ),
+  //   );
+  // }
 }

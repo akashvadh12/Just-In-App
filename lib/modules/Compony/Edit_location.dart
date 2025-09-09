@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
-import 'dart:io';
-
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
 import 'package:security_guard/modules/Compony/compony_location_controller.dart';
@@ -688,37 +685,37 @@ class _CompanyLocationEditScreenState extends State<CompanyLocationEditScreen> {
     );
   }
 
-  void _showImageSourceDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Select Image Source', style: AppTextStyles.subtitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(Icons.camera_alt, color: AppColors.primary),
-                title: Text('Camera', style: AppTextStyles.body),
-                onTap: () {
-                  Get.back();
-                  controller.pickImage(ImageSource.camera);
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.photo_library, color: AppColors.primary),
-                title: Text('Gallery', style: AppTextStyles.body),
-                onTap: () {
-                  Get.back();
-                  controller.pickImage(ImageSource.gallery);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  // void _showImageSourceDialog() {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: Text('Select Image Source', style: AppTextStyles.subtitle),
+  //         content: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             ListTile(
+  //               leading: Icon(Icons.camera_alt, color: AppColors.primary),
+  //               title: Text('Camera', style: AppTextStyles.body),
+  //               onTap: () {
+  //                 Get.back();
+  //                 controller.pickImage(ImageSource.camera);
+  //               },
+  //             ),
+  //             ListTile(
+  //               leading: Icon(Icons.photo_library, color: AppColors.primary),
+  //               title: Text('Gallery', style: AppTextStyles.body),
+  //               onTap: () {
+  //                 Get.back();
+  //                 controller.pickImage(ImageSource.gallery);
+  //               },
+  //             ),
+  //           ],
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   void _submitForm() async {
     if (!_formKey.currentState!.validate()) {

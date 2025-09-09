@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
 import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'dart:convert';
@@ -66,15 +65,15 @@ class AttendanceHistoryController extends GetxController {
   }
 
   // Show success message
-  void _showSuccess(String title, String message) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green,
-      colorText: Get.theme.colorScheme.onPrimary,
-    );
-  }
+  // void _showSuccess(String title, String message) {
+  //   Get.snackbar(
+  //     title,
+  //     message,
+  //     snackPosition: SnackPosition.BOTTOM,
+  //     backgroundColor: Colors.green,
+  //     colorText: Get.theme.colorScheme.onPrimary,
+  //   );
+  // }
 
   // Fetch attendance history
   Future<void> fetchAttendanceHistory() async {
@@ -82,7 +81,7 @@ class AttendanceHistoryController extends GetxController {
       isLoading.value = true;
 
       final userId = profileController.userModel.value?.userId;
-      final authToken = await getAuthToken();
+      // final authToken = await getAuthToken();
 
       if (userId == null || userId.isEmpty) {
         _showError(

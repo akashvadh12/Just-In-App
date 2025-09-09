@@ -1,10 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
-import 'package:security_guard/core/theme/app_text_styles.dart';
 import 'package:security_guard/modules/addLoacation/location_controller.dart';
 
 class EditLocationScreen extends StatefulWidget {
@@ -962,48 +960,48 @@ class _EditLocationScreenState extends State<EditLocationScreen> {
     );
   }
 
-  void _showDeleteDialog() {
-    Get.dialog(
-      AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(Icons.warning, color: Colors.red),
-            const SizedBox(width: 8),
-            Text('Delete Location'),
-          ],
-        ),
-        content: Text(
-          'Are you sure you want to delete "${widget.location.locationName}"? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Get.back();
-              _deleteLocation();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  }
+  // void _showDeleteDialog() {
+  //   Get.dialog(
+  //     AlertDialog(
+  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+  //       title: Row(
+  //         children: [
+  //           Icon(Icons.warning, color: Colors.red),
+  //           const SizedBox(width: 8),
+  //           Text('Delete Location'),
+  //         ],
+  //       ),
+  //       content: Text(
+  //         'Are you sure you want to delete "${widget.location.locationName}"? This action cannot be undone.',
+  //       ),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Get.back(),
+  //           child: Text('Cancel'),
+  //         ),
+  //         ElevatedButton(
+  //           onPressed: () {
+  //             Get.back();
+  //             _deleteLocation();
+  //           },
+  //           style: ElevatedButton.styleFrom(
+  //             backgroundColor: Colors.red,
+  //             foregroundColor: Colors.white,
+  //           ),
+  //           child: Text('Delete'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
-  Future<void> _deleteLocation() async {
-    // You'll need to implement this method in your LocationController
-    final success = await controller.deleteLocation(widget.location.locationId);
-    if (success) {
-      Get.back(); // Go back to previous screen
-    }
-  }
+  // Future<void> _deleteLocation() async {
+  //   // You'll need to implement this method in your LocationController
+  //   final success = await controller.deleteLocation(widget.location.locationId);
+  //   if (success) {
+  //     Get.back(); // Go back to previous screen
+  //   }
+  // }
 
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {

@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
-import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/notification/notification_controller.dart';
 import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
 
@@ -184,57 +183,57 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label, int count) {
-    final isSelected = _controller.selectedFilter == label;
+  // Widget _buildFilterChip(String label, int count) {
+  //   final isSelected = _controller.selectedFilter == label;
 
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => _controller.setFilter(label),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.grey[700],
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-              ),
-              if (count > 0) ...[
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        isSelected ? Colors.white.withOpacity(0.3) : Colors.red,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    count.toString(),
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  //   return Expanded(
+  //     child: GestureDetector(
+  //       onTap: () => _controller.setFilter(label),
+  //       child: Container(
+  //         padding: const EdgeInsets.symmetric(vertical: 12),
+  //         decoration: BoxDecoration(
+  //           color: isSelected ? AppColors.primary : Colors.transparent,
+  //           borderRadius: BorderRadius.circular(20),
+  //         ),
+  //         child: Row(
+  //           mainAxisAlignment: MainAxisAlignment.center,
+  //           children: [
+  //             Text(
+  //               label,
+  //               style: TextStyle(
+  //                 color: isSelected ? Colors.white : Colors.grey[700],
+  //                 fontWeight: FontWeight.w600,
+  //                 fontSize: 14,
+  //               ),
+  //             ),
+  //             if (count > 0) ...[
+  //               const SizedBox(width: 6),
+  //               Container(
+  //                 padding: const EdgeInsets.symmetric(
+  //                   horizontal: 6,
+  //                   vertical: 2,
+  //                 ),
+  //                 decoration: BoxDecoration(
+  //                   color:
+  //                       isSelected ? Colors.white.withOpacity(0.3) : Colors.red,
+  //                   borderRadius: BorderRadius.circular(10),
+  //                 ),
+  //                 child: Text(
+  //                   count.toString(),
+  //                   style: TextStyle(
+  //                     color: isSelected ? Colors.white : Colors.white,
+  //                     fontSize: 10,
+  //                     fontWeight: FontWeight.bold,
+  //                   ),
+  //                 ),
+  //               ),
+  //             ],
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildNotificationItem(Issue issue) {
     final icon = _controller.getIssueIcon(issue.status);
