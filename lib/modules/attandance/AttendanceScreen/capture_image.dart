@@ -12,37 +12,66 @@ class CameraScreen extends StatefulWidget {
 }
 
 class _CameraScreenState extends State<CameraScreen> {
-  late CameraController _controller;
+  CameraController? _controller;
   bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = CameraController(widget.camera, ResolutionPreset.high);
-    _controller.initialize().then((_) {
-      if (mounted) setState(() => _isInitialized = true);
-    });
+    _initializeCamera();
+  }
+
+  Future<void> _initializeCamera() async {
+    final controller = CameraController(widget.camera, ResolutionPreset.high);
+
+    try {
+      await controller.initialize();
+      if (mounted) {
+        setState(() {
+          _controller = controller;
+          _isInitialized = true;
+        });
+      }
+    } catch (e) {
+      debugPrint("Camera init error: $e");
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
+  @override
+  void reassemble() {
+    super.reassemble();
+    // Hot reload/restart safety
+    if (_controller != null) {
+      _controller?.dispose();
+      _controller = null;
+      _isInitialized = false;
+      _initializeCamera();
+    }
+  }
+
   Future<void> _takePhoto() async {
-    final XFile file = await _controller.takePicture();
-    Navigator.pop(context, File(file.path));
+    if (_controller == null || !_controller!.value.isInitialized) return;
+
+    final XFile file = await _controller!.takePicture();
+    if (mounted) {
+      Navigator.pop(context, File(file.path));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: _isInitialized
+      body: _isInitialized && _controller != null
           ? Stack(
               children: [
-                CameraPreview(_controller),
+                CameraPreview(_controller!),
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: Padding(
