@@ -2,11 +2,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
 import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/issue_model/issue_modl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class IssuesController extends GetxController
     with SingleGetTickerProviderMixin {
@@ -189,27 +187,27 @@ class IssuesController extends GetxController
 
   // Helper method to get headers (implement as needed)
 
-  // Auth token helper
-  Future<String?> _getAuthToken() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-      print("Retrieved Auth Token: 😁😁👍 ${token ?? 'No token found'}");
-      return token;
-    } catch (e) {
-      print("Error retrieving auth token: $e");
-      return null;
-    }
-  }
+  // // Auth token helper
+  // Future<String?> _getAuthToken() async {
+  //   try {
+  //     final prefs = await SharedPreferences.getInstance();
+  //     final token = prefs.getString('auth_token');
+  //     print("Retrieved Auth Token: 😁😁👍 ${token ?? 'No token found'}");
+  //     return token;
+  //   } catch (e) {
+  //     print("Error retrieving auth token: $e");
+  //     return null;
+  //   }
+  // }
 
   // Headers helper
-  Future<Map<String, String>> _getHeaders() async {
-    final token = await _getAuthToken();
-    return {
-      'Content-Type': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
-    };
-  }
+  // Future<Map<String, String>> _getHeaders() async {
+  //   final token = await _getAuthToken();
+  //   return {
+  //     'Content-Type': 'application/json',
+  //     if (token != null) 'Authorization': 'Bearer $token',
+  //   };
+  // }
 
   // Upsert incident report
   Future<void> upsertIncidentReport(Map<String, dynamic> data) async {

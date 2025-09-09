@@ -12,7 +12,7 @@ class SharedPrefHelper {
   static Future<String?> getStoredUserId() async {
     final prefs = await SharedPreferences.getInstance();
     String? storedUserId = prefs.getString('user_id');
-    String? storedissueId = prefs.getString('issue_id');
+    // String? storedissueId = prefs.getString('issue_id');
 
     // Fallback to user_data key
     if (storedUserId == null || storedUserId.isEmpty) {
@@ -67,7 +67,7 @@ class IssueCard extends StatelessWidget {
 
           if (issue.status == IssueStatus.resolved) {
             print('Issue is resolved, navigating to issue details screen');
-            final updatedIssue = await Navigator.push<Issue>(
+           await Navigator.push<Issue>(
               context,
               MaterialPageRoute(
                 builder: (context) => ResolvedIssueScreen(issue: issue),
@@ -200,7 +200,7 @@ class IssueCard extends StatelessWidget {
                               issue.resolvedAt != null &&
                                       issue.resolvedAt!.isNotEmpty
                                   ? issue.resolvedAt!
-                                  : issue.time ?? 'N/A',
+                                  : issue.time,
                               style: AppTextStyles.hint,
                               overflow: TextOverflow.ellipsis,
                             ),

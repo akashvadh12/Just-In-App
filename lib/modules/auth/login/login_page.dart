@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:security_guard/Data/services/notification_services.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
-import 'package:security_guard/modules/home/view/home_view.dart';
-import 'package:security_guard/shared/widgets/bottomnavigation/bottomnavigation.dart';
 import 'package:security_guard/shared/widgets/custom_button.dart';
 import '../../auth/controllers/auth_controller.dart';
 
@@ -13,7 +10,7 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authController = Get.find<AuthController>();
-    final NotificationServices notify = NotificationServices();
+    // final NotificationServices notify = NotificationServices();
 
     return Scaffold(
       backgroundColor: AppColors.primary,

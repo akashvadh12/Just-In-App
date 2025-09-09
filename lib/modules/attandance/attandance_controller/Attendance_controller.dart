@@ -2,9 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:security_guard/core/api/api_constants.dart';
 import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/attandance/AttendanceScreen/capture_image.dart';
@@ -37,56 +35,6 @@ class GuardAttendanceController extends GetxController {
     print(
       'Clocked In: ${isClockedIn.value} - User In: ${profileController.userModel.value?.clockStatus}',
     );
-
-    initializeCamera();
-  }
-
-  @override
-  void dispose() {
-    // _cameraController.dispose();
-    super.dispose();
-  }
-
-  Future<void> initializeCamera() async {
-    late CameraController _cameraController;
-    late List<CameraDescription> _cameras;
-    bool _isCameraInitialized = false;
-
-    // Check and request permission
-    final status = await Permission.camera.request();
-    if (!status.isGranted) {
-      Get.snackbar(
-        'Permission Denied',
-        'Camera permission is required to capture photo.',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
-
-    try {
-      _cameras = await availableCameras();
-      final frontCamera = _cameras.firstWhere(
-        (camera) => camera.lensDirection == CameraLensDirection.front,
-      );
-
-      _cameraController = CameraController(
-        frontCamera,
-        ResolutionPreset.medium,
-      );
-      await _cameraController.initialize();
-      _isCameraInitialized = true;
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to initialize the camera',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      print(e);
-    }
   }
 
   Future<void> capturePhoto(BuildContext context) async {
@@ -279,7 +227,7 @@ class GuardAttendanceController extends GetxController {
       print(
         'Office Radius: [33m${officeRadius.toStringAsFixed(2)} meters[0m',
       );
-      if (distance <= officeRadius!) {
+      if (distance <= officeRadius) {
         isLocationVerified.value = true;
         Get.snackbar(
           "Location Verified",
@@ -439,7 +387,7 @@ class GuardAttendanceController extends GetxController {
 
       // Get user credentials
       final userId = profileController.userModel.value?.userId;
-      final authToken = await getAuthToken();
+      // final authToken = await getAuthToken();
 
       if (userId == null || userId.isEmpty) {
         _showError(

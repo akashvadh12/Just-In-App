@@ -10,14 +10,10 @@ import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
-import 'package:mime/mime.dart';
-import 'package:http_parser/http_parser.dart';
-import 'package:path/path.dart' as path;
 import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/issue/issue_list/controller/issue_controller.dart';
-import 'package:security_guard/modules/issue/issue_list/issue_view/issue_screen.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:security_guard/shared/widgets/Custom_Snackbar/Custom_Snackbar.dart';
@@ -129,7 +125,7 @@ class IncidentReportController extends GetxController {
           imageBytesList.add(compressedBytes);
         }
       }
-    } on PlatformException catch (e) {
+    } on PlatformException {
         Get.snackbar(
           'Permission Denied',
           'Please allow camera access to select images.',

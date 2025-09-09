@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart'; // For contentType
 import 'package:path/path.dart';
 import 'package:security_guard/core/api/api_client.dart';
-import 'package:security_guard/core/api/api_constants.dart'; // For basename
 
 class ApiService {
    final ApiClient _client = ApiClient();

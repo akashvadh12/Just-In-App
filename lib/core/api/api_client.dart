@@ -254,7 +254,7 @@ Future<http.Response> companyPut(
 
     log('$_logTag Request body (after enrich): ${jsonEncode(updatedBody)}');
 
-    final url = Uri.parse('${Dev_BASE_URL}CompanyConfig/UpdateCompany');
+    final url = Uri.parse('${BASE_URL}CompanyConfig/UpdateCompany');
     final mergedHeaders = _buildHeaders(headers);
 
     final response = await http

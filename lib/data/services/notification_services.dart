@@ -4,8 +4,6 @@ import 'dart:ui';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
-import 'package:security_guard/modules/issue/IssueResolution/issue_details_Screens/issuDetails.dart';
-import 'package:security_guard/modules/notification/notification_screen.dart';
 import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
 
 class NotificationServices {

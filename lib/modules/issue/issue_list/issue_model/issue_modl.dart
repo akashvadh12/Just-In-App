@@ -205,17 +205,17 @@ class Issue {
     return null;
   }
 
-  static DateTime? _parseDateTime(dynamic dateTime) {
-    if (dateTime == null) return null;
-    if (dateTime is String) {
-      try {
-        return DateTime.parse(dateTime);
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  }
+  // static DateTime? _parseDateTime(dynamic dateTime) {
+  //   if (dateTime == null) return null;
+  //   if (dateTime is String) {
+  //     try {
+  //       return DateTime.parse(dateTime);
+  //     } catch (e) {
+  //       return null;
+  //     }
+  //   }
+  //   return null;
+  // }
 }
 
 enum IssueStatus {

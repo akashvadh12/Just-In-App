@@ -4,8 +4,6 @@ import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
 import 'package:security_guard/modules/Compony/Edit_location.dart';
 import 'package:security_guard/modules/Compony/compony_location_controller.dart';
-import 'package:security_guard/modules/addLoacation/add_location_screen.dart';
-import 'package:security_guard/modules/addLoacation/edit_location_screen.dart';
 
 class CompanyLocationsListScreen extends StatelessWidget {
   const CompanyLocationsListScreen({Key? key}) : super(key: key);
