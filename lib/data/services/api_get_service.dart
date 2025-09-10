@@ -608,37 +608,30 @@ Future<List<CompanyLocation>> getCompanyLocations() async {
 }
 
 Future<http.Response> addCompanyLocation({
-  required String companyName,
-  required String industry,
-  required String headquarters,
+  // required String companyName,
+  // required String industry,
+  // required String headquarters,
   required String locationName,
   required String latitude,
   required String longitude,
   required String radius,
   required String userId,
-  File? photo,
+  String? issueRadius,
 }) async {
-  final fields = {
-    'Company_Name': companyName,
-    'Industry': industry,
-    'Headquarters': headquarters,
-    'Location_Name': locationName,
-    'Latitude': latitude,
-    'Longitude': longitude,
-    'Radius': radius,
-    'UserId': userId,
+  const String endpoint = 'CompanyConfig/InsertMultipleCompanyLocation';
+  
+  final Map<String, dynamic> body = {
+    // 'companyName': companyName,
+    // 'industry': industry,
+    // 'headquarters': headquarters,
+    'latitude': latitude,
+    'longitude': longitude,
+    'locationName': locationName,
+    'radius': radius,
+    'issue_radius': issueRadius ?? radius, // Use radius as default if not provided
   };
 
-  final files = <http.MultipartFile>[];
-  if (photo != null) {
-    files.add(await http.MultipartFile.fromPath('Photos', photo.path));
-  }
-
-  return _client.postMultipart(
-    '/CompanyConfig/add', // ✅ replace with your correct endpoint
-    fields,
-    files,
-  );
+  return _client.post(endpoint, body);
 }
 
 

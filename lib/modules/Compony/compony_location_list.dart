@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/core/theme/app_text_styles.dart';
-import 'package:security_guard/modules/Compony/Edit_location.dart';
+import 'package:security_guard/modules/Compony/addAndEdit_company_location.dart';
 import 'package:security_guard/modules/Compony/compony_location_controller.dart';
 
 class CompanyLocationsListScreen extends StatelessWidget {
@@ -111,7 +111,7 @@ class CompanyLocationsListScreen extends StatelessWidget {
 
   Widget _buildCompanyLocationCard(CompanyLocation companyLocation) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Card(
         color: AppColors.whiteColor,
         elevation: 2,
@@ -129,32 +129,32 @@ class CompanyLocationsListScreen extends StatelessWidget {
             child: Icon(Icons.business, color: AppColors.whiteColor),
           ),
           title: Text(
-            companyLocation.companyName,
+            companyLocation.locationName,
             style: AppTextStyles.subtitle,
           ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Industry: ${companyLocation.industry}',
-                style: AppTextStyles.hint,
-              ),
-              Text(
-                'Headquarters: ${companyLocation.headquarters}',
-                style: AppTextStyles.hint,
-              ),
-              Text(
-                'Location: ${companyLocation.locationName}',
-                style: AppTextStyles.hint,
-              ),
               // Text(
-              //   'Coordinates: ${companyLocation.latitude}, ${companyLocation.longitude}',
+              //   'Industry: ${companyLocation.industry}',
               //   style: AppTextStyles.hint,
               // ),
               // Text(
-              //   'Radius: ${companyLocation.radius}m',
+              //   'Headquarters: ${companyLocation.headquarters}',
               //   style: AppTextStyles.hint,
               // ),
+              // Text(
+              //   'Location: ${companyLocation.locationName}',
+              //   style: AppTextStyles.hint,
+              // ),
+              Text(
+                '${companyLocation.latitude}, ${companyLocation.longitude}',
+                style: AppTextStyles.hint,
+              ),
+              Text(
+                'Radius: ${companyLocation.radius}m',
+                style: AppTextStyles.hint,
+              ),
               // Text(
               //   'Status: ${companyLocation.status ? 'Active' : 'Inactive'}',
               //   style: AppTextStyles.hint.copyWith(

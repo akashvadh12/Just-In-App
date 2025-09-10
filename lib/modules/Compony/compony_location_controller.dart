@@ -20,6 +20,11 @@ class CompanyLocation {
   final String locationName;
   final bool status;
   final String radius;
+  final String? issueRadius;
+  final bool? safetyCheckInEnabled;
+  final bool? liveTrackingEnabled;
+  final int? safetyCheckInIntervalSeconds;
+  final int? liveTrackingIntervalSeconds;
 
   CompanyLocation({
     required this.id,
@@ -32,6 +37,11 @@ class CompanyLocation {
     required this.locationName,
     required this.status,
     required this.radius,
+    this.issueRadius,
+    this.safetyCheckInEnabled,
+    this.liveTrackingEnabled,
+    this.safetyCheckInIntervalSeconds,
+    this.liveTrackingIntervalSeconds,
   });
 
   factory CompanyLocation.fromJson(Map<String, dynamic> json) {
@@ -46,6 +56,11 @@ class CompanyLocation {
       locationName: json['locationName']?.toString() ?? '',
       status: json['status'] ?? false,
       radius: json['radius']?.toString() ?? '0',
+      issueRadius: json['issueRadius']?.toString(),
+      safetyCheckInEnabled: json['safetyCheckInEnabled'],
+      liveTrackingEnabled: json['liveTrackingEnabled'],
+      safetyCheckInIntervalSeconds: json['safetyCheckInIntervalSeconds'],
+      liveTrackingIntervalSeconds: json['liveTrackingIntervalSeconds'],
     );
   }
 
@@ -61,6 +76,11 @@ class CompanyLocation {
       'locationName': locationName,
       'status': status,
       'radius': radius,
+      'issueRadius': issueRadius,
+      'safetyCheckInEnabled': safetyCheckInEnabled,
+      'liveTrackingEnabled': liveTrackingEnabled,
+      'safetyCheckInIntervalSeconds': safetyCheckInIntervalSeconds,
+      'liveTrackingIntervalSeconds': liveTrackingIntervalSeconds,
     };
   }
 
@@ -76,6 +96,11 @@ class CompanyLocation {
     String? locationName,
     bool? status,
     String? radius,
+    String? issueRadius,
+    bool? safetyCheckInEnabled,
+    bool? liveTrackingEnabled,
+    int? safetyCheckInIntervalSeconds,
+    int? liveTrackingIntervalSeconds,
   }) {
     return CompanyLocation(
       id: id ?? this.id,
@@ -88,6 +113,12 @@ class CompanyLocation {
       locationName: locationName ?? this.locationName,
       status: status ?? this.status,
       radius: radius ?? this.radius,
+      issueRadius: issueRadius ?? this.issueRadius,
+      safetyCheckInEnabled: safetyCheckInEnabled ?? this.safetyCheckInEnabled,
+      liveTrackingEnabled: liveTrackingEnabled ?? this.liveTrackingEnabled,
+      safetyCheckInIntervalSeconds:
+          safetyCheckInIntervalSeconds ?? this.safetyCheckInIntervalSeconds,
+      liveTrackingIntervalSeconds: liveTrackingIntervalSeconds ?? this.liveTrackingIntervalSeconds,
     );
   }
 }
@@ -157,192 +188,169 @@ class CompanyLocationController extends GetxController {
   // ========================= CREATE OPERATIONS =========================
 
   /// Add new company location
-  Future<bool> addCompanyLocation({
-    required String companyName,
-    required String industry,
-    required String headquarters,
-    required String locationName,
-    required String latitude,
-    required String longitude,
-    required String radius,
-    File? photo,
-  }) async {
-    if (!_validateRequiredFields(
-      companyName,
-      industry,
-      headquarters,
-      locationName,
-      latitude,
-      longitude,
-      radius,
-    )) {
-      return false;
-    }
 
-    try {
-      isSubmitting(true);
+/// Add new company location
+Future<bool> addCompanyLocation({
+  // required String companyName,
+  // required String industry,
+  // required String headquarters,
+  required String locationName,
+  required String latitude,
+  required String longitude,
+  required String radius,
+  String? issueRadius,
+}) async {
+  if (!_validateRequiredFields(
+ locationName,
+    latitude,
+    longitude,
+    radius,
+  )) {
+    return false;
+  }
 
+  try {
+    isSubmitting(true);
 
-      final response = await _apiService.addCompanyLocation(
-        companyName: companyName,
-        industry: industry,
-        headquarters: headquarters,
-        locationName: locationName,
-        latitude: latitude,
-        longitude: longitude,
-        radius: radius,
-        userId: userId,
-        photo: photo,
-      );
+    final String userId = Get.find<ProfileController>().userModel.value!.userId;
 
-      if (response.statusCode == 200) {
-        final respJson = json.decode(response.body);
+    final response = await _apiService.addCompanyLocation(
+      // companyName: companyName,
+      // industry: industry,
+      // headquarters: headquarters,
+      locationName: locationName,
+      latitude: latitude,
+      longitude: longitude,
+      radius: radius,
+      userId: userId,
+      issueRadius: issueRadius,
+    );
+
+    if (response.statusCode == 200) {
+      final respJson = json.decode(response.body);
+      if (respJson['status'] == true) {
         _showSuccessMessage(
           respJson['message'] ?? 'Company location added successfully',
         );
         await fetchCompanyLocations(); // Refresh the list
-        clearImage(); // Clear selected image after successful submission
         return true;
       } else {
-        _showErrorMessage('Failed to add company location: ${response.body}');
+        _showErrorMessage(respJson['message'] ?? 'Failed to add company location');
         return false;
       }
-    } catch (e) {
-      _showErrorMessage('Failed to add company location: $e');
+    } else {
+      _showErrorMessage('Failed to add company location: ${response.body}');
       return false;
-    } finally {
-      isSubmitting(false);
     }
+  } catch (e) {
+    _showErrorMessage('Failed to add company location: $e');
+    return false;
+  } finally {
+    isSubmitting(false);
   }
+}
 
   // ========================= UPDATE OPERATIONS =========================
 
-  /// Update company location
-  Future<bool> updateCompanyLocation({
-    required String companyID,
-    required String companyName,
-    required String industry,
-    required String headquarters,
-    required String locationName,
-    String? latitude,
-    String? longitude,
-    String? radius,
-    File? photo,
-    bool? status,
-    String? userId,
-  }) async {
-    if (
-      // companyID.isEmpty ||
-        companyName.isEmpty ||
-        industry.isEmpty ||
-        headquarters.isEmpty ||
-        locationName.isEmpty) {
-      _showErrorMessage('All required fields must be filled');
-      return false;
-    }
-
-    try {
-      isSubmitting(true);
-
-      // Get existing company data to fill missing fields
-      CompanyLocation? existingCompany = getCompanyLocationById(companyID);
-
-      // Use provided values or fallback to existing values or defaults
-      final String finalLatitude =
-          latitude ?? existingCompany?.latitude ?? '0.0';
-      final String finalLongitude =
-          longitude ?? existingCompany?.longitude ?? '0.0';
-      final String finalRadius = radius ?? existingCompany?.radius ?? '0';
-      final bool finalStatus = status ?? existingCompany?.status ?? true;
-      final String userId =
-          Get.find<ProfileController>().userModel.value!.userId;
-
-      // If no photo is provided, use the API service method for basic update
-      if (photo == null) {
-        final response = await _apiPostService.updateCompanyAPI(
-          companyID: companyID,
-          companyName: companyName,
-          industry: industry,
-          headquarters: headquarters,
-          latitude: finalLatitude,
-          longitude: finalLongitude,
-          locationName: locationName,
-          radius: finalRadius,
-
-          status: finalStatus,
-        );
-
-        if (response != null && response['status'] == true) {
-          _showSuccessMessage(
-            response['message'] ?? 'Company location updated successfully',
-          );
-          await fetchCompanyLocations(); // Refresh the list
-          return true;
-        } else {
-          // _showSuccessMessage(
-          //   response?['message'] ?? 'Company location updated successfully',
-          // );
-          _showErrorMessage('Failed to update company location');
-          return false;
-        }
-      } else {
-        // If photo is provided, use multipart request to handle photo upload
-      final response = await _apiService.updateLocationRaw(
-  companyID: companyID,
-  companyName: companyName,
-  industry: industry,
-  headquarters: headquarters,
-  locationName: locationName,
-  finalLatitude: finalLatitude,
-  finalLongitude: finalLongitude,
-  finalRadius: finalRadius,
-  userId: userId,
-  finalStatus: finalStatus,
-  photo: photo,
-);
-        if (response.statusCode == 200) {
-          final respJson = json.decode(response.body);
-          _showSuccessMessage(
-            respJson['message'] ?? 'Company location updated successfully',
-          );
-          await fetchCompanyLocations(); // Refresh the list
-          clearImage(); // Clear selected image after successful submission
-          return true;
-        } else {
-          _showErrorMessage(
-            'Failed to update company location: ${response.body}',
-          );
-          return false;
-        }
-      }
-    } catch (e) {
-      _showErrorMessage('Failed to update company location: $e');
-      return false;
-    } finally {
-      isSubmitting(false);
-    }
+/// Update company location
+Future<bool> updateCompanyLocation({
+  String? companyID,
+  String? companyName,
+  String? industry,
+  String? headquarters,
+  String? locationName,
+  String? latitude,
+  String? longitude,
+  String? radius,
+  String? issueRadius,
+  bool? status,
+  bool? safetyCheckInEnabled,
+  bool? liveTrackingEnabled,
+  int? safetyCheckInIntervalSeconds,
+  int? liveTrackingIntervalSeconds,
+}) async {
+  if (companyName == null ||
+      industry == null ||
+      headquarters == null ||
+      locationName == null) {
+    _showErrorMessage('All required fields must be filled');
+    return false;
   }
+
+  try {
+    isSubmitting(true);
+
+    // Get existing company data to fill missing fields
+    CompanyLocation? existingCompany = getCompanyLocationById(companyID!);
+
+    // Use provided values or fallback to existing values or defaults
+    final String finalLatitude = latitude ?? existingCompany?.latitude ?? '0.0';
+    final String finalLongitude = longitude ?? existingCompany?.longitude ?? '0.0';
+    final String finalRadius = radius ?? existingCompany?.radius ?? '0';
+    final bool finalStatus = status ?? existingCompany?.status ?? true;
+
+    final response = await _apiPostService.updateCompanyAPI(
+      id: existingCompany?.id ?? '',
+      companyID: companyID,
+      companyName: companyName,
+      industry: industry,
+      headquarters: headquarters,
+      locationName: locationName,
+      latitude: finalLatitude,
+      longitude: finalLongitude,
+      radius: finalRadius,
+      issueRadius: issueRadius ?? finalRadius,
+      status: finalStatus,
+      // safetyCheckInEnabled: safetyCheckInEnabled,
+      // liveTrackingEnabled: liveTrackingEnabled,
+      // safetyCheckInIntervalSeconds: safetyCheckInIntervalSeconds,
+      // liveTrackingIntervalSeconds: liveTrackingIntervalSeconds,
+    );
+
+    if (response.statusCode == 200) {
+      final respJson = json.decode(response.body);
+      if (respJson['status'] == true) {
+        _showSuccessMessage(
+          respJson['message'] ?? 'Company location updated successfully',
+        );
+        await fetchCompanyLocations(); // Refresh the list
+        return true;
+      } else {
+        _showErrorMessage(respJson['message'] ?? 'Failed to update company location');
+        return false;
+      }
+    } else {
+      _showErrorMessage('Failed to update company location: ${response.body}');
+      return false;
+    }
+  } catch (e) {
+    _showErrorMessage('Failed to update company location: $e');
+    return false;
+  } finally {
+    isSubmitting(false);
+  }
+}
 
   /// Toggle company status (active/inactive)
-  Future<bool> toggleCompanyStatus(String companyID) async {
-    CompanyLocation? company = getCompanyLocationById(companyID);
-    if (company == null) {
-      _showErrorMessage('Company not found');
-      return false;
-    }
+  // Future<bool> toggleCompanyStatus(String companyID) async {
+  //   CompanyLocation? company = getCompanyLocationById(companyID);
+  //   if (company == null) {
+  //     _showErrorMessage('Company not found');
+  //     return false;
+  //   }
 
-    return await updateCompanyLocation(
-      companyID: companyID,
-      companyName: company.companyName,
-      industry: company.industry,
-      headquarters: company.headquarters,
-      locationName: company.locationName,
-      latitude: company.latitude,
-      longitude: company.longitude,
-      radius: company.radius,
-      status: !company.status,
-    );
-  }
+  //   return await updateCompanyLocation(
+  //     companyID: companyID,
+  //     companyName: company.companyName,
+  //     industry: company.industry,
+  //     headquarters: company.headquarters,
+  //     locationName: company.locationName,
+  //     latitude: company.latitude,
+  //     longitude: company.longitude,
+  //     radius: company.radius,
+  //     status: !company.status,
+  //   );
+  // }
 
   // ========================= DELETE OPERATIONS =========================
 
@@ -615,17 +623,13 @@ class CompanyLocationController extends GetxController {
 
   /// Validate required fields
   bool _validateRequiredFields(
-    String companyName,
-    String industry,
-    String headquarters,
+
     String locationName,
     String latitude,
     String longitude,
     String radius,
   ) {
-    if (companyName.isEmpty ||
-        industry.isEmpty ||
-        headquarters.isEmpty ||
+    if (
         locationName.isEmpty ||
         latitude.isEmpty ||
         longitude.isEmpty ||

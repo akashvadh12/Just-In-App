@@ -92,186 +92,174 @@ class GuardAttendanceController extends GetxController {
       print(e);
     }
   }
+Future<void> getCurrentLocation() async {
+  if (isLoadingLocation.value) return;
+  final connectivityController = Get.find<ConnectivityController>();
 
-  Future<void> getCurrentLocation() async {
-    if (isLoadingLocation.value) return;
-    final connectivityController = Get.find<ConnectivityController>();
+  if (connectivityController.isOffline.value) {
+    connectivityController.showNoInternetSnackbar();
+    return;
+  }
 
-    if (connectivityController.isOffline.value) {
-      connectivityController.showNoInternetSnackbar();
+  isLoadingLocation.value = true;
+
+  try {
+    // 1. Fetch office locations from API
+    final officeResponse = await _apiService.getOfficeLocRaw();
+    if (officeResponse.statusCode != 200) {
+      Get.snackbar(
+        "Office Location Error",
+        "Failed to fetch office locations from server.",
+        backgroundColor: Colors.red,
+        snackPosition: SnackPosition.BOTTOM,
+        colorText: Colors.white,
+        icon: const Icon(Icons.error, color: Colors.white),
+        duration: const Duration(seconds: 2),
+      );
+      isLocationVerified.value = false;
       return;
     }
 
-    isLoadingLocation.value = true;
+    final officeList = jsonDecode(officeResponse.body);
+    if (officeList is! List || officeList.isEmpty) {
+      Get.snackbar(
+        "Office Location Error",
+        "No office location data received.",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        icon: const Icon(Icons.error, color: Colors.white),
+        duration: const Duration(seconds: 2),
+      );
+      isLocationVerified.value = false;
+      return;
+    }
 
-    try {
-      // 1. Fetch office location from API
-      final officeResponse = await _apiService.getOfficeLocRaw();
-      if (officeResponse.statusCode != 200) {
-        Get.snackbar(
-          "Office Location Error",
-          "Failed to fetch office location from server.",
-          backgroundColor: Colors.red,
-          snackPosition: SnackPosition.BOTTOM,
-          colorText: Colors.white,
-          icon: const Icon(Icons.error, color: Colors.white),
-          duration: const Duration(seconds: 2),
-        );
-        isLocationVerified.value = false;
-        isLoadingLocation.value = false;
-        return;
-      }
-      final officeList = jsonDecode(officeResponse.body);
-      if (officeList is! List || officeList.isEmpty) {
-        Get.snackbar(
-          "Office Location Error",
-          "No office location data received.",
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-          icon: const Icon(Icons.error, color: Colors.white),
-          duration: const Duration(seconds: 2),
-        );
-        isLocationVerified.value = false;
-        isLoadingLocation.value = false;
-        return;
-      }
-      final office = officeList[0];
+    // 2. Check device location service and permissions
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      Get.snackbar(
+        "Location Service Disabled",
+        "Please enable location services to continue",
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        icon: const Icon(Icons.location_off, color: Colors.white),
+        duration: const Duration(seconds: 2),
+      );
+      await Geolocator.openLocationSettings();
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      Get.snackbar(
+        "Permission Denied Forever",
+        "Please enable location permission from app settings",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        icon: const Icon(Icons.error, color: Colors.white),
+        duration: const Duration(seconds: 3),
+      );
+      await Geolocator.openAppSettings();
+      return;
+    }
+
+    if (permission != LocationPermission.whileInUse &&
+        permission != LocationPermission.always) {
+      Get.snackbar(
+        "Permission Required",
+        "Location permission is required for attendance",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        icon: const Icon(Icons.error, color: Colors.white),
+        duration: const Duration(seconds: 2),
+      );
+      return;
+    }
+
+    // 3. Get current location
+    final position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+      timeLimit: const Duration(seconds: 10),
+    );
+    currentPosition.value = position;
+
+    // 4. Compare against *all* office locations
+    bool foundMatch = false;
+    for (final office in officeList) {
       final officeLat = double.tryParse(office['latitude'].toString());
       final officeLng = double.tryParse(office['longitude'].toString());
-      final officeRadius = double.tryParse(office['radius'].toString()) ?? 50.0;
-      if (officeLat == null || officeLng == null) {
-        Get.snackbar(
-          "Office Location Error",
-          "Invalid office coordinates received.",
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-          icon: const Icon(Icons.error, color: Colors.white),
-          duration: const Duration(seconds: 2),
-        );
-        isLocationVerified.value = false;
-        isLoadingLocation.value = false;
-        return;
-      }
+      final officeRadius =
+          double.tryParse(office['radius'].toString()) ?? 50.0;
 
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        Get.snackbar(
-          "Location Service Disabled",
-          "Please enable location services to continue",
-          backgroundColor: Colors.orange,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-          icon: const Icon(Icons.location_off, color: Colors.white),
-          duration: const Duration(seconds: 2),
-        );
-        await Geolocator.openLocationSettings();
-        return;
-      }
+      if (officeLat == null || officeLng == null) continue;
 
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        Get.snackbar(
-          "Permission Denied Forever",
-          "Please enable location permission from app settings",
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-          icon: const Icon(Icons.error, color: Colors.white),
-          duration: const Duration(seconds: 3),
-        );
-        await Geolocator.openAppSettings();
-        return;
-      }
-
-      if (permission != LocationPermission.whileInUse &&
-          permission != LocationPermission.always) {
-        Get.snackbar(
-          "Permission Required",
-          "Location permission is required for attendance",
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-          icon: const Icon(Icons.error, color: Colors.white),
-          duration: const Duration(seconds: 2),
-        );
-        return;
-      }
-
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 10),
-      );
-
-      currentPosition.value = position;
-
-      // 2. Compare current location to office location (within 200 meters)
       final distance = Geolocator.distanceBetween(
         position.latitude,
         position.longitude,
         officeLat,
         officeLng,
       );
+
       print(
-        'Distance to office: [32m${distance.toStringAsFixed(2)} meters[0m',
+        'Checking office at $officeLat,$officeLng → Distance: ${distance.toStringAsFixed(2)} m (radius $officeRadius m)',
       );
-      print("Office Coordinates: [34m$officeLat, $officeLng[0m");
-      print(
-        "Current Coordinates: [34m${position.latitude}, ${position.longitude}[0m",
-      );
-      print(
-        'Office Radius: [33m${officeRadius.toStringAsFixed(2)} meters[0m',
-      );
+
       if (distance <= officeRadius) {
-        isLocationVerified.value = true;
-        Get.snackbar(
-          "Location Verified",
-          "GPS location verified successfully (within office range)",
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-          icon: const Icon(Icons.location_on, color: Colors.white),
-          duration: const Duration(seconds: 2),
-        );
-      } else {
-        isLocationVerified.value = false;
-        Get.snackbar(
-          "Out of Range",
-          "You are not within the allowed office location range.",
-          backgroundColor: Colors.orange,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-          icon: const Icon(Icons.location_off, color: Colors.white),
-          duration: const Duration(seconds: 3),
-        );
+        foundMatch = true;
+        break;
       }
+    }
 
-      print(
-        'Location obtained: [34m${position.latitude}, ${position.longitude}[0m',
-      );
-    } catch (e) {
-      print('Location error: $e');
-      isLocationVerified.value = false;
-      currentPosition.value = null;
-
+    if (foundMatch) {
+      isLocationVerified.value = true;
       Get.snackbar(
-        "Location Error",
-        "Unable to get your location. Please check settings.",
-        backgroundColor: Colors.red,
+        "Location Verified",
+        "GPS location verified successfully (within office range)",
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        icon: const Icon(Icons.location_on, color: Colors.white),
+        duration: const Duration(seconds: 2),
+      );
+    } else {
+      isLocationVerified.value = false;
+      Get.snackbar(
+        "Out of Range",
+        "You are not within the allowed office location range.",
+        backgroundColor: Colors.orange,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
         icon: const Icon(Icons.location_off, color: Colors.white),
         duration: const Duration(seconds: 3),
       );
-    } finally {
-      isLoadingLocation.value = false;
     }
+  } catch (e) {
+    print('Location error: $e');
+    isLocationVerified.value = false;
+    currentPosition.value = null;
+
+    Get.snackbar(
+      "Location Error",
+      "Unable to get your location. Please check settings.",
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+      icon: const Icon(Icons.location_off, color: Colors.white),
+      duration: const Duration(seconds: 3),
+    );
+  } finally {
+    isLoadingLocation.value = false;
   }
+}
+
 
   Future<String?> getUserId() async {
     try {
