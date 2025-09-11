@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -8,6 +7,7 @@ import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/data/services/session_service.dart';
+import 'package:security_guard/data/services/sos_checkin_service.dart';
 import 'package:security_guard/firebase_options.dart';
 import 'package:security_guard/modules/auth/controllers/auth_controller.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
@@ -39,6 +39,7 @@ void main() async {
   Get.put(ConnectivityController());
   Get.put(ProfileController());
   Get.put(AuthController());
+  Get.put(SosCheckInService(), permanent: true);
   _setupNotificationHandlers();
 
   runApp(MyApp());
@@ -113,7 +114,7 @@ Future<void> initServices() async {
   }
 
   void _handleNotificationNavigation() {
-    final authController = Get.find<AuthController>();
+    // final authController = Get.find<AuthController>();
     // if (authController.isUserSignedIn())
     //  {
     //   if (Get.currentRoute != '/home/notification') {

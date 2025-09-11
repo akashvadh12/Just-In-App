@@ -32,6 +32,47 @@ class ApiGetServices {
     }
   }
 
+
+// Add this method to your existing ApiService class
+
+/// Send live location data to server
+Future<http.Response> sendLiveLocation(Map<String, dynamic> locationData) async {
+  const String endpoint = 'Tracking/live-tracking';
+  
+  // Ensure required fields are present
+  final Map<String, dynamic> body = {
+    'userId': locationData['userId'],
+    'latitude': locationData['latitude'] ?? 0.0,
+    'longitude': locationData['longitude'] ?? 0.0,
+    'isClockedIn': locationData['isClockedIn'] ?? false,
+    'isClockedOut': locationData['isClockedOut'] ?? false,
+    // 'companyID': locationData['companyID'],
+    // 'siteId': locationData['siteId'],
+    
+    // Optional fields for enhanced tracking
+    if (locationData.containsKey('timestamp'))
+      'timestamp': locationData['timestamp'],
+    if (locationData.containsKey('accuracy'))
+      'accuracy': locationData['accuracy'],
+    if (locationData.containsKey('altitude'))
+      'altitude': locationData['altitude'],
+    if (locationData.containsKey('heading'))
+      'heading': locationData['heading'],
+    if (locationData.containsKey('speed'))
+      'speed': locationData['speed'],
+  };
+
+  try {
+    log('[ApiService] Sending live location: ${jsonEncode(body)}');
+    final response = await  _client.post(endpoint, body);
+    log('[ApiService] Live location response: ${response.statusCode} - ${response.body}');
+    return response;
+  } catch (e) {
+    log('[ApiService] Error sending live location: $e');
+    rethrow;
+  }
+}
+
   Future<http.Response> getOfficeLocRaw() async {
     const endpoint = 'CompanyConfig/GetOfficeLoc';
     final headers = await _getAuthenticatedHeaders();
@@ -475,67 +516,76 @@ class ApiGetServices {
   }
 
   // 3. Fetch User Patrol History (date range)
-Future<http.Response> fetchUserPatrolHistory({
-  required String userId,
-  required String startDate,
-  required String endDate,
-}) async {
-  const endpoint = 'patrol/Userhistory';
-  final headers = await _getAuthenticatedHeaders();
+  Future<http.Response> fetchUserPatrolHistory({
+    required String userId,
+    required String startDate,
+    required String endDate,
+  }) async {
+    const endpoint = 'patrol/Userhistory';
+    final headers = await _getAuthenticatedHeaders();
 
-  final params = {
-    'start': startDate,
-    'end': endDate,
-    'UserId': userId,
-  };
+    final params = {'start': startDate, 'end': endDate, 'UserId': userId};
 
-  log('$_logTag Fetch User Patrol History => endpoint: $endpoint, params: $params');
+    log(
+      '$_logTag Fetch User Patrol History => endpoint: $endpoint, params: $params',
+    );
 
-  try {
-    final response = await _client.getWithParams(endpoint, params, headers: headers);
+    try {
+      final response = await _client.getWithParams(
+        endpoint,
+        params,
+        headers: headers,
+      );
 
-    if (response.statusCode == 200) {
-      log('$_logTag Fetch User Patrol History successful');
-    } else {
-      log('$_logTag Fetch User Patrol History failed => '
-          'Status: ${response.statusCode}, Body: ${response.body}');
+      if (response.statusCode == 200) {
+        log('$_logTag Fetch User Patrol History successful');
+      } else {
+        log(
+          '$_logTag Fetch User Patrol History failed => '
+          'Status: ${response.statusCode}, Body: ${response.body}',
+        );
+      }
+
+      return response;
+    } catch (e) {
+      log('$_logTag Fetch User Patrol History error: $e');
+      rethrow;
     }
-
-    return response;
-  } catch (e) {
-    log('$_logTag Fetch User Patrol History error: $e');
-    rethrow;
   }
-}
 
+  // 4. Fetch Patrol History Details (by logId)
+  Future<http.Response> fetchHistoryDetails(String logId) async {
+    const endpoint = 'patrol/history';
+    final headers = await _getAuthenticatedHeaders();
 
-// 4. Fetch Patrol History Details (by logId)
-Future<http.Response> fetchHistoryDetails(String logId) async {
-  const endpoint = 'patrol/history';
-  final headers = await _getAuthenticatedHeaders();
+    final params = {'logId': logId};
 
-  final params = {'logId': logId};
+    log(
+      '$_logTag Fetch History Details => endpoint: $endpoint, params: $params',
+    );
 
-  log('$_logTag Fetch History Details => endpoint: $endpoint, params: $params');
+    try {
+      final response = await _client.getWithParams(
+        endpoint,
+        params,
+        headers: headers,
+      );
 
-  try {
-    final response = await _client.getWithParams(endpoint, params, headers: headers);
+      if (response.statusCode == 200) {
+        log('$_logTag Fetch History Details successful');
+      } else {
+        log(
+          '$_logTag Fetch History Details failed => '
+          'Status: ${response.statusCode}, Body: ${response.body}',
+        );
+      }
 
-    if (response.statusCode == 200) {
-      log('$_logTag Fetch History Details successful');
-    } else {
-      log('$_logTag Fetch History Details failed => '
-          'Status: ${response.statusCode}, Body: ${response.body}');
+      return response;
+    } catch (e) {
+      log('$_logTag Fetch History Details error: $e');
+      rethrow;
     }
-
-    return response;
-  } catch (e) {
-    log('$_logTag Fetch History Details error: $e');
-    rethrow;
   }
-}
-
-
 
   /// ✅ Patrol Check-in (normal flow)
   Future<http.Response> patrolCheckin({
@@ -593,114 +643,105 @@ Future<http.Response> fetchHistoryDetails(String logId) async {
     return _client.postMultipart('patrol/unknown-checkin', fields, files);
   }
 
-
-
-
-Future<List<CompanyLocation>> getCompanyLocations() async {
-  final response = await _client.get('CompanyConfig/GetCompanyLoc');
-
-  if (response.statusCode == 200) {
-    final List<dynamic> data = json.decode(response.body);
-    return data.map((json) => CompanyLocation.fromJson(json)).toList();
-  } else {
-    throw Exception('Failed to fetch company locations: ${response.body}');
-  }
-}
-
-Future<http.Response> addCompanyLocation({
-  // required String companyName,
-  // required String industry,
-  // required String headquarters,
-  required String locationName,
-  required String latitude,
-  required String longitude,
-  required String radius,
-  required String userId,
-  String? issueRadius,
-}) async {
-  const String endpoint = 'CompanyConfig/InsertMultipleCompanyLocation';
-  
-  final Map<String, dynamic> body = {
-    // 'companyName': companyName,
-    // 'industry': industry,
-    // 'headquarters': headquarters,
-    'latitude': latitude,
-    'longitude': longitude,
-    'locationName': locationName,
-    'radius': radius,
-    'issue_radius': issueRadius ?? radius, // Use radius as default if not provided
-  };
-
-  return _client.post(endpoint, body);
-}
-
-
-Future<http.Response> updateLocationRaw({
-  required String companyID,
-  required String companyName,
-  required String industry,
-  required String headquarters,
-  required String locationName,
-  required String finalLatitude,
-  required String finalLongitude,
-  required String finalRadius,
-  required String userId,
-  required bool finalStatus,
-  required File photo,
-}) async {
-  const endpoint = 'Loaction/update'; // ⚠️ check spelling ("Location"?)
-  final headers = await _getAuthenticatedHeaders();
-
-  log('$_logTag Update Location Raw request => endpoint: $endpoint');
-
-  try {
-    // Prepare fields
-    final fields = <String, String>{
-      'Company_ID': companyID,
-      'Company_Name': companyName,
-      'Industry': industry,
-      'Headquarters': headquarters,
-      'Location_Name': locationName,
-      'Latitude': finalLatitude,
-      'Longitude': finalLongitude,
-      'Radius': finalRadius,
-      'UserId': userId,
-      'Status': finalStatus.toString(),
-    };
-
-    // Prepare file
-    final multipartFile = await http.MultipartFile.fromPath(
-      'Photos',
-      photo.path,
-      filename: 'location_${DateTime.now().millisecondsSinceEpoch}.jpg',
-    );
-
-    // Use client’s postMultipart (you can also create putMultipart if needed)
-    final response = await _client.postMultipart(
-      endpoint,
-      fields,
-      [multipartFile],
-      headers: headers,
-    );
+  Future<List<CompanyLocation>> getCompanyLocations() async {
+    final response = await _client.get('CompanyConfig/GetCompanyLoc');
 
     if (response.statusCode == 200) {
-      log('$_logTag Update Location Raw successful');
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((json) => CompanyLocation.fromJson(json)).toList();
     } else {
-      log('$_logTag Update Location Raw failed => '
-          'Status: ${response.statusCode}, Body: ${response.body}');
+      throw Exception('Failed to fetch company locations: ${response.body}');
     }
-
-    return response;
-  } catch (e) {
-    log('$_logTag Update Location Raw error: $e');
-    rethrow;
   }
-}
 
+  Future<http.Response> addCompanyLocation({
+    // required String companyName,
+    // required String industry,
+    // required String headquarters,
+    required String locationName,
+    required String latitude,
+    required String longitude,
+    required String radius,
+    required String userId,
+    String? issueRadius,
+  }) async {
+    const String endpoint = 'CompanyConfig/InsertMultipleCompanyLocation';
 
+    final Map<String, dynamic> body = {
+      // 'companyName': companyName,
+      // 'industry': industry,
+      // 'headquarters': headquarters,
+      'latitude': latitude,
+      'longitude': longitude,
+      'locationName': locationName,
+      'radius': radius,
+      'issue_radius':
+          issueRadius ?? radius, // Use radius as default if not provided
+    };
 
+    return _client.post(endpoint, body);
+  }
 
+  Future<http.Response> updateLocationRaw({
+    required String companyID,
+    required String companyName,
+    required String industry,
+    required String headquarters,
+    required String locationName,
+    required String finalLatitude,
+    required String finalLongitude,
+    required String finalRadius,
+    required String userId,
+    required bool finalStatus,
+    required File photo,
+  }) async {
+    const endpoint = 'Loaction/update'; // ⚠️ check spelling ("Location"?)
+    final headers = await _getAuthenticatedHeaders();
 
+    log('$_logTag Update Location Raw request => endpoint: $endpoint');
+
+    try {
+      // Prepare fields
+      final fields = <String, String>{
+        'Company_ID': companyID,
+        'Company_Name': companyName,
+        'Industry': industry,
+        'Headquarters': headquarters,
+        'Location_Name': locationName,
+        'Latitude': finalLatitude,
+        'Longitude': finalLongitude,
+        'Radius': finalRadius,
+        'UserId': userId,
+        'Status': finalStatus.toString(),
+      };
+
+      // Prepare file
+      final multipartFile = await http.MultipartFile.fromPath(
+        'Photos',
+        photo.path,
+        filename: 'location_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      );
+
+      // Use client’s postMultipart (you can also create putMultipart if needed)
+      final response = await _client.postMultipart(endpoint, fields, [
+        multipartFile,
+      ], headers: headers);
+
+      if (response.statusCode == 200) {
+        log('$_logTag Update Location Raw successful');
+      } else {
+        log(
+          '$_logTag Update Location Raw failed => '
+          'Status: ${response.statusCode}, Body: ${response.body}',
+        );
+      }
+
+      return response;
+    } catch (e) {
+      log('$_logTag Update Location Raw error: $e');
+      rethrow;
+    }
+  }
 
   /// Fetch all locations
   Future<http.Response> fetchLocationsRaw() async {
@@ -715,8 +756,10 @@ Future<http.Response> updateLocationRaw({
       if (response.statusCode == 200) {
         log('$_logTag Fetch Locations successful');
       } else {
-        log('$_logTag Fetch Locations failed => '
-            'Status: ${response.statusCode}, Body: ${response.body}');
+        log(
+          '$_logTag Fetch Locations failed => '
+          'Status: ${response.statusCode}, Body: ${response.body}',
+        );
       }
       return response;
     } catch (e) {
@@ -753,14 +796,20 @@ Future<http.Response> updateLocationRaw({
         files.add(await http.MultipartFile.fromPath('Photos', photo.path));
       }
 
-      final response =
-          await _client.postMultipart(endpoint, fields, files, headers: headers);
+      final response = await _client.postMultipart(
+        endpoint,
+        fields,
+        files,
+        headers: headers,
+      );
 
       if (response.statusCode == 200) {
         log('$_logTag Add Location successful');
       } else {
-        log('$_logTag Add Location failed => '
-            'Status: ${response.statusCode}, Body: ${response.body}');
+        log(
+          '$_logTag Add Location failed => '
+          'Status: ${response.statusCode}, Body: ${response.body}',
+        );
       }
       return response;
     } catch (e) {
@@ -803,14 +852,20 @@ Future<http.Response> updateLocationRaw({
       // Option 1: Add putMultipart in ApiClient (recommended)
       // Option 2: Use postMultipart if backend accepts POST for update
 
-      final response =
-          await _client.putMultipart(endpoint, fields, files, headers: headers);
+      final response = await _client.putMultipart(
+        endpoint,
+        fields,
+        files,
+        headers: headers,
+      );
 
       if (response.statusCode == 200) {
         log('$_logTag Update Location successful');
       } else {
-        log('$_logTag Update Location failed => '
-            'Status: ${response.statusCode}, Body: ${response.body}');
+        log(
+          '$_logTag Update Location failed => '
+          'Status: ${response.statusCode}, Body: ${response.body}',
+        );
       }
       return response;
     } catch (e) {
@@ -832,8 +887,10 @@ Future<http.Response> updateLocationRaw({
       if (response.statusCode == 200) {
         log('$_logTag Delete Location successful');
       } else {
-        log('$_logTag Delete Location failed => '
-            'Status: ${response.statusCode}, Body: ${response.body}');
+        log(
+          '$_logTag Delete Location failed => '
+          'Status: ${response.statusCode}, Body: ${response.body}',
+        );
       }
       return response;
     } catch (e) {
@@ -841,7 +898,6 @@ Future<http.Response> updateLocationRaw({
       rethrow;
     }
   }
-
 
   Future<Map<String, String>> _getAuthenticatedHeaders() async {
     final deviceToken = LocalStorageService.instance.getDeviceToken();
