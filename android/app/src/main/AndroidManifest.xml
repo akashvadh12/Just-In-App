@@ -1,25 +1,32 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.cairovision.justin">
 
     <!-- Required Permissions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <!-- <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" /> -->
     <uses-feature android:name="android.hardware.camera.flash" />
-
-
-    <!-- <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" /> -->
-    <!-- <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" /> -->
-    <!-- Optional: For Android 13+ -->
-    <!-- <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" /> -->
 
     <application
         android:label="JustIN"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
 
+        <service
+            android:name="id.flutter.flutter_background_service.BackgroundService"
+            android:exported="false"
+            android:foregroundServiceType="location"
+            tools:replace="android:exported">
+            <meta-data
+                android:name="foreground_service_type"
+                android:value="location" />
+        </service>
 
         <meta-data
             android:name="io.flutter.plugins.camera.useLegacyCamera"

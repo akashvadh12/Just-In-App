@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:get/get.dart';
 import 'package:security_guard/core/api/api_service.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/data/services/api_get_service.dart';
+import 'package:security_guard/data/services/backgroud_location_service.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/data/services/session_service.dart';
 import 'package:security_guard/data/services/sos_checkin_service.dart';
@@ -15,6 +17,7 @@ import 'package:security_guard/modules/profile/controller/profileController/prof
 import 'package:security_guard/routes/app_pages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:workmanager/workmanager.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
    
@@ -30,6 +33,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize background service
+  await BackgroundLocationService.initializeService();
+  
 
   await Get.putAsync(() => LocalStorageService().init());
   await initServices();
@@ -44,6 +52,7 @@ void main() async {
 
   runApp(MyApp());
 }
+
 
 Future<void> initServices() async {
   print('Starting services initialization...');
