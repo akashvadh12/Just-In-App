@@ -145,7 +145,7 @@ class HomeController extends GetxController {
     
     if (!isAdmin && isClockedIn) {
       // Initialize SOS service
-      // _initializeSosService();
+      _initializeSosService();
       
       // Initialize Live Tracking service
       _initializeLiveTracking();

@@ -324,7 +324,7 @@ class HomeView extends GetView<HomeController> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Missed Check-ins',
+                      'Missed',
                       style: TextStyle(color: Colors.grey, fontSize: 14),
                     ),
                     SizedBox(height: 4),

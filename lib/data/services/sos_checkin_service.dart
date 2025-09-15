@@ -4,17 +4,18 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
 import 'package:security_guard/core/api/api_constants.dart';
-import 'package:security_guard/core/api/api_service.dart';
 import 'package:security_guard/data/services/api_get_service.dart';
+import 'package:security_guard/data/services/background_sos_foreground_service.dart';
 import 'package:security_guard/data/services/background_sos_service.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 import 'dart:developer' as dev;
 
-enum CheckInStatus { allOk, sos, ignored, pending }
+import 'package:security_guard/shared/widgets/sos_checkIn_dialog.dart';
+
+enum CheckInStatus { allOk, sos, ignore, pending }
 
 class SosCheckInService extends GetxController {
   static SosCheckInService get instance => Get.find<SosCheckInService>();
@@ -100,18 +101,21 @@ class SosCheckInService extends GetxController {
     }
   }
 
-  Future<void> startBackgroundService() async {
-    await BackgroundSosService.startBackgroundService(
-      intervalMinutes: 1,
-      responseWindowMinutes: 2,
-      userId: await _getUserId(),
-    );
-  }
+Future<void> startBackgroundService() async {
+  await BackgroundSosForegroundService.startBackgroundSosService(
+    userId: await _getUserId(),
+    companyId: profileController.userModel.value?.companyId ?? '',
+    siteId: profileController.userModel.value?.siteId ?? '',
+    intervalMinutes: checkInIntervalMinutes.value,
+    responseWindowMinutes: responseWindowMinutes.value,
+    apiBaseUrl: BASE_URL,
+  );
+}
 
   /// Stop background SOS service
-  Future<void> stopBackgroundService() async {
-    await BackgroundSosService.stopBackgroundService();
-  }
+Future<void> stopBackgroundService() async {
+  await BackgroundSosForegroundService.stopBackgroundSosService();
+}
 
   /// Start the SOS check-in service
   void startService() {
@@ -214,62 +218,93 @@ class SosCheckInService extends GetxController {
       name: 'SosCheckInDialog',
     );
   }
+/// Handle user response to check-in
+Future<void> handleCheckInResponse(CheckInStatus status) async {
+  dev.log('$_logTag SOS Check-in response: ${status.toString()}');
 
-  /// Handle user response to check-in
-  Future<void> handleCheckInResponse(CheckInStatus status) async {
-    dev.log('$_logTag SOS Check-in response: ${status.toString()}');
+  _responseTimer?.cancel();
+  isCheckInPending.value = false;
 
-    _responseTimer?.cancel();
-    isCheckInPending.value = false;
+  // **MOVED: Close dialog immediately for better UX**
+  Get.back();
 
-    try {
-      // Send check-in response to API
-      await _sendCheckInResponse(status);
+  // **MOVED: Show immediate feedback**
+  _showImmediateFeedback(status);
 
-      if (status != CheckInStatus.ignored) {
-        Get.back();
-      }
+  try {
+    // Send check-in response to API
+    await _sendCheckInResponse(status);
 
-      if (status == CheckInStatus.allOk) {
-        lastCheckInTime.value = _formatDateTime(DateTime.now());
-        missedCheckIns.value = 0;
-        _scheduleNextCheckIn();
+    if (status == CheckInStatus.allOk) {
+      lastCheckInTime.value = _formatDateTime(DateTime.now());
+      missedCheckIns.value = 0;
+      _scheduleNextCheckIn();
 
-        Get.snackbar(
-          '✅ Check-in Successful',
-          'Thank you for confirming your safety',
-          backgroundColor: Colors.green.withOpacity(0.8),
-          colorText: Colors.white,
-          icon: const Icon(Icons.check_circle, color: Colors.white),
-          duration: const Duration(seconds: 2),
-        );
-      } else if (status == CheckInStatus.sos) {
-        _handleSosAlert();
-      } else if (status == CheckInStatus.ignored) {
-        Get.back(); // Close dialog
-        _scheduleNextCheckIn(); // Continue with normal schedule
-
-        Get.snackbar(
-          'Check-in Ignored',
-          'Check-in was dismissed. Next check-in scheduled.',
-          backgroundColor: Colors.grey.withOpacity(0.8),
-          colorText: Colors.white,
-          icon: const Icon(Icons.info, color: Colors.white),
-          duration: const Duration(seconds: 2),
-        );
-      }
-    } catch (e) {
-      dev.log('$_logTag Error handling check-in response: $e');
+      // Update to success message
       Get.snackbar(
-        'Check-in Error',
-        'Failed to send response. It will be sent when connection is restored.',
-        backgroundColor: Colors.orange.withOpacity(0.8),
+        '✅ Check-in Successful',
+        'Thank you for confirming your safety',
+        backgroundColor: Colors.green.withOpacity(0.8),
         colorText: Colors.white,
-        icon: const Icon(Icons.cloud_off, color: Colors.white),
-        duration: const Duration(seconds: 3),
+        icon: const Icon(Icons.check_circle, color: Colors.white),
+        duration: const Duration(seconds: 2),
       );
+    } else if (status == CheckInStatus.sos) {
+      _handleSosAlert();
+    } else if (status == CheckInStatus.ignore) {
+      _scheduleNextCheckIn(); // Continue with normal schedule
     }
+  } catch (e) {
+    dev.log('$_logTag Error handling check-in response: $e');
+    Get.snackbar(
+      'Check-in Error',
+      'Failed to send response. It will be sent when connection is restored.',
+      backgroundColor: Colors.orange.withOpacity(0.8),
+      colorText: Colors.white,
+      icon: const Icon(Icons.cloud_off, color: Colors.white),
+      duration: const Duration(seconds: 3),
+    );
   }
+}
+
+// **NEW: Add this method**
+void _showImmediateFeedback(CheckInStatus status) {
+  switch (status) {
+    case CheckInStatus.allOk:
+      Get.snackbar(
+        '✅ Processing',
+        'Recording your safety status...',
+        backgroundColor: Colors.green.withOpacity(0.8),
+        colorText: Colors.white,
+        icon: const Icon(Icons.check_circle, color: Colors.white),
+        duration: const Duration(seconds: 1),
+      );
+      break;
+    case CheckInStatus.sos:
+      Get.snackbar(
+        '🚨 Emergency Alert',
+        'Sending emergency alert...',
+        backgroundColor: Colors.red.withOpacity(0.8),
+        colorText: Colors.white,
+        icon: const Icon(Icons.emergency, color: Colors.white),
+        duration: const Duration(seconds: 1),
+      );
+      break;
+    case CheckInStatus.ignore:
+      Get.snackbar(
+        'Check-in Dismissed',
+        'Next check-in scheduled.',
+        backgroundColor: Colors.grey.withOpacity(0.8),
+        colorText: Colors.white,
+        icon: const Icon(Icons.info, color: Colors.white),
+        duration: const Duration(seconds: 2),
+      );
+      break;
+    case CheckInStatus.pending:
+      // No feedback needed for pending status
+      break;
+  }
+}
 
   /// Handle no response within time window
   void _handleNoResponse() {
@@ -381,7 +416,7 @@ class SosCheckInService extends GetxController {
         return 'AllOK';
       case CheckInStatus.sos:
         return 'SOS';
-      case CheckInStatus.ignored:
+      case CheckInStatus.ignore:
         return 'Ignore';
       case CheckInStatus.pending:
         return 'Missed'; // or 'NoResponse'
@@ -487,235 +522,5 @@ class SosCheckInService extends GetxController {
     }
 
     await _processPendingCheckIns();
-  }
-}
-
-class SosCheckInDialog extends StatefulWidget {
-  const SosCheckInDialog({Key? key}) : super(key: key);
-
-  @override
-  State<SosCheckInDialog> createState() => _SosCheckInDialogState();
-}
-
-class _SosCheckInDialogState extends State<SosCheckInDialog>
-    with TickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late AnimationController _timerController;
-  late Animation<double> _pulseAnimation;
-  late Animation<double> _timerAnimation;
-
-  final SosCheckInService sosService = SosCheckInService.instance;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _pulseController = AnimationController(
-      duration: const Duration(seconds: 1),
-      vsync: this,
-    );
-
-    _timerController = AnimationController(
-      duration: Duration(minutes: sosService.responseWindowMinutes.value),
-      vsync: this,
-    );
-
-    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
-    _timerAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(parent: _timerController, curve: Curves.linear));
-
-    _pulseController.repeat(reverse: true);
-    _timerController.forward();
-
-    print('🔔 SOS Check-in dialog initialized');
-  }
-
-  @override
-  void dispose() {
-    _pulseController.dispose();
-    _timerController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => false, // Prevent dismissal
-      child: Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Timer indicator
-              AnimatedBuilder(
-                animation: _timerAnimation,
-                builder: (context, child) {
-                  return Column(
-                    children: [
-                      LinearProgressIndicator(
-                        value: _timerAnimation.value,
-                        backgroundColor: Colors.grey[200],
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          _timerAnimation.value > 0.5
-                              ? Colors.green
-                              : Colors.red,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Time remaining: ${(_timerAnimation.value * sosService.responseWindowMinutes.value).ceil()} min',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                    ],
-                  );
-                },
-              ),
-
-              const SizedBox(height: 20),
-
-              // Pulsing security icon
-              AnimatedBuilder(
-                animation: _pulseAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _pulseAnimation.value,
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.blue[100],
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.security,
-                        size: 40,
-                        color: Colors.blue,
-                      ),
-                    ),
-                  );
-                },
-              ),
-
-              const SizedBox(height: 20),
-
-              const Text(
-                'Safety Check-In',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 12),
-
-              const Text(
-                'Please confirm your status within the response window',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 30),
-
-              // Action buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildActionButton(
-                      icon: Icons.check_circle,
-                      label: 'All OK',
-                      color: Colors.green,
-                      onTap:
-                          () => sosService.handleCheckInResponse(
-                            CheckInStatus.allOk,
-                          ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildActionButton(
-                      icon: Icons.emergency,
-                      label: 'SOS',
-                      color: Colors.red,
-                      onTap:
-                          () => sosService.handleCheckInResponse(
-                            CheckInStatus.sos,
-                          ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed:
-                      () => sosService.handleCheckInResponse(
-                        CheckInStatus.ignored,
-                      ),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: const Text(
-                    'Ignore',
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return ElevatedButton(
-      onPressed: onTap,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 2,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
-    );
   }
 }

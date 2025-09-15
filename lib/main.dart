@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:get/get.dart';
 import 'package:security_guard/core/api/api_service.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
@@ -15,6 +16,7 @@ import 'package:security_guard/modules/auth/controllers/auth_controller.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:security_guard/routes/app_pages.dart';
+import 'package:security_guard/shared/widgets/sos_checkIn_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
@@ -37,6 +39,7 @@ void main() async {
   // Initialize background service
   await BackgroundLocationService.initializeService();
   await BackgroundSosService.initialize();
+  _setupBackgroundServiceListener();
   
 
   await Get.putAsync(() => LocalStorageService().init());
@@ -53,6 +56,25 @@ void main() async {
   runApp(MyApp());
 }
 
+
+void _setupBackgroundServiceListener() {
+  final service = FlutterBackgroundService();
+  
+  service.on('notificationTapped').listen((event) {
+    if (event != null && event['action'] == 'show_sos_dialog') {
+      // Navigate to home screen and show dialog
+      Get.offAllNamed('/home'); // or your main route
+      
+      Future.delayed(const Duration(milliseconds: 500), () {
+        Get.dialog(
+          const SosCheckInDialog(),
+          barrierDismissible: false,
+          name: 'SosCheckInDialog',
+        );
+      });
+    }
+  });
+}
 
 Future<void> initServices() async {
   print('Starting services initialization...');
