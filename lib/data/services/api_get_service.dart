@@ -46,20 +46,8 @@ Future<http.Response> sendLiveLocation(Map<String, dynamic> locationData) async 
     'longitude': locationData['longitude'] ?? 0.0,
     'isClockedIn': locationData['isClockedIn'] ?? false,
     'isClockedOut': locationData['isClockedOut'] ?? false,
-    // 'companyID': locationData['companyID'],
-    // 'siteId': locationData['siteId'],
-    
-    // Optional fields for enhanced tracking
-    if (locationData.containsKey('timestamp'))
-      'timestamp': locationData['timestamp'],
-    if (locationData.containsKey('accuracy'))
-      'accuracy': locationData['accuracy'],
-    if (locationData.containsKey('altitude'))
-      'altitude': locationData['altitude'],
-    if (locationData.containsKey('heading'))
-      'heading': locationData['heading'],
-    if (locationData.containsKey('speed'))
-      'speed': locationData['speed'],
+ 
+  
   };
 
   try {
@@ -69,6 +57,30 @@ Future<http.Response> sendLiveLocation(Map<String, dynamic> locationData) async 
     return response;
   } catch (e) {
     log('[ApiService] Error sending live location: $e');
+    rethrow;
+  }
+}
+
+
+Future<http.Response> sendSafetyCheckIn(Map<String, dynamic> checkInData) async {
+  const String endpoint = 'Tracking/safety-checkin';
+  
+  // Ensure required fields are present with proper structure
+  final Map<String, dynamic> body = {
+    'userId': checkInData['userId'] ?? '',
+    'latitude': checkInData['latitude'] ?? 0.0,
+    'longitude': checkInData['longitude'] ?? 0.0,
+    'promptTime': checkInData['promptTime'] ?? DateTime.now().toIso8601String(),
+    'response': checkInData['response'] ?? 'AllOK',
+  };
+
+  try {
+    log('[ApiService] Sending safety check-in: ${jsonEncode(body)}');
+    final response = await _client.post(endpoint, body);
+    log('[ApiService] Safety check-in response: ${response.statusCode} - ${response.body}');
+    return response;
+  } catch (e) {
+    log('[ApiService] Error sending safety check-in: $e');
     rethrow;
   }
 }

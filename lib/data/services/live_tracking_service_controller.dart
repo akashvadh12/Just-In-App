@@ -168,7 +168,7 @@ class LiveTrackingService extends GetxController {
       log('$_logTag Live tracking started with interval: ${trackingIntervalSeconds}s');
       trackingStatus.value = isBackgroundTrackingEnabled.value ? 'Active (Background enabled)' : 'Active (Foreground only)';
       
-      _showTrackingNotification('Live tracking started', Colors.green);
+      // _showTrackingNotification('Live tracking started', Colors.green);
       
       return true;
       
@@ -249,7 +249,7 @@ class LiveTrackingService extends GetxController {
     
     // Start periodic updates
     _trackingTimer = Timer.periodic(
-      Duration(seconds: 60),
+      Duration(seconds: trackingIntervalSeconds),
       (_) => _getCurrentLocationAndSend(),
     );
   }
@@ -445,83 +445,122 @@ class LiveTrackingService extends GetxController {
     log('$_logTag Processed pending locations: $successCount success, $failCount failed');
   }
   
-  Future<bool> _checkPermissions() async {
-    try {
-      // Check location permission
-      LocationPermission permission = await Geolocator.checkPermission();
-      
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      
-      if (permission == LocationPermission.deniedForever) {
-        _showPermissionDialog();
-        return false;
-      }
-      
-      if (permission == LocationPermission.denied) {
-        _showTrackingNotification('Location permission denied', Colors.red);
-        return false;
-      }
-      
-      // For background tracking, we need "always" location permission
-      if (await Permission.locationAlways.isDenied) {
-        _showBackgroundPermissionDialog();
-        final status = await Permission.locationAlways.request();
-        
-        if (status.isGranted) {
-          isBackgroundTrackingEnabled.value = true;
-          log('$_logTag Background location permission granted');
-        } else if (status.isPermanentlyDenied) {
-          _showBackgroundPermissionDeniedDialog();
-          isBackgroundTrackingEnabled.value = false;
-        } else {
-          isBackgroundTrackingEnabled.value = false;
-          log('$_logTag Background location permission denied');
-        }
-      } else if (await Permission.locationAlways.isGranted) {
-        isBackgroundTrackingEnabled.value = true;
-      }
-      
-      // Check notification permission for foreground service
-      if (await Permission.notification.isDenied) {
-        await Permission.notification.request();
-      }
-      
-      return true;
-      
-    } catch (e) {
-      log('$_logTag Error checking permissions: $e');
+Future<bool> _checkPermissions() async {
+  try {
+    // Show a pre-permission dialog before asking the system
+    // await _showPrePermissionDialog();
+
+    // Check location permission
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      _showPrePermissionDialog(); // your existing dialog
       return false;
     }
+
+    if (permission == LocationPermission.denied) {
+      _showTrackingNotification('Location permission denied', Colors.red);
+      return false;
+    }
+
+    // If user only granted "while in use", guide them to settings
+    if (permission == LocationPermission.whileInUse) {
+      await _showSettingsRedirectDialog();
+      return false;
+    }
+
+    // For background tracking, we need "always" location permission
+    if (await Permission.locationAlways.isDenied) {
+      _showBackgroundPermissionDialog(); // your existing dialog
+      final status = await Permission.locationAlways.request();
+
+      if (status.isGranted) {
+        isBackgroundTrackingEnabled.value = true;
+        log('$_logTag Background location permission granted');
+      } else if (status.isPermanentlyDenied) {
+        _showBackgroundPermissionDeniedDialog();
+        isBackgroundTrackingEnabled.value = false;
+      } else {
+        isBackgroundTrackingEnabled.value = false;
+        log('$_logTag Background location permission denied');
+      }
+    } else if (await Permission.locationAlways.isGranted) {
+      isBackgroundTrackingEnabled.value = true;
+    }
+
+    // Check notification permission for foreground service
+    if (await Permission.notification.isDenied) {
+      await Permission.notification.request();
+    }
+
+    return true;
+  } catch (e) {
+    log('$_logTag Error checking permissions: $e');
+    return false;
   }
-  
-  void _showPermissionDialog() {
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Location Permission Required'),
+}
+
+Future<void> _showPrePermissionDialog() async {
+  await showDialog(
+    context: Get.context!,
+    barrierDismissible: false,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text("Enable Background Location"),
         content: const Text(
-          'This app needs location permission to track your position during work hours. '
-          'Please enable location permission in app settings.',
+          "To keep tracking active even when the app is closed, "
+          "we need 'Allow all the time' location permission.\n\n"
+          "Without it, background tracking won’t work properly."
         ),
         actions: [
           TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Not Now"),
           ),
-          ElevatedButton(
+          TextButton(
             onPressed: () {
-              Get.back();
-              openAppSettings();
+              Navigator.pop(context);
             },
-            child: const Text('Open Settings'),
+            child: const Text("Continue"),
           ),
         ],
-      ),
-      barrierDismissible: false,
-    );
-  }
-  
+      );
+    },
+  );
+}
+
+Future<void> _showSettingsRedirectDialog() async {
+  await showDialog(
+    context: Get.context!,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text("Enable Full Access"),
+        content: const Text(
+          "For background tracking to work reliably, please enable "
+          "'Allow all the time' in your phone’s settings."
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings();
+            },
+            child: const Text("Go to Settings"),
+          ),
+        ],
+      );
+    },
+  );
+}
+
   void _showBackgroundPermissionDialog() {
     Get.dialog(
       AlertDialog(
@@ -605,7 +644,6 @@ class LiveTrackingService extends GetxController {
       message,
       backgroundColor: color,
       colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
       duration: const Duration(seconds: 2),
       icon: Icon(
         color == Colors.green ? Icons.gps_fixed : 

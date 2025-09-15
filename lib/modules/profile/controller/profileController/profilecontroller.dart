@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/modules/auth/models/user_model.dart';
 import 'package:security_guard/data/services/api_post_service.dart';
-import 'package:security_guard/modules/home/controllers/home_controller.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
 
@@ -12,41 +11,32 @@ class ProfileController extends GetxController {
   final Rx<UserModel?> userModel = Rx<UserModel?>(null);
   final RxBool isLoading = false.obs;
 
-  // Only device token is stored in SharedPreferences
   final LocalStorageService _storage = LocalStorageService.instance;
   final ApiPostServices _apiPostService = ApiPostServices();
   final ApiGetServices _apiGetService = ApiGetServices();
-  
 
-  @override
-  void onInit() {
-    super.onInit();
-    // You may want to load userId from an AuthController or similar
-    // For demo, you can set userModel.value = ...
-    
-  }
 
-Future<void> fetchUserProfile(String userId) async {
-  isLoading.value = true;
-  try {
-    final response = await _apiGetService.getProfileAPI(userId);
-    if (response != null) {
-      if (userModel.value != null) {
-        // Update existing user data, preserving fields not in the response
-        userModel.value = userModel.value!.updateWith(response);
+  Future<void> fetchUserProfile(String userId) async {
+    isLoading.value = true;
+    try {
+      final response = await _apiGetService.getProfileAPI(userId);
+      if (response != null) {
+        if (userModel.value != null) {
+          // Update existing user data, preserving fields not in the response
+          userModel.value = userModel.value!.updateWith(response);
+        } else {
+          // Create new user if none exists
+          userModel.value = UserModel.fromJson(response);
+        }
       } else {
-        // Create new user if none exists
-        userModel.value = UserModel.fromJson(response);
+        _showErrorSnackbar(response?['message'] ?? 'Failed to fetch profile');
       }
-    } else {
-      _showErrorSnackbar(response?['message'] ?? 'Failed to fetch profile');
+    } catch (e) {
+      _showErrorSnackbar('Failed to fetch profile data');
+    } finally {
+      isLoading.value = false;
     }
-  } catch (e) {
-    _showErrorSnackbar('Failed to fetch profile data');
-  } finally {
-    isLoading.value = false;
   }
-}
 
   Future<void> updateProfile({
     required String userId,
@@ -134,9 +124,7 @@ Future<void> fetchUserProfile(String userId) async {
         userId: userId,
         imageFile: imageFile,
       );
-      if (response != null &&
-         
-          response['photoUrl'] != null) {
+      if (response != null && response['photoUrl'] != null) {
         userModel.value = userModel.value?.copyWith(
           photoPath: response['photoUrl'],
         );
@@ -156,7 +144,7 @@ Future<void> fetchUserProfile(String userId) async {
   Future<void> logout() async {
     userModel.value = null;
     await _storage.removeDeviceToken();
-  Get.find<BottomNavController>().changeTab(0);
+    Get.find<BottomNavController>().changeTab(0);
     Get.offAllNamed('/login');
   }
 
@@ -175,7 +163,7 @@ Future<void> fetchUserProfile(String userId) async {
     Get.snackbar(
       'Success',
       message,
-     snackPosition: SnackPosition.BOTTOM,
+      snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.green,
       colorText: Colors.white,
     );
