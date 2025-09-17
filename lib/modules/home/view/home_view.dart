@@ -123,8 +123,8 @@ class HomeView extends GetView<HomeController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  controller.profileController.userModel.value?.name.toString().split(" ").first ?? 
-                    "$greeting",
+                 "$greeting, ${controller.profileController.userModel.value?.name.toString().split(" ").first}" 
+                   ,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -145,7 +145,7 @@ class HomeView extends GetView<HomeController> {
           ),
 
           // SOS Status Indicator
-          _buildSosStatusIndicator(),
+          // _buildSosStatusIndicator(),
 
           Stack(
             children: [
@@ -162,56 +162,7 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  Widget _buildSosStatusIndicator() {
-    return Obx(() {
-      final isAdmin = controller.profileController.userModel.value?.isAdmin == true;
-      if (isAdmin) return SizedBox.shrink(); // Don't show for admins
-      
-      final sosService = Get.find<SosCheckInService>();
-      final isActive =  controller.profileController.userModel.value?.safetyCheckInEnabled == true;
-      final isPending = sosService.isCheckInPending.value;
-      
-      return Container(
-        margin: EdgeInsets.only(right: 8),
-        child: GestureDetector(
-          onTap: () => _showSosStatusDialog(),
-          child: Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: isPending 
-                  ? Colors.orange 
-                  : isActive 
-                      ? Colors.green 
-                      : Colors.grey,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 1),
-            ),
-            child: Icon(
-              isPending ? Icons.timer : Icons.security,
-              color: Colors.white,
-              size: 18,
-            ),
-          ),
-        ),
-      );
-    });
-  }
 
-  // Widget _buildSosFloatingButton() {
-  //   return Obx(() {
-  //     final isAdmin = controller.profileController.userModel.value?.isAdmin == true;
-  //     if (isAdmin) return SizedBox.shrink(); // Don't show for admins
-      
-  //     return FloatingActionButton(
-  //       onPressed: () => _showSosDialog(),
-  //       backgroundColor: Colors.red,
-  //       child: Icon(Icons.emergency, color: Colors.white),
-  //       heroTag: "sosButton",
-  //       tooltip: 'Emergency SOS',
-  //     );
-  //   });
-  // }
 
   Widget _buildBody(bottomNavController) {
     return SingleChildScrollView(
@@ -221,8 +172,7 @@ class HomeView extends GetView<HomeController> {
         children: [
           _buildAttendanceCard(),
           SizedBox(height: 16),
-          _buildSosStatusCard(), // New SOS status card
-          SizedBox(height: 24),
+          
           _buildSectionTitle('Quick Actions'),
           SizedBox(height: 12),
           _buildQuickActions(bottomNavController),
@@ -236,131 +186,7 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  Widget _buildSosStatusCard() {
-    return Obx(() {
-      final isAdmin = controller.profileController.userModel.value?.isAdmin == true;
-      if (isAdmin) return SizedBox.shrink(); // Don't show for admins
-      
-      final sosService = Get.find<SosCheckInService>();
-      final isActive = sosService.isServiceActive.value;
-      final isPending = sosService.isCheckInPending.value;
-      final lastCheckIn = sosService.lastCheckInTime.value;
-      final missedCheckIns = sosService.missedCheckIns.value;
-      
-      return Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Safety Check-In Status',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isPending 
-                        ? Color(0xFFFFF3CD)
-                        : isActive 
-                            ? Color(0xFFE6F7EE) 
-                            : Color(0xFFFFE6E6),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    isPending 
-                        ? 'Pending Response'
-                        : isActive 
-                            ? 'Active' 
-                            : 'Inactive',
-                    style: TextStyle(
-                      color: isPending 
-                          ? Colors.orange[800]
-                          : isActive 
-                              ? Color(0xFF4CAF50) 
-                              : Colors.red,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Last Check-in',
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      lastCheckIn.isEmpty ? 'None' : lastCheckIn,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Missed',
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      missedCheckIns.toString(),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: missedCheckIns > 0 ? Colors.red : Colors.green,
-                      ),
-                    ),
-                  ],
-                ),
-                // GestureDetector(
-                //   onTap: () => controller.toggleSosService(),
-                //   child: Container(
-                //     padding: EdgeInsets.all(8),
-                //     decoration: BoxDecoration(
-                //       color: isActive ? Colors.red[100] : Colors.green[100],
-                //       borderRadius: BorderRadius.circular(8),
-                //     ),
-                //     child: Icon(
-                //       isActive ? Icons.stop : Icons.play_arrow,
-                //       color: isActive ? Colors.red : Colors.green,
-                //       size: 20,
-                //     ),
-                //   ),
-                // ),
-              ],
-            ),
-          ],
-        ),
-      );
-    });
-  }
+  
 
   Widget _buildAttendanceCard() {
     return Obx(
@@ -761,94 +587,4 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  // void _showSosDialog() {
-  //   Get.dialog(
-  //     AlertDialog(
-  //       title: Row(
-  //         children: [
-  //           Icon(Icons.emergency, color: Colors.red),
-  //           SizedBox(width: 8),
-  //           Text('Emergency SOS'),
-  //         ],
-  //       ),
-  //       content: Text(
-  //         'Are you sure you want to send an emergency SOS alert? This will notify admin and authorities immediately.',
-  //       ),
-  //       actions: [
-  //         TextButton(
-  //           onPressed: () => Get.back(),
-  //           child: Text('Cancel'),
-  //         ),
-  //         ElevatedButton(
-  //           onPressed: () {
-  //             Get.back();
-  //             // controller.triggerManualSos();
-  //           },
-  //           style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-  //           child: Text('Send SOS', style: TextStyle(color: Colors.white)),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  void _showSosStatusDialog() {
-    final sosService = Get.find<SosCheckInService>();
-    
-    Get.dialog(
-      AlertDialog(
-        title: Text('Safety Check-In Status'),
-        content: Obx(() => Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildStatusRow('Service Status', sosService.isServiceActive.value ? 'Active' : 'Inactive'),
-            _buildStatusRow('Check-in Interval', '${sosService.checkInIntervalMinutes.value} minutes'),
-            _buildStatusRow('Response Window', '${sosService.responseWindowMinutes.value} minutes'),
-            _buildStatusRow('Last Check-in', sosService.lastCheckInTime.value.isEmpty ? 'None' : sosService.lastCheckInTime.value),
-            _buildStatusRow('Missed Check-ins', sosService.missedCheckIns.value.toString()),
-          ],
-        )),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('Close'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Get.back();
-              // controller.toggleSosService();
-            },
-            child: Text(sosService.isServiceActive.value ? 'Stop Service' : 'Start Service'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: TextStyle(fontWeight: FontWeight.w500)),
-          Text(value, style: TextStyle(color: Colors.grey[600])),
-        ],
-      ),
-    );
-  }
-
-  // Color _getActivityColor(String type) {
-  //   switch (type) {
-  //     case 'patrol':
-  //       return Colors.blue;
-  //     case 'attendance':
-  //       return Colors.purple;
-  //     case 'issue':
-  //       return Colors.orange;
-  //     default:
-  //       return Colors.grey;
-  //   }
-  // }
 }

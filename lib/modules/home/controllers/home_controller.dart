@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:security_guard/Data/services/notification_services.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
-import 'package:security_guard/data/services/live_tracking_service_controller.dart';
+import 'package:security_guard/data/services/live_tracking_service.dart';
 import 'package:security_guard/data/services/session_service.dart';
 import 'package:security_guard/data/services/sos_checkin_service.dart';
 import 'package:security_guard/modules/issue/versionUpdateCheck/versionUpdateCheckScreen.dart';
@@ -63,7 +63,7 @@ class HomeController extends GetxController {
 
   @override
   void onClose() {
-    sosService.stopService();
+
     liveTrackingService.stopTracking();
     super.onClose();
   }
@@ -136,8 +136,6 @@ void _initializeLiveTracking() {
   // Set up reactive listeners
   _setupTrackingListeners();
   
-  // Start tracking if conditions are met
-  // _updateTrackingState();
 }
 
 // Setup reactive listeners
@@ -323,10 +321,7 @@ void _showNotification(String message, Color color) {
 
   // Stop all services (useful when logging out or switching users)
   void stopAllServices() {
-    if (sosService.isServiceActive.value) {
-      sosService.stopService();
-      sosServiceActive.value = false;
-    }
+  
     
     if (liveTrackingService.isTrackingActive.value) {
       liveTrackingService.stopTracking();

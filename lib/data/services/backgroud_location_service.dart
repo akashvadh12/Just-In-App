@@ -24,25 +24,25 @@ class BackgroundLocationService {
   static const String _keyIsTrackingEnabled = 'bg_tracking_enabled';
 
 // Show notification only when app is in background
-// static Future<void> initializeService({bool showNotification = true}) async {
-//   final service = FlutterBackgroundService();
-//   await service.configure(
-//     androidConfiguration: AndroidConfiguration(
-//       onStart: onStart,
-//       autoStart: false,
-//       isForegroundMode: showNotification, // Make it configurable
-//       notificationChannelId: showNotification ? notificationChannelId : null,
-//       initialNotificationTitle: 'Live Tracking',
-//       initialNotificationContent: 'Tracking your location...',
-//       foregroundServiceNotificationId: notificationId ,
-//     ),
-//     iosConfiguration: IosConfiguration(
-//       autoStart: false,
-//       onForeground: onStart,
-//       onBackground: onIosBackground,
-//     ),
-//   );
-// }
+static Future<void> initializeService({bool showNotification = true}) async {
+  final service = FlutterBackgroundService();
+  await service.configure(
+    androidConfiguration: AndroidConfiguration(
+      onStart: onStart,
+      autoStart: false,
+      isForegroundMode: showNotification, // Make it configurable
+      notificationChannelId: showNotification ? notificationChannelId : null,
+      initialNotificationTitle: 'Live Tracking',
+      initialNotificationContent: 'Tracking your location...',
+      foregroundServiceNotificationId: notificationId ,
+    ),
+    iosConfiguration: IosConfiguration(
+      autoStart: false,
+      onForeground: onStart,
+      onBackground: onIosBackground,
+    ),
+  );
+}
 
 
   // Main entry point for background service
