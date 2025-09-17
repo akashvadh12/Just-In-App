@@ -63,14 +63,14 @@ Future<http.Response> sendLiveLocation(Map<String, dynamic> locationData) async 
 
 
 Future<http.Response> sendSafetyCheckIn(Map<String, dynamic> checkInData) async {
-  const String endpoint = 'Tracking/safety-checkin';
+  const String endpoint = 'Tracking/safety-checkin-response';
   
   // Ensure required fields are present with proper structure
   final Map<String, dynamic> body = {
-    'userId': checkInData['userId'] ?? '',
+    // 'userId': checkInData['userId'] ?? '',
+    'checkInId': checkInData['checkInId'] ?? '',
     'latitude': checkInData['latitude'] ?? 0.0,
     'longitude': checkInData['longitude'] ?? 0.0,
-    'promptTime': checkInData['promptTime'] ?? DateTime.now().toIso8601String(),
     'response': checkInData['response'] ?? 'AllOK',
   };
 

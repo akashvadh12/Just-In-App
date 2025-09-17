@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -5,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
+import 'package:security_guard/shared/widgets/sos_checkIn_dialog.dart';
 
 class NotificationServices {
   FirebaseMessaging messaging = FirebaseMessaging.instance;
@@ -28,11 +30,8 @@ class NotificationServices {
       // Set up token refresh listener
       messaging.onTokenRefresh.listen((newToken) {
         print('FCM Token refreshed:😊😊😊 $newToken');
-        sendTokenToBackend(newToken);
       });
-
-      // Get and send token with error handling
-      await getAndSendToken();
+  
     } catch (e) {
       print('Error initializing notification services: $e');
       // Continue app execution even if notification setup fails
@@ -102,18 +101,56 @@ class NotificationServices {
   void handleNotificationTap(NotificationResponse? payload) {
     if (payload != null && payload.payload != null) {
       print('Notification tapped with payload: ${payload.payload}');
-      print('Notification tapped with payload: ${Get.currentRoute}');
-      // if (Get.currentRoute != '/home/notification') {
-      //   Get.to(NotificationsScreen);
-      //   // Get.to(NotificationScreen());
-      // }
-      // Get.find<NotificationController>().fetchNotifications();
-      // Get.to(NotificationsScreen);
-      print('Current route: ${controller.currentIndex.value}');
 
+      try {
+        // Parse the payload as JSON
+        final data = jsonDecode(payload.payload!);
+
+        // Check if it's a safety check-in notification
+        if (data['Type'] == 'safety_checkin') {
+          handleSafetyCheckInNotification(data);
+          return;
+        }
+      } catch (e) {
+        print('Error parsing notification payload: $e');
+      }
+
+      // Handle other notifications (your existing logic)
       controller.currentIndex.value = 3;
-      print('Current route: ${controller.currentIndex.value}');
     }
+  }
+
+  // Add this method to handle safety check-in specific notifications
+  void handleSafetyCheckInNotification(Map<String, dynamic> data) {
+    if (data['Type'] == 'safety_checkin') {
+      final checkInId = data['checkInId'];
+      final sender = data['sender'];
+
+      print('Safety check-in notification received: ID $checkInId');
+
+      // Navigate to main screen if needed and show dialog
+      // if (Get.currentRoute != '/home') {
+      //   Get.offAllNamed('/home');
+      // }
+
+      // Small delay to ensure navigation completes
+      Future.delayed(const Duration(milliseconds: 300), () {
+        _showSafetyCheckInDialog(checkInId);
+      });
+    }
+  }
+
+  void _showSafetyCheckInDialog(String checkInId) {
+    // Close any existing dialogs first
+    if (Get.isDialogOpen ?? false) {
+      Get.back();
+    }
+
+    Get.dialog(
+      SosCheckInDialog(checkInId: checkInId),
+      barrierDismissible: false,
+      name: 'SosCheckInDialog',
+    );
   }
 
   void firebaseInit() {
@@ -122,8 +159,14 @@ class NotificationServices {
       print('Got a message in the foreground!');
       print('Message data: ${message.data}');
 
-      // For iOS, we'll let the system handle the notification display
-      // For Android, we'll use our local notifications plugin
+      // Check if it's a safety check-in notification
+      if (message.data['Type'] == 'safety_checkin') {
+        // For foreground, show dialog immediately without notification
+        handleSafetyCheckInNotification(message.data);
+        return;
+      }
+
+      // For other notifications, show notification
       if (!GetPlatform.isIOS) {
         showNotification(message);
       }
@@ -132,11 +175,14 @@ class NotificationServices {
     // Handle notification clicks when app is in background but open
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       print('A notification was clicked on: ${message.data}');
-      // Navigate or handle based on the notification data
-      // if (Get.currentRoute != '/home/notification') {
-      //   Get.toNamed("/home/notification", id: 0);
-      //   Get.find<NotificationController>().fetchNotifications();
-      // }
+
+      // Check if it's a safety check-in notification
+      if (message.data['Type'] == 'safety_checkin') {
+        handleSafetyCheckInNotification(message.data);
+        return;
+      }
+
+      // Handle other notifications (your existing logic)
     });
   }
 
@@ -257,8 +303,7 @@ class NotificationServices {
       );
     }
   }
-
-  Future<String?> getDeviceToken() async {
+   Future<String?> getDeviceToken() async {
     try {
       // For iOS, we need to get the APNS token first
       if (GetPlatform.isIOS) {
@@ -284,7 +329,7 @@ class NotificationServices {
             String? delayedToken = await messaging.getToken();
             if (delayedToken != null && delayedToken.isNotEmpty) {
               print('Delayed FCM token now available: $delayedToken');
-              sendTokenToBackend(delayedToken);
+              // sendTokenToBackend(delayedToken);
             }
           });
 
@@ -299,99 +344,6 @@ class NotificationServices {
     } catch (e) {
       print('Error getting device token: $e');
       return null;
-    }
-  }
-
-  Future<void> getAndSendToken() async {
-    try {
-      String? token = await getDeviceToken();
-      if (token != null) {
-        sendTokenToBackend(token);
-      } else {
-        print('Device token is null, skipping backend registration');
-
-        // For iOS, set up a listener to get the token when it becomes available
-        if (GetPlatform.isIOS) {
-          // Listen for APNS token changes
-          messaging.onTokenRefresh.listen((newToken) {
-            print('Token now available: $newToken');
-            sendTokenToBackend(newToken);
-          });
-        }
-      }
-    } catch (e) {
-      print('Error in getAndSendToken: $e');
-      // Don't rethrow - allow app to continue
-    }
-  }
-
-  Future<void> sendTokenToBackend(String token) async {
-    try {
-      // TODO: Replace with your actual backend API endpoint when ready
-      // For now, we'll just log the token for debugging
-      print('FCM token ready to send to backend: $token');
-      print('Device type: ${GetPlatform.isIOS ? 'iOS' : 'Android'}');
-
-      // When your backend is ready, uncomment and update this code:
-      /*
-      final response = await http.post(
-        Uri.parse('https://api.sayandwork.com/register-device'),
-        headers: {
-          'Content-Type': 'application/json',
-          // Add authorization headers if needed
-          // 'Authorization': 'Bearer $userToken',
-        },
-        body: {
-          'fcm_token': token,
-          'device_type': GetPlatform.isIOS ? 'ios' : 'android',
-          // Include user ID if available
-          // 'user_id': getUserId(),
-        },
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        print('FCM token successfully sent to backend');
-      } else {
-        print('Failed to send FCM token to backend: ${response.statusCode}');
-      }
-      */
-    } catch (e) {
-      print('Error sending FCM token to backend: $e');
-    }
-  }
-
-  Future<void> onUserLogin(String userId) async {
-    String? token = await getDeviceToken();
-    if (token != null) {
-      try {
-        // TODO: Replace with your actual backend API endpoint when ready
-        // For now, we'll just log the token for debugging
-        print('FCM token ready to associate with user: $token');
-        print('User ID: $userId');
-
-        // When your backend is ready, uncomment and update this code:
-        /*
-        final response = await http.post(
-          Uri.parse('https://api.sayandwork.com/associate-device'),
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: {
-            'fcm_token': token,
-            'user_id': userId,
-            'device_type': GetPlatform.isIOS ? 'ios' : 'android',
-          },
-        );
-
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          print('FCM token associated with user $userId');
-        } else {
-          print('Failed to associate FCM token with user: ${response.statusCode}');
-        }
-        */
-      } catch (e) {
-        print('Error associating FCM token with user: $e');
-      }
     }
   }
 

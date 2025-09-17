@@ -169,7 +169,7 @@ class CompanyLocationsListScreen extends StatelessWidget {
               // Get.to(() => EditLocationScreen(location: companyLocation));
               Get.to(
                 CompanyLocationEditScreen(
-                  companyID: '${companyLocation.companyID}',
+                  companyID: '${companyLocation.id}',
                 ),
               );
             },

@@ -60,7 +60,7 @@ class LiveTrackingService extends GetxController {
     log('$_logTag Initializing Live Tracking Service with Background Support');
     
     // Initialize background service
-    await BackgroundLocationService.initializeService();
+    // await BackgroundLocationService.initializeService();
     
     // Check if background service is already running
     backgroundServiceRunning.value = await BackgroundLocationService.isBackgroundTrackingRunning();
@@ -168,14 +168,13 @@ class LiveTrackingService extends GetxController {
       log('$_logTag Live tracking started with interval: ${trackingIntervalSeconds}s');
       trackingStatus.value = isBackgroundTrackingEnabled.value ? 'Active (Background enabled)' : 'Active (Foreground only)';
       
-      // _showTrackingNotification('Live tracking started', Colors.green);
+     
       
       return true;
       
     } catch (e) {
       log('$_logTag Error starting tracking: $e');
       trackingStatus.value = 'Error: $e';
-      _showTrackingNotification('Failed to start tracking: $e', Colors.red);
       return false;
     }
   }
@@ -375,9 +374,9 @@ class LiveTrackingService extends GetxController {
       _queueLocationData(locationData);
       
       // Show error notification only for critical failures
-      if (failedAttempts.value == 1) {
-        _showTrackingNotification('Location send failed, will retry', Colors.orange);
-      }
+      // if (failedAttempts.value == 1) {
+      //   _showTrackingNotification('Location send failed, will retry', Colors.orange);
+      // }
       
     } finally {
       isSubmittingLocation.value = false;
@@ -457,45 +456,45 @@ Future<bool> _checkPermissions() async {
       permission = await Geolocator.requestPermission();
     }
 
-    if (permission == LocationPermission.deniedForever) {
-      _showPrePermissionDialog(); // your existing dialog
-      return false;
-    }
+    // if (permission == LocationPermission.deniedForever) {
+    //   _showPrePermissionDialog(); // your existing dialog
+    //   return false;
+    // }
 
-    if (permission == LocationPermission.denied) {
-      _showTrackingNotification('Location permission denied', Colors.red);
-      return false;
-    }
+    // if (permission == LocationPermission.denied) {
+    //   _showTrackingNotification('Location permission denied', Colors.red);
+    //   return false;
+    // }
 
-    // If user only granted "while in use", guide them to settings
-    if (permission == LocationPermission.whileInUse) {
-      await _showSettingsRedirectDialog();
-      return false;
-    }
+    // // If user only granted "while in use", guide them to settings
+    // if (permission == LocationPermission.whileInUse) {
+    //   await _showSettingsRedirectDialog();
+    //   return false;
+    // }
 
     // For background tracking, we need "always" location permission
-    if (await Permission.locationAlways.isDenied) {
-      _showBackgroundPermissionDialog(); // your existing dialog
-      final status = await Permission.locationAlways.request();
+    // if (await Permission.locationAlways.isDenied) {
+    //   _showBackgroundPermissionDialog(); // your existing dialog
+    //   final status = await Permission.locationAlways.request();
 
-      if (status.isGranted) {
-        isBackgroundTrackingEnabled.value = true;
-        log('$_logTag Background location permission granted');
-      } else if (status.isPermanentlyDenied) {
-        _showBackgroundPermissionDeniedDialog();
-        isBackgroundTrackingEnabled.value = false;
-      } else {
-        isBackgroundTrackingEnabled.value = false;
-        log('$_logTag Background location permission denied');
-      }
-    } else if (await Permission.locationAlways.isGranted) {
-      isBackgroundTrackingEnabled.value = true;
-    }
+    //   if (status.isGranted) {
+    //     isBackgroundTrackingEnabled.value = true;
+    //     log('$_logTag Background location permission granted');
+    //   } else if (status.isPermanentlyDenied) {
+    //     _showBackgroundPermissionDeniedDialog();
+    //     isBackgroundTrackingEnabled.value = false;
+    //   } else {
+    //     isBackgroundTrackingEnabled.value = false;
+    //     log('$_logTag Background location permission denied');
+    //   }
+    // } else if (await Permission.locationAlways.isGranted) {
+    //   isBackgroundTrackingEnabled.value = true;
+    // }
 
-    // Check notification permission for foreground service
-    if (await Permission.notification.isDenied) {
-      await Permission.notification.request();
-    }
+    // // Check notification permission for foreground service
+    // if (await Permission.notification.isDenied) {
+    //   await Permission.notification.request();
+    // }
 
     return true;
   } catch (e) {

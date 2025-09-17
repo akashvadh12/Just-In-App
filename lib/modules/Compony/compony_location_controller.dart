@@ -534,10 +534,10 @@ Future<bool> updateCompanyLocation({
   // ========================= GETTER METHODS =========================
 
   /// Get company location by ID
-  CompanyLocation? getCompanyLocationById(String companyID) {
+  CompanyLocation? getCompanyLocationById(String locationId) {
     try {
       return companyLocations.firstWhere(
-        (location) => location.companyID == companyID,
+        (location) => location.id == locationId,
       );
     } catch (e) {
       return null;

@@ -1,9 +1,10 @@
-
 import 'package:flutter/material.dart';
 import 'package:security_guard/data/services/sos_checkin_service.dart';
 
 class SosCheckInDialog extends StatefulWidget {
-  const SosCheckInDialog({Key? key}) : super(key: key);
+  final String? checkInId; // Add this parameter
+
+  const SosCheckInDialog({Key? key, this.checkInId}) : super(key: key);
 
   @override
   State<SosCheckInDialog> createState() => _SosCheckInDialogState();
@@ -44,7 +45,10 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
     _pulseController.repeat(reverse: true);
     _timerController.forward();
 
-    print('🔔 SOS Check-in dialog initialized');
+    // Log whether this is notification-triggered or timer-triggered
+    print(
+      '🔔 SOS Check-in dialog initialized ${widget.checkInId != null ? "(Notification ID: ${widget.checkInId})" : "(Timer-based)"}',
+    );
   }
 
   @override
@@ -103,7 +107,7 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
 
               const SizedBox(height: 20),
 
-              // Pulsing security icon
+              // Pulsing security icon - different color for notification vs timer
               AnimatedBuilder(
                 animation: _pulseAnimation,
                 builder: (context, child) {
@@ -113,13 +117,23 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: Colors.blue[100],
+                        color:
+                            widget.checkInId != null
+                                ? Colors
+                                    .orange[100] // Orange for notification-triggered
+                                : Colors.blue[100], // Blue for timer-based
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.security,
+                      child: Icon(
+                        widget.checkInId != null
+                            ? Icons
+                                .notifications_active // Different icon for notifications
+                            : Icons.security,
                         size: 40,
-                        color: Colors.blue,
+                        color:
+                            widget.checkInId != null
+                                ? Colors.orange
+                                : Colors.blue,
                       ),
                     ),
                   );
@@ -128,9 +142,11 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
 
               const SizedBox(height: 20),
 
-              const Text(
-                'Safety Check-In',
-                style: TextStyle(
+              Text(
+                widget.checkInId != null
+                    ? 'Safety Check-In Required' // Different title for notifications
+                    : 'Safety Check-In',
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
@@ -140,11 +156,23 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
 
               const SizedBox(height: 12),
 
-              const Text(
-                'Please confirm your status within the response window',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+              Text(
+                widget.checkInId != null
+                    ? 'You have a pending safety check-in. Please confirm your status.'
+                    : 'Please confirm your status within the response window',
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
+
+              // Show check-in ID for notification-triggered dialogs (optional)
+              if (widget.checkInId != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Check-in ID: ${widget.checkInId}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  textAlign: TextAlign.center,
+                ),
+              ],
 
               const SizedBox(height: 30),
 
@@ -156,10 +184,13 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
                       icon: Icons.check_circle,
                       label: 'All OK',
                       color: Colors.green,
-                      onTap:
-                          () => sosService.handleCheckInResponse(
-                            CheckInStatus.allOk,
-                          ),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        sosService.handleCheckInResponse(
+                          CheckInStatus.allOk,
+                          checkInId: widget.checkInId, // Pass the checkInId
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -168,10 +199,13 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
                       icon: Icons.emergency,
                       label: 'SOS',
                       color: Colors.red,
-                      onTap:
-                          () => sosService.handleCheckInResponse(
-                            CheckInStatus.sos,
-                          ),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        sosService.handleCheckInResponse(
+                          CheckInStatus.sos,
+                          checkInId: widget.checkInId, // Pass the checkInId
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -182,10 +216,13 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
               SizedBox(
                 width: double.infinity,
                 child: TextButton(
-                  onPressed:
-                      () => sosService.handleCheckInResponse(
-                        CheckInStatus.ignore,
-                      ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    sosService.handleCheckInResponse(
+                      CheckInStatus.ignore,
+                      checkInId: widget.checkInId, // Pass the checkInId
+                    );
+                  },
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),

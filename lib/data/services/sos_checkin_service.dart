@@ -39,6 +39,7 @@ class SosCheckInService extends GetxController {
   Timer? _responseTimer;
   DateTime? _lastCheckInSent;
   DateTime? _currentPromptTime;
+  String? _currentCheckInId; // Track current check-in ID
 
   static const String _logTag = '[SosCheckInService]';
 
@@ -101,21 +102,21 @@ class SosCheckInService extends GetxController {
     }
   }
 
-Future<void> startBackgroundService() async {
-  await BackgroundSosForegroundService.startBackgroundSosService(
-    userId: await _getUserId(),
-    companyId: profileController.userModel.value?.companyId ?? '',
-    siteId: profileController.userModel.value?.siteId ?? '',
-    intervalMinutes: checkInIntervalMinutes.value,
-    responseWindowMinutes: responseWindowMinutes.value,
-    apiBaseUrl: BASE_URL,
-  );
-}
+  Future<void> startBackgroundService() async {
+    await BackgroundSosForegroundService.startBackgroundSosService(
+      userId: await _getUserId(),
+      companyId: profileController.userModel.value?.companyId ?? '',
+      siteId: profileController.userModel.value?.siteId ?? '',
+      intervalMinutes: checkInIntervalMinutes.value,
+      responseWindowMinutes: responseWindowMinutes.value,
+      apiBaseUrl: BASE_URL,
+    );
+  }
 
   /// Stop background SOS service
-Future<void> stopBackgroundService() async {
-  await BackgroundSosForegroundService.stopBackgroundSosService();
-}
+  Future<void> stopBackgroundService() async {
+    await BackgroundSosForegroundService.stopBackgroundSosService();
+  }
 
   /// Start the SOS check-in service
   void startService() {
@@ -143,16 +144,17 @@ Future<void> stopBackgroundService() async {
     _checkInTimer?.cancel();
     _responseTimer?.cancel();
     isCheckInPending.value = false;
+    _currentCheckInId = null;
 
     stopBackgroundService();
-    Get.snackbar(
-      'SOS Service Stopped',
-      'Periodic safety check-ins have been disabled',
-      backgroundColor: Colors.orange.withOpacity(0.8),
-      colorText: Colors.white,
-      icon: const Icon(Icons.security_outlined, color: Colors.white),
-      duration: const Duration(seconds: 3),
-    );
+    // Get.snackbar(
+    //   'SOS Service Stopped',
+    //   'Periodic safety check-ins have been disabled',
+    //   backgroundColor: Colors.orange.withOpacity(0.8),
+    //   colorText: Colors.white,
+    //   icon: const Icon(Icons.security_outlined, color: Colors.white),
+    //   duration: const Duration(seconds: 3),
+    // );
 
     dev.log('$_logTag SOS Check-in service stopped');
   }
@@ -196,115 +198,179 @@ Future<void> stopBackgroundService() async {
     );
   }
 
-  /// Show the check-in dialog
+  /// Show the check-in dialog (for timer-based check-ins)
   void _showCheckInDialog() {
-    if (!isServiceActive.value) return;
+    _showCheckInDialogInternal(checkInId: null);
+  }
+
+  /// Internal method to show check-in dialog
+  void _showCheckInDialogInternal({String? checkInId}) {
+    if (!isServiceActive.value && checkInId == null) {
+      // Only enforce service active check for timer-based check-ins
+      return;
+    }
+
+    // Close any existing dialog first
+    if (Get.isDialogOpen ?? false) {
+      Get.back();
+    }
 
     isCheckInPending.value = true;
     _lastCheckInSent = DateTime.now();
-    _currentPromptTime = DateTime.now(); // Store the prompt time
+    _currentPromptTime = DateTime.now();
+    _currentCheckInId = checkInId; // Store the check-in ID
 
-    dev.log('$_logTag Showing SOS check-in dialog');
+    dev.log('$_logTag Showing SOS check-in dialog (ID: $checkInId)');
 
     // Start response timer
+    _responseTimer?.cancel();
     _responseTimer = Timer(
       Duration(minutes: responseWindowMinutes.value),
       _handleNoResponse,
     );
 
     Get.dialog(
-      const SosCheckInDialog(),
+      SosCheckInDialog(checkInId: checkInId), // Pass the checkInId to dialog
       barrierDismissible: false,
       name: 'SosCheckInDialog',
     );
   }
-/// Handle user response to check-in
-Future<void> handleCheckInResponse(CheckInStatus status) async {
-  dev.log('$_logTag SOS Check-in response: ${status.toString()}');
 
-  _responseTimer?.cancel();
-  isCheckInPending.value = false;
-
-  // **MOVED: Close dialog immediately for better UX**
-  Get.back();
-
-  // **MOVED: Show immediate feedback**
-  _showImmediateFeedback(status);
-
-  try {
-    // Send check-in response to API
-    await _sendCheckInResponse(status);
-
-    if (status == CheckInStatus.allOk) {
-      lastCheckInTime.value = _formatDateTime(DateTime.now());
-      missedCheckIns.value = 0;
-      _scheduleNextCheckIn();
-
-      // Update to success message
-      Get.snackbar(
-        '✅ Check-in Successful',
-        'Thank you for confirming your safety',
-        backgroundColor: Colors.green.withOpacity(0.8),
-        colorText: Colors.white,
-        icon: const Icon(Icons.check_circle, color: Colors.white),
-        duration: const Duration(seconds: 2),
-      );
-    } else if (status == CheckInStatus.sos) {
-      _handleSosAlert();
-    } else if (status == CheckInStatus.ignore) {
-      _scheduleNextCheckIn(); // Continue with normal schedule
+  /// Handle check-in triggered by notification
+  Future<void> handleNotificationCheckIn(String checkInId) async {
+    dev.log('$_logTag Handling notification-triggered check-in: $checkInId');
+    // Show the dialog with the notification check-in ID
+    _showCheckInDialogInternal(checkInId: checkInId);
+    
+    // If service is not active, we might want to temporarily activate it
+    // or handle it separately based on your business logic
+    if (!isServiceActive.value) {
+      dev.log('$_logTag Service not active, but handling notification check-in');
     }
-  } catch (e) {
-    dev.log('$_logTag Error handling check-in response: $e');
-    Get.snackbar(
-      'Check-in Error',
-      'Failed to send response. It will be sent when connection is restored.',
-      backgroundColor: Colors.orange.withOpacity(0.8),
-      colorText: Colors.white,
-      icon: const Icon(Icons.cloud_off, color: Colors.white),
-      duration: const Duration(seconds: 3),
-    );
   }
+
+  /// Handle user response to check-in
+  Future<void> handleCheckInResponse(CheckInStatus status, {String? checkInId}) async {
+    dev.log('$_logTag SOS Check-in response: ${status.toString()}, ID: $checkInId');
+
+    _responseTimer?.cancel();
+    isCheckInPending.value = false;
+    
+    // Use the stored checkInId if none provided
+    final effectiveCheckInId = checkInId ?? _currentCheckInId;
+    _currentCheckInId = null; // Clear after use
+
+    // Close dialog immediately for better UX
+    // if (Get.isDialogOpen ?? false) {
+      // Get.back();
+    // }
+
+    // Show immediate feedback
+    _showImmediateFeedback(status);
+
+    try {
+      // Send check-in response to API
+      await _sendCheckInResponse(status, checkInId: effectiveCheckInId);
+
+      if (status == CheckInStatus.allOk) {
+        lastCheckInTime.value = _formatDateTime(DateTime.now());
+        missedCheckIns.value = 0;
+        
+        // Only schedule next check-in for timer-based check-ins
+        if (effectiveCheckInId == null) {
+          _scheduleNextCheckIn();
+        }
+
+        // Update to success message
+        Get.snackbar(
+          '✅ Check-in Successful',
+          'Thank you for confirming your safety',
+          backgroundColor: Colors.green.withOpacity(0.8),
+          colorText: Colors.white,
+          icon: const Icon(Icons.check_circle, color: Colors.white),
+          duration: const Duration(seconds: 2),
+        );
+      } else if (status == CheckInStatus.sos) {
+        _handleSosAlert(effectiveCheckInId);
+      } else if (status == CheckInStatus.ignore) {
+        // Only schedule next check-in for timer-based check-ins
+        if (effectiveCheckInId == null) {
+          _scheduleNextCheckIn();
+        }
+      }
+    } catch (e) {
+      dev.log('$_logTag Error handling check-in response: $e');
+      Get.snackbar(
+        'Check-in Error',
+        'Failed to send response. It will be sent when connection is restored.',
+        backgroundColor: Colors.orange.withOpacity(0.8),
+        colorText: Colors.white,
+        icon: const Icon(Icons.cloud_off, color: Colors.white),
+        duration: const Duration(seconds: 3),
+      );
+    }
+  }
+
+/// Forces dialog closure regardless of other overlays
+
+void _replaceSnackbar(String title, String message, Color color, IconData icon) {
+  // Close current snackbar if any
+  if (Get.isSnackbarOpen) {
+    Get.closeCurrentSnackbar();
+  }
+  
+  // Small delay before showing new snackbar
+  Future.delayed(const Duration(milliseconds: 100), () {
+    Get.snackbar(
+      title,
+      message,
+      backgroundColor: color.withOpacity(0.8),
+      colorText: Colors.white,
+      icon: Icon(icon, color: Colors.white),
+      duration: const Duration(seconds: 2),
+    );
+  });
 }
 
-// **NEW: Add this method**
-void _showImmediateFeedback(CheckInStatus status) {
-  switch (status) {
-    case CheckInStatus.allOk:
-      Get.snackbar(
-        '✅ Processing',
-        'Recording your safety status...',
-        backgroundColor: Colors.green.withOpacity(0.8),
-        colorText: Colors.white,
-        icon: const Icon(Icons.check_circle, color: Colors.white),
-        duration: const Duration(seconds: 1),
-      );
-      break;
-    case CheckInStatus.sos:
-      Get.snackbar(
-        '🚨 Emergency Alert',
-        'Sending emergency alert...',
-        backgroundColor: Colors.red.withOpacity(0.8),
-        colorText: Colors.white,
-        icon: const Icon(Icons.emergency, color: Colors.white),
-        duration: const Duration(seconds: 1),
-      );
-      break;
-    case CheckInStatus.ignore:
-      Get.snackbar(
-        'Check-in Dismissed',
-        'Next check-in scheduled.',
-        backgroundColor: Colors.grey.withOpacity(0.8),
-        colorText: Colors.white,
-        icon: const Icon(Icons.info, color: Colors.white),
-        duration: const Duration(seconds: 2),
-      );
-      break;
-    case CheckInStatus.pending:
-      // No feedback needed for pending status
-      break;
+  /// Show immediate feedback to user
+  void _showImmediateFeedback(CheckInStatus status) {
+    switch (status) {
+      case CheckInStatus.allOk:
+  
+        Get.snackbar(
+          '✅ Processing',
+          'Recording your safety status...',
+          backgroundColor: Colors.green.withOpacity(0.8),
+          colorText: Colors.white,
+          icon: const Icon(Icons.check_circle, color: Colors.white),
+          duration: const Duration(seconds: 1),
+        );
+        break;
+      case CheckInStatus.sos:
+        Get.snackbar(
+          '🚨 Emergency Alert',
+          'Sending emergency alert...',
+          backgroundColor: Colors.red.withOpacity(0.8),
+          colorText: Colors.white,
+          icon: const Icon(Icons.emergency, color: Colors.white),
+          duration: const Duration(seconds: 1),
+        );
+        break;
+      case CheckInStatus.ignore:
+        Get.snackbar(
+          'Check-in Dismissed',
+          'Next check-in scheduled.',
+          backgroundColor: Colors.grey.withOpacity(0.8),
+          colorText: Colors.white,
+          icon: const Icon(Icons.info, color: Colors.white),
+          duration: const Duration(seconds: 2),
+        );
+        break;
+      case CheckInStatus.pending:
+        // No feedback needed for pending status
+        break;
+    }
   }
-}
 
   /// Handle no response within time window
   void _handleNoResponse() {
@@ -314,12 +380,20 @@ void _showImmediateFeedback(CheckInStatus status) {
 
     isCheckInPending.value = false;
     missedCheckIns.value++;
+    final missedCheckInId = _currentCheckInId;
+    _currentCheckInId = null;
 
-    Get.back(); // Close dialog if still open
+    if (Get.isDialogOpen ?? false) {
+      Get.back(); // Close dialog if still open
+    }
 
     // Send missed check-in
-    _sendMissedCheckInResponse();
-    _scheduleNextCheckIn();
+    _sendMissedCheckInResponse(checkInId: missedCheckInId);
+    
+    // Only schedule next check-in for timer-based check-ins
+    if (missedCheckInId == null) {
+      _scheduleNextCheckIn();
+    }
 
     Get.snackbar(
       '⚠️ Missed Check-in',
@@ -332,7 +406,7 @@ void _showImmediateFeedback(CheckInStatus status) {
   }
 
   /// Send check-in response to API
-  Future<void> _sendCheckInResponse(CheckInStatus status) async {
+  Future<void> _sendCheckInResponse(CheckInStatus status, {String? checkInId}) async {
     final userModel = profileController.userModel.value;
     if (userModel == null) {
       dev.log('$_logTag User model is null, cannot send check-in');
@@ -355,13 +429,11 @@ void _showImmediateFeedback(CheckInStatus status) {
       'userId': userModel.userId ?? '',
       'latitude': position?.latitude ?? 0.0,
       'longitude': position?.longitude ?? 0.0,
-      'promptTime': (_currentPromptTime ?? DateTime.now()).toIso8601String(),
       'response': _getApiResponseString(status),
-      'companyID': userModel.companyId ?? '',
-      'siteId': userModel.siteId ?? '',
+      if (checkInId != null) 'checkInId': checkInId, // Add checkInId if provided
     };
 
-    dev.log('$_logTag Sending check-in response: ${checkInData['response']}');
+    dev.log('$_logTag Sending check-in response: ${checkInData['response']} (ID: $checkInId)');
 
     if (connectivityController.isOffline.value) {
       // Queue for later
@@ -374,9 +446,9 @@ void _showImmediateFeedback(CheckInStatus status) {
   }
 
   /// Send missed check-in response
-  Future<void> _sendMissedCheckInResponse() async {
+  Future<void> _sendMissedCheckInResponse({String? checkInId}) async {
     try {
-      await _sendCheckInResponse(CheckInStatus.pending);
+      await _sendCheckInResponse(CheckInStatus.pending, checkInId: checkInId);
     } catch (e) {
       dev.log('$_logTag Error sending missed check-in: $e');
     }
@@ -424,9 +496,16 @@ void _showImmediateFeedback(CheckInStatus status) {
   }
 
   /// Send SOS alert
-  void _handleSosAlert() {
-    Get.back(); // Close dialog
-    _scheduleNextCheckIn();
+  void _handleSosAlert([String? checkInId]) {
+    if (Get.isDialogOpen ?? false) {
+      Get.back(); // Close dialog
+    }
+    
+    // Only schedule next check-in for timer-based check-ins
+    if (checkInId == null) {
+      _scheduleNextCheckIn();
+    }
+    
     Get.snackbar(
       '🆘 SOS Alert Sent',
       'Emergency alert has been sent to admin and authorities',
@@ -436,7 +515,21 @@ void _showImmediateFeedback(CheckInStatus status) {
       duration: const Duration(seconds: 5),
     );
 
-    // Don't schedule next check-in for SOS - let admin handle
+    dev.log('$_logTag SOS alert handled (ID: $checkInId)');
+  }
+
+  /// Check if there's currently a pending check-in dialog
+  bool get hasActiveDialog => isCheckInPending.value;
+
+  /// Force close any active check-in dialog
+  void forceCloseDialog() {
+    if (Get.isDialogOpen ?? false) {
+      Get.back();
+    }
+    _responseTimer?.cancel();
+    isCheckInPending.value = false;
+    _currentCheckInId = null;
+    dev.log('$_logTag Force closed check-in dialog');
   }
 
   /// Helper methods
@@ -488,6 +581,7 @@ void _showImmediateFeedback(CheckInStatus status) {
       'lastCheckIn': lastCheckInTime.value,
       'missedCount': missedCheckIns.value,
       'pendingCount': _pendingCheckIns.length,
+      'currentCheckInId': _currentCheckInId,
       'nextCheckIn':
           isServiceActive.value
               ? DateTime.now()

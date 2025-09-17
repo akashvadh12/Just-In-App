@@ -33,15 +33,13 @@ class HomeController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-  
-    print('User ID from storage🔴🔴: ${profileController.userModel.value?.userId}');
-  
+    
     // called after widget is built and mounted
     WidgetsBinding.instance.addPostFrameCallback((_) {
       VersionChecker.checkForUpdate(Get.context!);
       
       // Initialize services for guards (not admins)
-      _initializeServices();
+      _initializeLiveTracking();
     });
   }
 
@@ -132,216 +130,84 @@ class HomeController extends GetxController {
     final month = months[currentDate.value.month - 1];
     return 'Monday, $month $day';
   }
+  
+// Initialize Live Tracking service
+void _initializeLiveTracking() {
+  // Set up reactive listeners
+  _setupTrackingListeners();
+  
+  // Start tracking if conditions are met
+  // _updateTrackingState();
+}
 
-  // Initialize both SOS and Live Tracking services
-  void _initializeServices() {
-    final userModel = profileController.userModel.value;
-    final isAdmin = userModel?.isAdmin == true;
-    final isClockedIn = attendanceStatus.value == 'In' || userModel?.clockStatus == true;
-    
-    print('🔵 Initializing services - IsAdmin: $isAdmin, IsClockedIn: $isClockedIn');
-    print('🔵 Live tracking enabled: ${userModel?.liveTrackingEnabled}');
-    print('🔵 Live tracking interval: ${userModel?.liveTrackingIntervalSeconds}s');
-    
-    if (!isAdmin && isClockedIn) {
-      // Initialize SOS service
-      _initializeSosService();
-      
-      // Initialize Live Tracking service
-      _initializeLiveTracking();
-    }
+// Setup reactive listeners
+void _setupTrackingListeners() {
+  // Listen to attendance changes
+  ever(attendanceStatus, (_) => _updateTrackingState());
+  
+  // Listen to user model changes  
+  ever(profileController.userModel, (_) => _updateTrackingState());
+}
+
+// Single method to handle all tracking logic
+void _updateTrackingState() {
+  final userModel = profileController.userModel.value;
+  final shouldTrack = _shouldStartTracking(userModel);
+  final isCurrentlyTracking = liveTrackingService.isTrackingActive.value;
+  
+  if (shouldTrack && !isCurrentlyTracking) {
+    _startTracking();
+  } else if (!shouldTrack && isCurrentlyTracking) {
+    _stopTracking();
   }
+}
 
-  // Initialize SOS service based on user role
-  void _initializeSosService() {
-    final isAdmin = profileController.userModel.value?.isAdmin == true;
-    
-    if (!isAdmin && attendanceStatus.value == 'In') {
-      // Only start SOS service for guards who are clocked in
-      sosService.startService();
-      sosServiceActive.value = true;
-      
-      // Listen to attendance status changes
-      ever(attendanceStatus, (String status) {
-        if (status == 'In' && !sosService.isServiceActive.value) {
-          sosService.startService();
-          sosServiceActive.value = true;
-        } else if (status == 'Out' && sosService.isServiceActive.value) {
-          sosService.stopService();
-          sosServiceActive.value = false;
-        }
-      });
-    }
-  }
+// Check if tracking should be active
+bool _shouldStartTracking(UserModel? userModel) {
+  if (userModel == null) return false;
+  
+  final isAdmin = userModel.isAdmin == true;
+  final isClockedIn = attendanceStatus.value == 'In' || userModel.clockStatus == true;
+  final trackingEnabled = userModel.liveTrackingEnabled == true;
+  
+  return !isAdmin && isClockedIn && trackingEnabled;
+}
 
-  // Initialize Live Tracking service
-  void _initializeLiveTracking() {
-    final userModel = profileController.userModel.value;
-    final isAdmin = userModel?.isAdmin == true;
-    final isClockedIn = attendanceStatus.value == 'In' || userModel?.clockStatus == true;
-    final trackingEnabled = userModel?.liveTrackingEnabled == true;
-    
-    print('🟢 Live tracking initialization - Admin: $isAdmin, ClockedIn: $isClockedIn, Enabled: $trackingEnabled');
-    
-    if (!isAdmin && isClockedIn && trackingEnabled) {
-      // Start live tracking for guards who are clocked in
-      liveTrackingService.startTracking().then((success) {
-        liveTrackingActive.value = success;
-        if (success) {
-          print('🟢 Live tracking started successfully');
-          _showTrackingStatusNotification('Live GPS tracking started', Colors.green);
-        } else {
-          print('🔴 Failed to start live tracking');
-          _showTrackingStatusNotification('Failed to start GPS tracking', Colors.red);
-        }
-      });
-    }
-    
-    // Listen to attendance status changes for live tracking
-    ever(attendanceStatus, (String status) {
-      final currentUserModel = profileController.userModel.value;
-      final trackingEnabled = currentUserModel?.liveTrackingEnabled == true;
-      
-      if (status == 'In' && trackingEnabled && !liveTrackingService.isTrackingActive.value) {
-        // Start tracking when clocked in
-        liveTrackingService.startTracking().then((success) {
-          liveTrackingActive.value = success;
-          if (success) {
-            _showTrackingStatusNotification('GPS tracking started', Colors.green);
-          }
-        });
-      } else if (status == 'Out' && liveTrackingService.isTrackingActive.value) {
-        // Stop tracking when clocked out
-        liveTrackingService.stopTracking();
-        liveTrackingActive.value = false;
-        _showTrackingStatusNotification('GPS tracking stopped', Colors.orange);
-      }
-    });
-    
-    // Listen to user model changes for tracking configuration updates
-    ever(profileController.userModel, (UserModel? userModel) {
-      if (userModel != null) {
-        _handleTrackingConfigurationUpdate(userModel);
-      }
-    });
-  }
-
-  // Handle tracking configuration updates from user model
-  void _handleTrackingConfigurationUpdate(UserModel userModel) {
-    final isAdmin = userModel.isAdmin == true;
-    final isClockedIn = attendanceStatus.value == 'In' || userModel.clockStatus == true;
-    final trackingEnabled = userModel.liveTrackingEnabled == true;
-    
-    print('🔄 Tracking config update - Admin: $isAdmin, ClockedIn: $isClockedIn, Enabled: $trackingEnabled');
-    
-    if (!isAdmin && isClockedIn) {
-      if (trackingEnabled && !liveTrackingService.isTrackingActive.value) {
-        // Start tracking if enabled and not running
-        liveTrackingService.startTracking().then((success) {
-          liveTrackingActive.value = success;
-        });
-      } else if (!trackingEnabled && liveTrackingService.isTrackingActive.value) {
-        // Stop tracking if disabled
-        liveTrackingService.stopTracking();
-        liveTrackingActive.value = false;
-        _showTrackingStatusNotification('GPS tracking disabled', Colors.orange);
-      }
-    }
-  }
-
-  // Show tracking status notification
-  void _showTrackingStatusNotification(String message, Color color) {
-    Get.snackbar(
-      'Live Tracking',
-      message,
-      backgroundColor: color,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 2),
-      icon: Icon(
-        color == Colors.green ? Icons.gps_fixed : 
-        color == Colors.red ? Icons.gps_off : Icons.gps_not_fixed,
-        color: Colors.white,
-      ),
+// Start tracking with notification
+void _startTracking() {
+  liveTrackingService.startTracking().then((success) {
+    liveTrackingActive.value = success;
+    _showNotification(
+      success ? 'GPS tracking started' : 'Failed to start GPS tracking',
+      success ? Colors.green : Colors.red
     );
-  }
+  });
+}
 
-  // Manual SOS trigger
-  void triggerManualSos() {
-    sosService.handleCheckInResponse(CheckInStatus.sos);
-  }
+// Stop tracking with notification
+void _stopTracking() {
+  liveTrackingService.stopTracking();
+  liveTrackingActive.value = false;
+  _showNotification('GPS tracking stopped', Colors.orange);
+}
 
-  // Toggle SOS service (for testing or manual control)
-  void toggleSosService() {
-    if (sosService.isServiceActive.value) {
-      sosService.stopService();
-      sosServiceActive.value = false;
-    } else {
-      sosService.startService();
-      sosServiceActive.value = true;
-    }
-  }
+// Simplified notification method
+void _showNotification(String message, Color color) {
+  if (Get.isSnackbarOpen) return;
+  Get.snackbar(
+    'Live Tracking',
+    message,
+    backgroundColor: color,
+    colorText: Colors.white,
+    snackPosition: SnackPosition.BOTTOM,
+    duration: const Duration(seconds: 2),
+    icon: Icon(
+      color == Colors.green ? Icons.gps_fixed : Icons.gps_off,
+      color: Colors.white,
+    ),
+  );
+}
 
-  // Manual live tracking controls
-  void toggleLiveTracking() {
-    if (liveTrackingService.isTrackingActive.value) {
-      liveTrackingService.stopTracking();
-      liveTrackingActive.value = false;
-    } else {
-      liveTrackingService.startTracking().then((success) {
-        liveTrackingActive.value = success;
-      });
-    }
-  }
-
-  void manualLocationUpdate() {
-    liveTrackingService.manualLocationUpdate();
-  }
-
-  // Get tracking statistics for debugging/monitoring
-  Map<String, dynamic> getTrackingStats() {
-    return liveTrackingService.getTrackingStats();
-  }
-
-  // Actions
-  void startPatrol() {
-    Get.snackbar(
-      'Patrol Started',
-      'You have started a new patrol round',
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
-    );
-    // Implementation for starting patrol
-  }
-
-  void markAttendance() {
-    Get.snackbar(
-      'Attendance Marked',
-      'Your attendance has been recorded',
-      backgroundColor: Colors.blue,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
-    );
-    // Implementation for marking attendance
-  }
-
-  void raiseIssue() {
-    // Navigate to issue reporting screen
-    // Get.toNamed(Routes.REPORT_ISSUE);
-    Get.snackbar(
-      'Report Issue',
-      'Navigating to issue reporting form',
-      backgroundColor: Colors.orange,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
-    );
-  }
-
-  void navigateTo(int index) {
-    selectedIndex.value = index;
-    // Implementation for navigation
-  }
 
   Future<void> fetchDashboardData() async {
     final connectivityController = Get.find<ConnectivityController>();
@@ -385,7 +251,7 @@ class HomeController extends GetxController {
         print('Dashboard data fetched successfully: $data');
         
         // Initialize services after fetching attendance status
-        _initializeServices();
+        _initializeLiveTracking();
         
         // Update user info/photo if present in dashboard response
         if (data['userID'] != null) {
@@ -444,26 +310,13 @@ class HomeController extends GetxController {
     }
   }
 
-  // Additional utility methods for service management
-  
-  // Get service status summary
-  Map<String, dynamic> getServiceStatus() {
-    return {
-      'sosServiceActive': sosServiceActive.value,
-      'liveTrackingActive': liveTrackingActive.value,
-      'attendanceStatus': attendanceStatus.value,
-      'isAdmin': profileController.userModel.value?.isAdmin ?? false,
-      'trackingEnabled': profileController.userModel.value?.liveTrackingEnabled ?? false,
-      'trackingStats': getTrackingStats(),
-    };
-  }
 
   // Force refresh user model and reinitialize services
   void refreshUserModelAndServices() {
     final userId = profileController.userModel.value?.userId;
     if (userId != null && userId.isNotEmpty) {
       profileController.fetchUserProfile(userId).then((_) {
-        _initializeServices();
+        _initializeLiveTracking();
       });
     }
   }
@@ -483,6 +336,6 @@ class HomeController extends GetxController {
 
   // Start all services (useful when logging in or switching to guard role)
   void startAllServices() {
-    _initializeServices();
+    _initializeLiveTracking();
   }
 }

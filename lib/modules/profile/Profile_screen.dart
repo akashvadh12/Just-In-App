@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
+import 'package:security_guard/modules/home/controllers/home_controller.dart';
 
 import 'package:security_guard/modules/home/view/home_view.dart';
 import 'package:security_guard/modules/issue/report_issue/report_incident_screen.dart';
@@ -121,31 +122,86 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // Show logout confirmation dialog
-  void _showLogoutConfirmationDialog() {
+void _showLogoutConfirmationDialog() {
+  final homeController = Get.find<HomeController>();
+  
+  // Block logout if clocked in
+  if (homeController.clockInTime.value != 'Not clocked in' && 
+      homeController.clockOutTime.value.isEmpty) {
+    
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Confirm Logout'),
-          content: const Text('Are you sure you want to logout?'),
+          title: const Text('Clock Out Required'),
+          content: Text(
+            'Please clock out first before logging out.\n\nClocked in at: ${homeController.clockInTime.value}'
+          ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context), // Cancel closes dialog
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                controller.logout(); // 1. Call logout on your controller
-                Navigator.pop(context); // 2. Close the dialog
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Logout'),
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
             ),
           ],
         );
       },
     );
+    return;
   }
+  
+  // Normal logout dialog
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Confirm Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              controller.logout();
+              Navigator.pop(context);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Logout'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+void _showFinalLogoutDialog() {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Confirm Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              controller.logout();
+              Navigator.pop(context);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Logout'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
 
   @override
   Widget build(BuildContext context) {

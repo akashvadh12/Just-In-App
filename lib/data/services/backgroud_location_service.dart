@@ -23,44 +23,27 @@ class BackgroundLocationService {
   static const String _keyAuthToken = 'bg_auth_token';
   static const String _keyIsTrackingEnabled = 'bg_tracking_enabled';
 
-  static Future<void> initializeService() async {
-    final service = FlutterBackgroundService();
-    
-    // Create notification channel
-    const AndroidNotificationChannel channel = AndroidNotificationChannel(
-      notificationChannelId,
-      'Live Location Tracking',
-      description: 'Shows when live tracking is active',
-      importance: Importance.low,
-    );
+// Show notification only when app is in background
+// static Future<void> initializeService({bool showNotification = true}) async {
+//   final service = FlutterBackgroundService();
+//   await service.configure(
+//     androidConfiguration: AndroidConfiguration(
+//       onStart: onStart,
+//       autoStart: false,
+//       isForegroundMode: showNotification, // Make it configurable
+//       notificationChannelId: showNotification ? notificationChannelId : null,
+//       initialNotificationTitle: 'Live Tracking',
+//       initialNotificationContent: 'Tracking your location...',
+//       foregroundServiceNotificationId: notificationId ,
+//     ),
+//     iosConfiguration: IosConfiguration(
+//       autoStart: false,
+//       onForeground: onStart,
+//       onBackground: onIosBackground,
+//     ),
+//   );
+// }
 
-    final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-        FlutterLocalNotificationsPlugin();
-
-    if (Platform.isAndroid) {
-      await flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(channel);
-    }
-
-    await service.configure(
-      androidConfiguration: AndroidConfiguration(
-        onStart: onStart,
-        autoStart: false,
-        isForegroundMode: true,
-        notificationChannelId: notificationChannelId,
-        initialNotificationTitle: 'Live Tracking',
-        initialNotificationContent: 'Tracking your location...',
-        foregroundServiceNotificationId: notificationId,
-      ),
-      iosConfiguration: IosConfiguration(
-        autoStart: false,
-        onForeground: onStart,
-        onBackground: onIosBackground,
-      ),
-    );
-  }
 
   // Main entry point for background service
   @pragma('vm:entry-point')

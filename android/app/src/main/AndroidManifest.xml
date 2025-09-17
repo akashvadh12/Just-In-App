@@ -2,28 +2,30 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.cairovision.justin">
 
-    <!-- Required Permissions -->
+    <!-- KEEP - Essential for location -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    
+    <!-- KEEP - Required for foreground services -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    
+    <!-- KEEP - For camera functionality -->
     <uses-permission android:name="android.permission.CAMERA" />
+    
+    <!-- KEEP - Required for background services -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
-    <uses-permission android:name="android.permission.VIBRATE" />
-
-    <uses-feature android:name="android.hardware.camera.flash" />
+    
+    <!-- KEEP - Required for notifications -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:label="JustIN"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
 
-        <!-- Add this inside <application> tag -->
         <receiver android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />
-        <receiver
-            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <receiver android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
             
         <service
             android:name="id.flutter.flutter_background_service.BackgroundService"
@@ -38,7 +40,7 @@
         <meta-data
             android:name="io.flutter.plugins.camera.useLegacyCamera"
             android:value="true" />
-        <!-- Google Maps API Key -->
+        
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="YOUR_GOOGLE_MAPS_API_KEY" />
@@ -63,13 +65,11 @@
             </intent-filter>
         </activity>
 
-        <!-- Flutter Plugin Support -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
 
-    <!-- Required for text processing plugins -->
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT" />

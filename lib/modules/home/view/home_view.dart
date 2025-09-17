@@ -28,7 +28,7 @@ class HomeView extends GetView<HomeController> {
       appBar: _buildAppBar(bottomNavController),
       body: _buildBody(bottomNavController),
       // Add floating SOS button for guards
-      floatingActionButton: _buildSosFloatingButton(),
+      // floatingActionButton: _buildSosFloatingButton(),
     );
   }
 
@@ -123,7 +123,8 @@ class HomeView extends GetView<HomeController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "$greeting, ${controller.profileController.userModel.value?.name.toString().split(" ").first ?? ''}",
+                  controller.profileController.userModel.value?.name.toString().split(" ").first ?? 
+                    "$greeting",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -167,7 +168,7 @@ class HomeView extends GetView<HomeController> {
       if (isAdmin) return SizedBox.shrink(); // Don't show for admins
       
       final sosService = Get.find<SosCheckInService>();
-      final isActive = sosService.isServiceActive.value;
+      final isActive =  controller.profileController.userModel.value?.safetyCheckInEnabled == true;
       final isPending = sosService.isCheckInPending.value;
       
       return Container(
@@ -197,20 +198,20 @@ class HomeView extends GetView<HomeController> {
     });
   }
 
-  Widget _buildSosFloatingButton() {
-    return Obx(() {
-      final isAdmin = controller.profileController.userModel.value?.isAdmin == true;
-      if (isAdmin) return SizedBox.shrink(); // Don't show for admins
+  // Widget _buildSosFloatingButton() {
+  //   return Obx(() {
+  //     final isAdmin = controller.profileController.userModel.value?.isAdmin == true;
+  //     if (isAdmin) return SizedBox.shrink(); // Don't show for admins
       
-      return FloatingActionButton(
-        onPressed: () => _showSosDialog(),
-        backgroundColor: Colors.red,
-        child: Icon(Icons.emergency, color: Colors.white),
-        heroTag: "sosButton",
-        tooltip: 'Emergency SOS',
-      );
-    });
-  }
+  //     return FloatingActionButton(
+  //       onPressed: () => _showSosDialog(),
+  //       backgroundColor: Colors.red,
+  //       child: Icon(Icons.emergency, color: Colors.white),
+  //       heroTag: "sosButton",
+  //       tooltip: 'Emergency SOS',
+  //     );
+  //   });
+  // }
 
   Widget _buildBody(bottomNavController) {
     return SingleChildScrollView(
@@ -338,21 +339,21 @@ class HomeView extends GetView<HomeController> {
                     ),
                   ],
                 ),
-                GestureDetector(
-                  onTap: () => controller.toggleSosService(),
-                  child: Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isActive ? Colors.red[100] : Colors.green[100],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      isActive ? Icons.stop : Icons.play_arrow,
-                      color: isActive ? Colors.red : Colors.green,
-                      size: 20,
-                    ),
-                  ),
-                ),
+                // GestureDetector(
+                //   onTap: () => controller.toggleSosService(),
+                //   child: Container(
+                //     padding: EdgeInsets.all(8),
+                //     decoration: BoxDecoration(
+                //       color: isActive ? Colors.red[100] : Colors.green[100],
+                //       borderRadius: BorderRadius.circular(8),
+                //     ),
+                //     child: Icon(
+                //       isActive ? Icons.stop : Icons.play_arrow,
+                //       color: isActive ? Colors.red : Colors.green,
+                //       size: 20,
+                //     ),
+                //   ),
+                // ),
               ],
             ),
           ],
@@ -760,36 +761,36 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  void _showSosDialog() {
-    Get.dialog(
-      AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.emergency, color: Colors.red),
-            SizedBox(width: 8),
-            Text('Emergency SOS'),
-          ],
-        ),
-        content: Text(
-          'Are you sure you want to send an emergency SOS alert? This will notify admin and authorities immediately.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Get.back();
-              controller.triggerManualSos();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: Text('Send SOS', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
+  // void _showSosDialog() {
+  //   Get.dialog(
+  //     AlertDialog(
+  //       title: Row(
+  //         children: [
+  //           Icon(Icons.emergency, color: Colors.red),
+  //           SizedBox(width: 8),
+  //           Text('Emergency SOS'),
+  //         ],
+  //       ),
+  //       content: Text(
+  //         'Are you sure you want to send an emergency SOS alert? This will notify admin and authorities immediately.',
+  //       ),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Get.back(),
+  //           child: Text('Cancel'),
+  //         ),
+  //         ElevatedButton(
+  //           onPressed: () {
+  //             Get.back();
+  //             // controller.triggerManualSos();
+  //           },
+  //           style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+  //           child: Text('Send SOS', style: TextStyle(color: Colors.white)),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   void _showSosStatusDialog() {
     final sosService = Get.find<SosCheckInService>();
@@ -816,7 +817,7 @@ class HomeView extends GetView<HomeController> {
           ElevatedButton(
             onPressed: () {
               Get.back();
-              controller.toggleSosService();
+              // controller.toggleSosService();
             },
             child: Text(sosService.isServiceActive.value ? 'Stop Service' : 'Start Service'),
           ),
