@@ -286,6 +286,7 @@ class PatrolCheckInController extends GetxController {
       final logId = profileController.userModel.value!.logId;
 
       final response = await _apiService.fetchPatrolHistory(
+        userId: profileController.userModel.value!.userId,
         logId: logId,
         isRefresh: isRefresh,
       );

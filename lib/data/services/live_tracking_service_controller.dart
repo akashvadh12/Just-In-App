@@ -236,7 +236,7 @@ class LiveTrackingService extends GetxController {
       _processPendingLocations();
     }
     
-    _showTrackingNotification('Live tracking stopped', Colors.orange);
+    // _showTrackingNotification('Live tracking stopped', Colors.orange);
     log('$_logTag Live tracking stopped successfully');
   }
   
@@ -434,12 +434,12 @@ class LiveTrackingService extends GetxController {
       }
     }
     
-    if (successCount > 0 || failCount > 0) {
-      _showTrackingNotification(
-        'Synced $successCount locations${failCount > 0 ? ', $failCount failed' : ''}',
-        failCount == 0 ? Colors.green : Colors.orange,
-      );
-    }
+    // if (successCount > 0 || failCount > 0) {
+    //   _showTrackingNotification(
+    //     'Synced $successCount locations${failCount > 0 ? ', $failCount failed' : ''}',
+    //     failCount == 0 ? Colors.green : Colors.orange,
+    //   );
+    // }
     
     log('$_logTag Processed pending locations: $successCount success, $failCount failed');
   }

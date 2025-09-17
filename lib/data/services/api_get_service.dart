@@ -490,12 +490,14 @@ Future<http.Response> sendSafetyCheckIn(Map<String, dynamic> checkInData) async 
 
   Future<http.Response> fetchPatrolHistory({
     String? logId,
+    String? userId,
     bool isRefresh = false,
   }) async {
     const endpoint = 'Patrol/history';
     final headers = await _getAuthenticatedHeaders();
 
     final params = <String, String>{};
+    params['UserID'] = userId ?? '';
     if (logId != null && logId.isNotEmpty && !isRefresh) {
       params['logId'] = logId;
     }

@@ -188,7 +188,7 @@ void _startTracking() {
 void _stopTracking() {
   liveTrackingService.stopTracking();
   liveTrackingActive.value = false;
-  _showNotification('GPS tracking stopped', Colors.orange);
+  // _showNotification('GPS tracking stopped', Colors.orange);
 }
 
 // Simplified notification method
