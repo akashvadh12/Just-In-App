@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:security_guard/core/api/api_service.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/data/services/api_get_service.dart';
+import 'package:security_guard/data/services/backgroud_location_service.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/data/services/session_service.dart';
 import 'package:security_guard/firebase_options.dart';
@@ -25,12 +26,12 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     await prefs.setBool('received_notification', true);
   }
 }
-
+  
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
+  await BackgroundLocationService.initializeService();
   await Get.putAsync(() => LocalStorageService().init());
   await initServices();
   Get.put(SessionService());

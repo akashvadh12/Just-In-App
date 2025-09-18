@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:security_guard/Data/services/notification_services.dart';
@@ -116,6 +118,7 @@ class HomeController extends GetxController {
   // Service status observables
   final RxBool sosServiceActive = false.obs;
   final RxBool liveTrackingActive = false.obs;
+  bool _isStartingTracking = false;
 
   // Local storage service
   final LocalStorageService _storage = LocalStorageService.instance;
@@ -140,11 +143,9 @@ void _initializeLiveTracking() {
 
 // Setup reactive listeners
 void _setupTrackingListeners() {
-  // Listen to attendance changes
-  ever(attendanceStatus, (_) => _updateTrackingState());
-  
-  // Listen to user model changes  
-  ever(profileController.userModel, (_) => _updateTrackingState());
+  // Debounce multiple rapid changes
+  debounce(attendanceStatus, (_) => _updateTrackingState(), time: Duration(milliseconds: 500));
+  debounce(profileController.userModel, (_) => _updateTrackingState(), time: Duration(milliseconds: 500));
 }
 
 // Single method to handle all tracking logic
@@ -173,12 +174,21 @@ bool _shouldStartTracking(UserModel? userModel) {
 
 // Start tracking with notification
 void _startTracking() {
+  if (_isStartingTracking) {
+    log(' Tracking start already in progress, skipping...');
+    return;
+  }
+  
+  _isStartingTracking = true;
+  
   liveTrackingService.startTracking().then((success) {
     liveTrackingActive.value = success;
     _showNotification(
       success ? 'GPS tracking started' : 'Failed to start GPS tracking',
       success ? Colors.green : Colors.red
     );
+  }).whenComplete(() {
+    _isStartingTracking = false;
   });
 }
 
@@ -310,14 +320,14 @@ void _showNotification(String message, Color color) {
 
 
   // Force refresh user model and reinitialize services
-  void refreshUserModelAndServices() {
-    final userId = profileController.userModel.value?.userId;
-    if (userId != null && userId.isNotEmpty) {
-      profileController.fetchUserProfile(userId).then((_) {
-        _initializeLiveTracking();
-      });
-    }
-  }
+  // void refreshUserModelAndServices() {
+  //   final userId = profileController.userModel.value?.userId;
+  //   if (userId != null && userId.isNotEmpty) {
+  //     profileController.fetchUserProfile(userId).then((_) {
+  //       _initializeLiveTracking();
+  //     });
+  //   }
+  // }
 
   // Stop all services (useful when logging out or switching users)
   void stopAllServices() {
@@ -330,7 +340,7 @@ void _showNotification(String message, Color color) {
   }
 
   // Start all services (useful when logging in or switching to guard role)
-  void startAllServices() {
-    _initializeLiveTracking();
-  }
+  // void startAllServices() {
+  //   _initializeLiveTracking();
+  // }
 }
