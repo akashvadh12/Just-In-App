@@ -33,76 +33,38 @@ class BottomNavBarWidget extends StatelessWidget {
     BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
   ];
 
-
   @override
   Widget build(BuildContext context) {
     return Obx(
-      ()=> WillPopScope(
-  onWillPop: () async {
-    if (controller.currentIndex.value == 0) {
-      // Get home controller to check clock status
-      final homeController = Get.find<HomeController>();
-      
-      // Block app exit if clocked in
-      if (homeController.clockInTime.value != 'Not clocked in' && 
-          homeController.clockOutTime.value.isEmpty) {
-        
-        showDialog(
-          context: context,
-          barrierDismissible: false, // Prevent tap outside dismissal
-          builder: (BuildContext context) {
-            return WillPopScope(
-              onWillPop: () async => false, // Prevent back button dismissal
-              child: AlertDialog(
-                title: const Text('Clock Out Required'),
-                content: Text(
-                  'To close the app, please clock out first.\n\nClocked in at: ${homeController.clockInTime.value}\n\nYou must complete your clock out before exiting the application.'
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('OK'),
+      () => WillPopScope(
+        onWillPop: () async {
+          if (controller.currentIndex.value == 0) {
+            bool? confirmExit = await showDialog(
+              context: context,
+              builder:
+                  (context) => AlertDialog(
+                    title: const Text('Exit App'),
+                    content: const Text(
+                      'Are you sure you want to exit the app?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('Exit'),
+                      ),
+                    ],
                   ),
-                ],
-              ),
             );
-          },
-        );
-        return false; // Don't exit the app
-      }
-      
-      // Normal exit confirmation dialog
-      bool? confirmExit = await showDialog(
-        context: context,
-        barrierDismissible: false, // Prevent tap outside dismissal
-        builder: (context) => WillPopScope(
-          onWillPop: () async => false, // Prevent back button dismissal
-          child: AlertDialog(
-            title: const Text('Exit App'),
-            content: const Text(
-              'Are you sure you want to exit the app?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Exit'),
-              ),
-            ],
-          ),
-        ),
-      );
-      return confirmExit ?? false;
-    } else {
-      controller.changeTab(0); // Navigate to Home tab
-      return false; // Prevent back navigation
-    }
-  },
-
-
+            return confirmExit ?? false;
+          } else {
+            controller.changeTab(0); // Navigate to Home tab
+            return false; // Prevent back navigation
+          }
+        },
         child: Scaffold(
           body: screens[controller.currentIndex.value],
           bottomNavigationBar: BottomNavigationBar(

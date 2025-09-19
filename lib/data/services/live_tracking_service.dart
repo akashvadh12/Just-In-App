@@ -94,8 +94,8 @@ class LiveTrackingService extends GetxController {
         title: "Live Tracking Active",
         text: "Tracking location for security purposes",
         color: "#2196F3",
-        smallIcon: "drawable/ic_notification",
-        largeIcon: "drawable/ic_launcher",
+        smallIcon: "drawable/launcher_icon",
+        largeIcon: "drawable/launcher_icon",
       ),
       foregroundService: true,
       

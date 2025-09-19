@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/data/services/session_service.dart';
 import 'api_constants.dart';
 
@@ -27,6 +28,13 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     return _executeWithRetry(() async {
+      final connectivityController = Get.find<ConnectivityController>();
+
+      if (connectivityController.isOffline.value) {
+        connectivityController.showNoInternetSnackbar();
+        return http.Response('No internet connection', 503);
+      }
+
       log('$_logTag POST => $baseUrl$endpoint');
 
       // Add company and site IDs to body if available and not already present
@@ -61,6 +69,12 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     return _executeWithRetry(() async {
+      final connectivityController = Get.find<ConnectivityController>();
+
+      if (connectivityController.isOffline.value) {
+        connectivityController.showNoInternetSnackbar();
+        return http.Response('No internet connection', 503);
+      }
       // Add company and site IDs to params if available and not already present
       final updatedParams = Map<String, dynamic>.from(params);
       if (_sessionService.companyId != null &&
@@ -96,6 +110,12 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     return _executeWithRetry(() async {
+      final connectivityController = Get.find<ConnectivityController>();
+
+      if (connectivityController.isOffline.value) {
+        connectivityController.showNoInternetSnackbar();
+        return http.Response('No internet connection', 503);
+      }
       // Build query parameters with company and site IDs
       final queryParams = <String, String>{};
       if (_sessionService.companyId != null) {
@@ -132,6 +152,12 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     return _executeWithRetry(() async {
+      final connectivityController = Get.find<ConnectivityController>();
+
+      if (connectivityController.isOffline.value) {
+        connectivityController.showNoInternetSnackbar();
+        return http.Response('No internet connection', 503);
+      }
       log('$_logTag PUT => $baseUrl$endpoint');
 
       // Add company and site IDs to body if available and not already present
@@ -159,8 +185,6 @@ class ApiClient {
     });
   }
 
-
-
   /// Multipart POST request (for file uploads)
   Future<http.Response> postMultipart(
     String endpoint,
@@ -169,14 +193,22 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     return _executeWithRetry(() async {
+      final connectivityController = Get.find<ConnectivityController>();
+
+      if (connectivityController.isOffline.value) {
+        connectivityController.showNoInternetSnackbar();
+        return http.Response('No internet connection', 503);
+      }
       log('$_logTag POST Multipart => $baseUrl$endpoint');
 
       // Add company and site IDs to fields if available and not already present
       final updatedFields = Map<String, String>.from(fields);
-      if (_sessionService.companyId != null && !updatedFields.containsKey('CompanyId')) {
+      if (_sessionService.companyId != null &&
+          !updatedFields.containsKey('CompanyId')) {
         updatedFields['CompanyId'] = _sessionService.companyId!;
       }
-      if (_sessionService.siteId != null && !updatedFields.containsKey('SiteId')) {
+      if (_sessionService.siteId != null &&
+          !updatedFields.containsKey('SiteId')) {
         updatedFields['SiteId'] = _sessionService.siteId!;
       }
 
@@ -188,7 +220,7 @@ class ApiClient {
       // Add headers (excluding Content-Type as it's set automatically for multipart)
       final customHeaders = Map<String, String>.from(headers ?? {});
       customHeaders.remove('Content-Type'); // Let http package set this
-      
+
       final mergedHeaders = _buildHeaders(customHeaders);
       mergedHeaders.remove('Content-Type'); // Remove again to be safe
       request.headers.addAll(mergedHeaders);
@@ -201,7 +233,9 @@ class ApiClient {
 
       log('$_logTag Sending multipart request with ${files.length} files');
 
-      final streamedResponse = await request.send().timeout(Duration(seconds: timeoutSeconds));
+      final streamedResponse = await request.send().timeout(
+        Duration(seconds: timeoutSeconds),
+      );
       final response = await http.Response.fromStream(streamedResponse);
 
       _logResponse(endpoint, response);
@@ -209,12 +243,17 @@ class ApiClient {
     });
   }
 
-
   Future<http.Response> postWithoutBody(
     String endpoint, {
     Map<String, String>? headers,
   }) async {
     return _executeWithRetry(() async {
+      final connectivityController = Get.find<ConnectivityController>();
+
+      if (connectivityController.isOffline.value) {
+        connectivityController.showNoInternetSnackbar();
+        return http.Response('No internet connection', 503);
+      }
       log('$_logTag POST (no body) => $baseUrl$endpoint');
 
       final url = Uri.parse('$baseUrl$endpoint');
@@ -230,89 +269,99 @@ class ApiClient {
   }
 
   /// PUT request
-Future<http.Response> companyPut(
-  String endpoint,
-  Map<String, dynamic> body, {
-  Map<String, String>? headers,
-}) async {
-  return _executeWithRetry(() async {
-    log('$_logTag PUT => $baseUrl$endpoint');
-    log('$_logTag Request body (before enrich): ${jsonEncode(body)}');
+  Future<http.Response> companyPut(
+    String endpoint,
+    Map<String, dynamic> body, {
+    Map<String, String>? headers,
+  }) async {
+    return _executeWithRetry(() async {
+      final connectivityController = Get.find<ConnectivityController>();
 
-    // ✅ Copy body so we don't mutate the caller's map
-    final updatedBody = Map<String, dynamic>.from(body);
+      if (connectivityController.isOffline.value) {
+        connectivityController.showNoInternetSnackbar();
+        return http.Response('No internet connection', 503);
+      }
+      log('$_logTag PUT => $baseUrl$endpoint');
+      log('$_logTag Request body (before enrich): ${jsonEncode(body)}');
 
-    // ✅ Inject CompanyId and SiteId if available and not already set
-    if (_sessionService.companyId != null &&
-        !updatedBody.containsKey('CompanyId')) {
-      updatedBody['CompanyId'] = _sessionService.companyId!;
-    }
-    if (_sessionService.siteId != null &&
-        !updatedBody.containsKey('SiteId')) {
-      updatedBody['SiteId'] = _sessionService.siteId!;
-    }
+      // ✅ Copy body so we don't mutate the caller's map
+      final updatedBody = Map<String, dynamic>.from(body);
 
-    log('$_logTag Request body (after enrich): ${jsonEncode(updatedBody)}');
+      // ✅ Inject CompanyId and SiteId if available and not already set
+      if (_sessionService.companyId != null &&
+          !updatedBody.containsKey('CompanyId')) {
+        updatedBody['CompanyId'] = _sessionService.companyId!;
+      }
+      if (_sessionService.siteId != null &&
+          !updatedBody.containsKey('SiteId')) {
+        updatedBody['SiteId'] = _sessionService.siteId!;
+      }
 
-    final url = Uri.parse('${BASE_URL}CompanyConfig/UpdateCompany');
-    final mergedHeaders = _buildHeaders(headers);
+      log('$_logTag Request body (after enrich): ${jsonEncode(updatedBody)}');
 
-    final response = await http
-        .put(
-          url,
-          headers: mergedHeaders,
-          body: jsonEncode(updatedBody),
-        )
-        .timeout(Duration(seconds: timeoutSeconds));
+      final url = Uri.parse('${BASE_URL}CompanyConfig/UpdateCompany');
+      final mergedHeaders = _buildHeaders(headers);
 
-    _logResponse(endpoint, response);
-    return response;
-  });
-}
+      final response = await http
+          .put(url, headers: mergedHeaders, body: jsonEncode(updatedBody))
+          .timeout(Duration(seconds: timeoutSeconds));
 
+      _logResponse(endpoint, response);
+      return response;
+    });
+  }
 
-Future<http.Response> putMultipart(
-  String endpoint,
-  Map<String, String> fields,
-  List<http.MultipartFile> files, {
-  Map<String, String>? headers,
-}) async {
-  return _executeWithRetry(() async {
-    log('$_logTag PUT Multipart => $baseUrl$endpoint');
+  Future<http.Response> putMultipart(
+    String endpoint,
+    Map<String, String> fields,
+    List<http.MultipartFile> files, {
+    Map<String, String>? headers,
+  }) async {
+    return _executeWithRetry(() async {
+         final connectivityController = Get.find<ConnectivityController>();
 
-    // Add company and site IDs if missing
-    final updatedFields = Map<String, String>.from(fields);
-    if (_sessionService.companyId != null && !updatedFields.containsKey('CompanyId')) {
-      updatedFields['CompanyId'] = _sessionService.companyId!;
-    }
-    if (_sessionService.siteId != null && !updatedFields.containsKey('SiteId')) {
-      updatedFields['SiteId'] = _sessionService.siteId!;
-    }
+      if (connectivityController.isOffline.value) {
+        connectivityController.showNoInternetSnackbar();
+        return http.Response('No internet connection', 503);
+      }
+      log('$_logTag PUT Multipart => $baseUrl$endpoint');
 
-    log('Multipart fields (PUT): $updatedFields');
+      // Add company and site IDs if missing
+      final updatedFields = Map<String, String>.from(fields);
+      if (_sessionService.companyId != null &&
+          !updatedFields.containsKey('CompanyId')) {
+        updatedFields['CompanyId'] = _sessionService.companyId!;
+      }
+      if (_sessionService.siteId != null &&
+          !updatedFields.containsKey('SiteId')) {
+        updatedFields['SiteId'] = _sessionService.siteId!;
+      }
 
-    final uri = Uri.parse('$baseUrl$endpoint');
-    var request = http.MultipartRequest('PUT', uri);
+      log('Multipart fields (PUT): $updatedFields');
 
-    // Headers
-    final customHeaders = Map<String, String>.from(headers ?? {});
-    customHeaders.remove('Content-Type'); // Let http package set this
-    final mergedHeaders = _buildHeaders(customHeaders);
-    mergedHeaders.remove('Content-Type');
-    request.headers.addAll(mergedHeaders);
+      final uri = Uri.parse('$baseUrl$endpoint');
+      var request = http.MultipartRequest('PUT', uri);
 
-    // Add fields + files
-    request.fields.addAll(updatedFields);
-    request.files.addAll(files);
+      // Headers
+      final customHeaders = Map<String, String>.from(headers ?? {});
+      customHeaders.remove('Content-Type'); // Let http package set this
+      final mergedHeaders = _buildHeaders(customHeaders);
+      mergedHeaders.remove('Content-Type');
+      request.headers.addAll(mergedHeaders);
 
-    final streamedResponse = await request.send().timeout(Duration(seconds: timeoutSeconds));
-    final response = await http.Response.fromStream(streamedResponse);
+      // Add fields + files
+      request.fields.addAll(updatedFields);
+      request.files.addAll(files);
 
-    _logResponse(endpoint, response);
-    return response;
-  });
-}
+      final streamedResponse = await request.send().timeout(
+        Duration(seconds: timeoutSeconds),
+      );
+      final response = await http.Response.fromStream(streamedResponse);
 
+      _logResponse(endpoint, response);
+      return response;
+    });
+  }
 
   /// DELETE request
   Future<http.Response> delete(

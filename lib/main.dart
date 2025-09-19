@@ -44,9 +44,6 @@ void main() async {
   runApp(MyApp());
 }
 
-
-
-
 Future<void> initServices() async {
   print('Starting services initialization...');
 
