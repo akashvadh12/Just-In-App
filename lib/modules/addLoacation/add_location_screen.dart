@@ -595,6 +595,103 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
     });
   }
 
+//   Future<void> _getCurrentLocation() async {
+//   setState(() {
+//     _isGettingLocation = true;
+//   });
+
+//   try {
+//     // Check if location services are enabled
+//     bg.ProviderChangeEvent provider = await bg.BackgroundGeolocation.getProviderState();
+//     if (!provider.gps) {
+//       Get.snackbar(
+//         'Location Services Disabled',
+//         'Please enable location services to get current location',
+//         backgroundColor: Colors.orange,
+//         snackPosition: SnackPosition.BOTTOM,
+//         colorText: Colors.white,
+//         icon: Icon(Icons.location_off, color: Colors.white),
+//       );
+//       return;
+//     }
+
+//     // Check location permissions
+//     int status = await bg.BackgroundGeolocation.requestPermission();
+//     if (status != bg.ProviderChangeEvent.AUTHORIZATION_STATUS_ALWAYS && 
+//         status != bg.ProviderChangeEvent.AUTHORIZATION_STATUS_WHEN_IN_USE) {
+      
+//       String message = status == bg.ProviderChangeEvent.AUTHORIZATION_STATUS_DENIED 
+//         ? 'Location permissions are required to get current location'
+//         : 'Location permissions are permanently denied. Please enable them in settings.';
+        
+//       Get.snackbar(
+//         'Location Permission Denied',
+//         message,
+//         backgroundColor: status == bg.ProviderChangeEvent.AUTHORIZATION_STATUS_DENIED 
+//           ? Colors.orange : Colors.red,
+//         snackPosition: SnackPosition.BOTTOM,
+//         colorText: Colors.white,
+//         icon: Icon(Icons.location_off, color: Colors.white),
+//       );
+//       return;
+//     }
+
+//     // Get current position
+//     bg.Location location = await bg.BackgroundGeolocation.getCurrentPosition(
+//       timeout: 10,
+//       maximumAge: 5000,
+//       desiredAccuracy: 10, // High accuracy (10 meters)
+//       samples: 3, // Take 3 samples for better accuracy
+//     );
+
+//     _latitudeController.text = location.coords.latitude.toStringAsFixed(6);
+//     _longitudeController.text = location.coords.longitude.toStringAsFixed(6);
+
+//     Get.snackbar(
+//       'Location Retrieved',
+//       'Current location coordinates have been filled',
+//       backgroundColor: Colors.green,
+//       colorText: Colors.white,
+//       snackPosition: SnackPosition.BOTTOM,
+//       icon: Icon(Icons.gps_fixed, color: Colors.white),
+//     );
+    
+//   } catch (e) {
+//     dev.log('Error getting location: $e');
+//     Get.snackbar(
+//       'Error',
+//       'Failed to get current location: please check your settings and permissions',
+//       backgroundColor: Colors.red,
+//       colorText: Colors.white,
+//       snackPosition: SnackPosition.BOTTOM,
+//       icon: Icon(Icons.error, color: Colors.white),
+//     );
+//   } finally {
+//     setState(() {
+//       _isGettingLocation = false;
+//     });
+//   }
+// }
+
+// // Optional: Add a helper method for better error handling
+// Future<bg.Location?> _getSafeCurrentLocation({
+//   int timeout = 10,
+//   int maximumAge = 5000,
+//   double desiredAccuracy = 100,
+// }) async {
+//   try {
+//     return await bg.BackgroundGeolocation.getCurrentPosition(
+//       timeout: timeout,
+//       maximumAge: maximumAge,
+//       desiredAccuracy: 10,
+//       samples: 1,
+//     );
+//   } catch (e) {
+//     dev.log(' Error getting safe location: $e');
+//     return null;
+//   }
+// }
+
   Future<void> _getCurrentLocation() async {
     setState(() {
       _isGettingLocation = true;

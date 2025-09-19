@@ -239,6 +239,57 @@ class SosCheckInService extends GetxController {
     );
   }
 
+
+//   Future<void> _sendCheckInResponse(CheckInStatus status, {String? checkInId}) async {
+//   final userModel = profileController.userModel.value;
+//   if (userModel == null) {
+//     dev.log('$_logTag User model is null, cannot send check-in');
+//     throw Exception('User information not available');
+//   }
+
+//   // Get current location using flutter_background_geolocation
+//   bg.Location? location;
+//   try {
+//     location = await bg.BackgroundGeolocation.getCurrentPosition(
+//       timeout: 10, // 10 seconds
+//       maximumAge: 5000, // Accept location up to 5 seconds old
+//       desiredAccuracy: 10, // 10 meters accuracy
+//       samples: 1,
+//     );
+//   } catch (e) {
+//     dev.log('$_logTag Error getting location for check-in: $e');
+//     // Continue without location (will use 0,0)
+//   }
+
+//   final checkInData = {
+//     'userId': userModel.userId ?? '',
+//     'latitude': location?.coords.latitude ?? 0.0,
+//     'longitude': location?.coords.longitude ?? 0.0,
+//     'response': _getApiResponseString(status),
+//     if (checkInId != null) 'checkInId': checkInId,
+//   };
+
+//   dev.log('$_logTag Sending check-in response: ${checkInData['response']} (ID: $checkInId)');
+
+//   if (connectivityController.isOffline.value) {
+//     // Queue for later
+//     _pendingCheckIns.add(checkInData);
+//     dev.log('$_logTag Check-in queued for later (offline)');
+//     return;
+//   }
+
+//   await _sendCheckInToApi(checkInData);
+// }
+
+//   /// Send missed check-in response
+//   Future<void> _sendMissedCheckInResponse({String? checkInId}) async {
+//     try {
+//       await _sendCheckInResponse(CheckInStatus.pending, checkInId: checkInId);
+//     } catch (e) {
+//       dev.log('$_logTag Error sending missed check-in: $e');
+//     }
+//   }
+
   /// Send check-in response to API
   Future<void> _sendCheckInResponse(CheckInStatus status, {String? checkInId}) async {
     final userModel = profileController.userModel.value;

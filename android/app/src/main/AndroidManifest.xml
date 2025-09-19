@@ -2,54 +2,64 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.cairovision.justin">
 
-    <!-- KEEP - Essential for location -->
+    <!-- Essential location permissions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    
-    <!-- KEEP - Required for foreground services -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- Foreground service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
-    
-    <!-- KEEP - For camera functionality -->
+
+    <!-- Camera (if your app uses it) -->
     <uses-permission android:name="android.permission.CAMERA" />
-    
-    <!-- KEEP - Required for background services -->
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    
-    <!-- KEEP - Required for notifications -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Restart tracking on device reboot -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:label="JustIN"
         android:name="${applicationName}"
-        android:icon="@mipmap/launcher_icon">
+        android:icon="@mipmap/launcher_icon"
+        tools:replace="android:label">
 
+        <!-- Local notifications (keep if you use flutter_local_notifications) -->
         <receiver android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />
-        <receiver android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
-            
+        
+        <!-- Background Geolocation core service -->
         <service
-            android:name="id.flutter.flutter_background_service.BackgroundService"
+            android:name="com.transistorsoft.flutter_background_geolocation.FLTBackgroundGeolocationService"
+            android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="location"
-            tools:replace="android:exported">
-            <meta-data
-                android:name="foreground_service_type"
-                android:value="location" />
-        </service>
+            android:foregroundServiceType="location" />
 
+        <!-- Boot receiver to restart tracking after reboot -->
+        <receiver
+            android:name="com.transistorsoft.flutter_background_geolocation.FLTBootReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <data android:scheme="package" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Camera metadata -->
         <meta-data
             android:name="io.flutter.plugins.camera.useLegacyCamera"
             android:value="true" />
-        
+
+        <!-- Google Maps API key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="YOUR_GOOGLE_MAPS_API_KEY" />
 
+        <!-- Main activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
-            android:taskAffinity=""
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
@@ -65,11 +75,13 @@
             </intent-filter>
         </activity>
 
+        <!-- Flutter embedding v2 -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
 
+    <!-- Required for Android 11+ app queries -->
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT" />

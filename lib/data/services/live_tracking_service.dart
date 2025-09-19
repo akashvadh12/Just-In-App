@@ -2,13 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:get/get.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:security_guard/core/api/api_constants.dart';
 import 'package:security_guard/data/services/api_get_service.dart';
-import 'package:security_guard/data/services/backgroud_location_service.dart';
 import 'package:security_guard/modules/auth/models/user_model.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
@@ -24,426 +22,268 @@ class LiveTrackingService extends GetxController {
   
   // Observables
   final RxBool isTrackingActive = false.obs;
-  final RxBool isSubmittingLocation = false.obs;
-  final Rx<Position?> currentLocation = Rx<Position?>(null);
   final RxString trackingStatus = 'Disabled'.obs;
   final RxInt failedAttempts = 0.obs;
   final RxInt successfulSends = 0.obs;
   final RxString lastUpdateTime = ''.obs;
-  final RxBool isBackgroundTrackingEnabled = false.obs;
-  final RxBool backgroundServiceRunning = false.obs;
+  final Rx<bg.Location?> currentLocation = Rx<bg.Location?>(null);
   
-  // Configuration from UserModel
+  // Configuration
   bool get liveTrackingEnabled => _profileController.userModel.value?.liveTrackingEnabled ?? false;
   int get trackingIntervalSeconds => _profileController.userModel.value?.liveTrackingIntervalSeconds ?? 300;
   
   // Private variables
-  Timer? _trackingTimer;
-  StreamSubscription<Position>? _positionStream;
   List<Map<String, dynamic>> _pendingLocations = [];
   static const int _maxPendingLocations = 50;
-  static const int _maxRetryAttempts = 3;
   
-  bool _isCheckingPermissions = false;
-bool _hasPermissionsBeenChecked = false;
-bool _hasValidPermissions = false;
-
   @override
   void onInit() {
     super.onInit();
-    _initializeService();
+    _initializeBackgroundGeolocation();
   }
   
   @override
   void onClose() {
-    stopTracking();
+    bg.BackgroundGeolocation.stop();
+    bg.BackgroundGeolocation.removeListeners();
     super.onClose();
   }
-  
-  void _initializeService() async {
-    log('$_logTag Initializing Live Tracking Service with Background Support');
-    
-    // Initialize background service
-    // await BackgroundLocationService.initializeService();
-    
-    // Check if background service is already running
-    backgroundServiceRunning.value = await BackgroundLocationService.isBackgroundTrackingRunning();
-    
-    // Listen to background service updates
-    _listenToBackgroundService();
-    
-    // // Listen to user model changes
-    // ever(_profileController.userModel, (UserModel? userModel) {
-    //   if (userModel != null) {
-    //     _handleUserModelUpdate(userModel);
-    //   }
-    // });
-    
-    // // Listen to connectivity changes
-    // ever(_connectivityController.isOffline, (bool isOffline) {
-    //   if (!isOffline && _pendingLocations.isNotEmpty) {
-    //     _processPendingLocations();
-    //   }
-    // });
-  }
-  
-  void _listenToBackgroundService() {
-    final service = FlutterBackgroundService();
-    
-    service.on('locationUpdate').listen((event) {
-      log('$_logTag Received background location update: $event');
-      
-      if (event != null) {
-        // Update UI with background location data
-        if (event['success'] == true) {
-          successfulSends.value++;
-          failedAttempts.value = 0;
-          lastUpdateTime.value = event['timestamp'] ?? '';
-          trackingStatus.value = 'Background active';
-        } else {
-          failedAttempts.value++;
-        }
-        
-        // Update current location if we received coordinates
-        if (event['latitude'] != null && event['longitude'] != null) {
-          // Create a position object for display purposes
-          // Note: We can't create a full Position object without all required fields
-          // So we'll just update our tracking info
-          lastUpdateTime.value = event['timestamp'] ?? DateTime.now().toIso8601String();
-        }
-      }
-    });
-  }
-  
-  // void _handleUserModelUpdate(UserModel userModel) {
-  //   log('$_logTag User model updated - Live tracking enabled: ${userModel.liveTrackingEnabled}, Interval: ${userModel.liveTrackingIntervalSeconds}s');
-    
-  //   if (userModel.liveTrackingEnabled == true && userModel.clockStatus == true) {
-  //     if (!isTrackingActive.value) {
-  //       startTracking();
-  //     } else {
-  //       // Update tracking interval if changed
-  //       _restartTrackingWithNewInterval();
-  //     }
-  //   } else {
-  //     stopTracking();
-  //   }
-  // }
-Future<bool> startTracking({bool enableBackground = true}) async {
-  if (isTrackingActive.value) {
-    log('$_logTag Tracking already active');
-    return true;
-  }
-  
-  if (!liveTrackingEnabled) {
-    log('$_logTag Live tracking is disabled for this user');
-    trackingStatus.value = 'Disabled by configuration';
-    return false;
-  }
-  
-  try {
-    // Check permissions first
-    if (!await _checkPermissions()) {
-      trackingStatus.value = 'Permission denied';
-      return false;
-    }
-    
-    // Check if GPS is enabled
-    if (!await Geolocator.isLocationServiceEnabled()) {
-      trackingStatus.value = 'GPS disabled';
-      _showLocationServiceDisabledDialog();
-      return false;
-    }
-    
-    // Get current permission level
-    final permissionLevel = await Geolocator.checkPermission();
-    
-    // ✅ START TRACKING with WhileInUse permission
-    isTrackingActive.value = true;
-    trackingStatus.value = 'Starting...';
-    failedAttempts.value = 0;
-    successfulSends.value = 0;
-    
-    // Start foreground tracking (works with both WhileInUse and Always)
-    _startPeriodicTracking();
-    
-    // Handle permission-specific logic
-    if (permissionLevel == LocationPermission.always) {
-      // Full background tracking capability
-      if (enableBackground && isBackgroundTrackingEnabled.value) {
-        await _startBackgroundTracking();
-        log('$_logTag Background tracking started');
-      }
-      
-      trackingStatus.value = 'Active (Background enabled)';
-      _showTrackingPermissionNotification(
-        'Live tracking started with background support!',
-        backgroundColor: Colors.green,
-        icon: Icons.gps_fixed,
-      );
-      
-    } else if (permissionLevel == LocationPermission.whileInUse) {
-      // ⚠️ SHOW SETTINGS DIALOG for "All Time" permission
-      trackingStatus.value = 'Active (Foreground only)';
-      
-      _showTrackingPermissionNotification(
-        'Live tracking started (app must stay open)',
-        backgroundColor: Colors.blue,
-        icon: Icons.gps_not_fixed,
-      );
-      
-      // 🔔 SHOW DIALOG PROMPTING FOR "ALWAYS" PERMISSION
-      await _showAlwaysPermissionDialog();
-      
-      log('$_logTag Tracking started with WhileInUse - Settings dialog shown');
-    }
-    
-    log('$_logTag Live tracking started with interval: ${trackingIntervalSeconds}s');
-    return true;
-    
-  } catch (e) {
-    log('$_logTag Error starting tracking: $e');
-    trackingStatus.value = 'Error: $e';
-    _showTrackingPermissionNotification(
-      'Failed to start tracking: ${e.toString()}',
-      backgroundColor: Colors.red,
-      icon: Icons.error,
-    );
-    return false;
-  }
-}
 
-Future<void> _showAlwaysPermissionDialog() async {
-  return showDialog<void>(
-    context: Get.context!, // Use GetX context
-    barrierDismissible: true,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Center(child: Text('Enable Background\n        Tracking?', style: TextStyle(fontWeight: FontWeight.w500,fontSize: 20))),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'For continuous tracking even when the app is closed:',
-              style: TextStyle(fontWeight: FontWeight.w500),
-            ),
-            SizedBox(height: 12),
-            Text('1. Go to Settings'),
-            Text('2. Find this app'),
-            Text('3. Choose Location permissions'),
-            Text('4. Select "Allow all the time"'),
-            SizedBox(height: 16),
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, size: 16, color: Colors.blue),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Tracking is already active in foreground mode',
-                      style: TextStyle(fontSize: 12, color: Colors.blue),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Later'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              openAppSettings(); // Navigate to settings
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-            ),
-            child: Text('Open Settings'),
-          ),
-        ],
-      );
-    },
-  );
-}
+  void _initializeBackgroundGeolocation() async {
+    log('$_logTag Initializing Background Geolocation');
+    
+    // Configure the plugin
+    bg.BackgroundGeolocation.onLocation(_onLocation);
+    bg.BackgroundGeolocation.onMotionChange(_onMotionChange);
+    bg.BackgroundGeolocation.onActivityChange(_onActivityChange);
+    bg.BackgroundGeolocation.onProviderChange(_onProviderChange);
+    bg.BackgroundGeolocation.onConnectivityChange(_onConnectivityChange);
+    bg.BackgroundGeolocation.onHttp(_onHttp);
+    
+    // Configure the plugin
+    bg.BackgroundGeolocation.ready(bg.Config(
+      // Geolocation Config
+      desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
+      distanceFilter: 10.0,
+      
+      // Activity Recognition
+      stopTimeout: 1,
+      
+      // Application config
+      debug: false, // Set to false for production
+      logLevel: bg.Config.LOG_LEVEL_OFF,
+      
+      // HTTP / Persistence config
+      url: '$BASE_URL/Tracking/live-tracking',
+      httpRootProperty: '.',
+      httpTimeout: 30000,
+      
+      // Background Task config
+      enableHeadless: true,
+      heartbeatInterval: trackingIntervalSeconds,
+      
+      // Geofencing (if needed)
+      // geofenceProximityRadius: 1000,
+      
+      // iOS specific
+      preventSuspend: true,
+      disableElasticity: false,
+      
+      // Android specific
+      notification: bg.Notification(
+        title: "Live Tracking Active",
+        text: "Tracking location for security purposes",
+        color: "#2196F3",
+        smallIcon: "drawable/ic_notification",
+        largeIcon: "drawable/ic_launcher",
+      ),
+      foregroundService: true,
+      
+      // Auto sync
+      autoSync: true,
+      autoSyncThreshold: 5,
+      
+      // Battery optimization
+      disableStopDetection: false,
+      disableMotionActivityUpdates: false,
+    ));
+  }
 
-  
-  Future<void> _startBackgroundTracking() async {
-    final userModel = _profileController.userModel.value;
-    if (userModel == null) {
-      log('$_logTag Cannot start background tracking: user model is null');
-      return;
+  Future<bool> startTracking() async {
+    if (isTrackingActive.value) {
+      log('$_logTag Tracking already active');
+      return true;
+    }
+    
+    if (!liveTrackingEnabled) {
+      log('$_logTag Live tracking disabled');
+      trackingStatus.value = 'Disabled by configuration';
+      return false;
     }
     
     try {
-      // Get API base URL from your API service
-      // You'll need to expose this from your ApiGetServices class
-       final deviceToken = LocalStorageService.instance.getDeviceToken();
-      final String apiBaseUrl = BASE_URL; // Add this getter to your API service
-      final String? authToken = deviceToken; // Add this getter to your API service
+      trackingStatus.value = 'Starting...';
       
-      await BackgroundLocationService.startBackgroundTracking(
-        userId: userModel.userId ?? '',
-        companyId: userModel.companyId ?? '',
-        siteId: userModel.siteId ?? '',
-        isClocked: userModel.clockStatus == true,
-        trackingInterval: trackingIntervalSeconds,
-        apiBaseUrl: apiBaseUrl,
-        authToken: authToken,
-      );
+      // Update HTTP headers with auth token
+      final deviceToken = LocalStorageService.instance.getDeviceToken();
+      if (deviceToken != null) {
+        bg.BackgroundGeolocation.setConfig(bg.Config(
+          headers: {
+            'Authorization': 'Bearer $deviceToken',
+            'Content-Type': 'application/json',
+          }
+        ));
+      }
       
-      backgroundServiceRunning.value = true;
-      log('$_logTag Background tracking started successfully');
+      // Start the plugin
+      bg.State state = await bg.BackgroundGeolocation.start();
+      
+      if (state.enabled) {
+        isTrackingActive.value = true;
+        trackingStatus.value = 'Active';
+        failedAttempts.value = 0;
+        
+        log('$_logTag Background geolocation started successfully');
+        
+        _showTrackingNotification(
+          'Live tracking started successfully!',
+          backgroundColor: Colors.green,
+          icon: Icons.gps_fixed,
+        );
+        
+        return true;
+      } else {
+        trackingStatus.value = 'Failed to start';
+        return false;
+      }
       
     } catch (e) {
-      log('$_logTag Error starting background tracking: $e');
-      _showTrackingNotification('Background tracking failed to start', Colors.orange);
+      log('$_logTag Error starting tracking: $e');
+      trackingStatus.value = 'Error: $e';
+      
+      _showTrackingNotification(
+        'Failed to start tracking: ${e.toString()}',
+        backgroundColor: Colors.red,
+        icon: Icons.error,
+      );
+      
+      return false;
     }
   }
-  
+
   void stopTracking() async {
     if (!isTrackingActive.value) return;
     
     log('$_logTag Stopping live tracking');
     
-    isTrackingActive.value = false;
-    trackingStatus.value = 'Stopped';
-    
-    // Stop foreground tracking
-    _trackingTimer?.cancel();
-    _trackingTimer = null;
-    
-    _positionStream?.cancel();
-    _positionStream = null;
-    
-    // Stop background tracking
-    await BackgroundLocationService.stopBackgroundTracking();
-    backgroundServiceRunning.value = false;
-    
-    // Send any pending locations before stopping
-    if (_pendingLocations.isNotEmpty && !_connectivityController.isOffline.value) {
-      _processPendingLocations();
-    }
-    
-    // _showTrackingNotification('Live tracking stopped', Colors.orange);
-    log('$_logTag Live tracking stopped successfully');
-  }
-  
-  void _startPeriodicTracking() {
-    _trackingTimer?.cancel();
-    
-    // Get initial location immediately
-    _getCurrentLocationAndSend();
-    
-    // Start periodic updates
-    _trackingTimer = Timer.periodic(
-      Duration(seconds: trackingIntervalSeconds),
-      (_) => _getCurrentLocationAndSend(),
-    );
-  }
-  
-  void _restartTrackingWithNewInterval() async {
-    if (isTrackingActive.value) {
-      log('$_logTag Restarting tracking with new interval: ${trackingIntervalSeconds}s');
+    try {
+      await bg.BackgroundGeolocation.stop();
       
-      // Update foreground tracking
-      _startPeriodicTracking();
+      isTrackingActive.value = false;
+      trackingStatus.value = 'Stopped';
       
-      // Update background tracking configuration
-      final userModel = _profileController.userModel.value;
-      if (userModel != null && backgroundServiceRunning.value) {
-        await BackgroundLocationService.updateBackgroundConfig(
-          isClocked: userModel.clockStatus == true,
-          trackingInterval: trackingIntervalSeconds,
-        );
+      // Process any pending locations
+      if (_pendingLocations.isNotEmpty && !_connectivityController.isOffline.value) {
+        _processPendingLocations();
       }
+      
+      log('$_logTag Live tracking stopped successfully');
+      
+    } catch (e) {
+      log('$_logTag Error stopping tracking: $e');
     }
   }
-  Future<void> _getCurrentLocationAndSend() async {
-  if (!isTrackingActive.value) return;
-  
-  try {
-    trackingStatus.value = 'Getting location...';
+
+  // Location event handler
+  void _onLocation(bg.Location location) {
+    log('$_logTag Location received: ${location.coords.latitude}, ${location.coords.longitude}');
     
-    // Different settings for foreground vs background
-    LocationAccuracy accuracy = LocationAccuracy.high;
-    Duration timeout = const Duration(seconds: 15);
-    
-    // Check if app is in background and adjust settings
-    if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.paused ||
-        WidgetsBinding.instance.lifecycleState == AppLifecycleState.detached) {
-      accuracy = LocationAccuracy.medium; // Less demanding
-      timeout = const Duration(seconds: 30); // More time
-    }
-    
-    Position position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: accuracy,
-      timeLimit: timeout,
-    );
-    
-    currentLocation.value = position;
+    currentLocation.value = location;
     lastUpdateTime.value = DateTime.now().toIso8601String();
     
-    await _sendLocationToServer(position);
+    // The HTTP request is handled automatically by the plugin
+    // but we can also manually send if needed
+    _sendLocationToServer(location);
+  }
+
+  // Motion change event handler
+  void _onMotionChange(bg.Location location) {
+    log('$_logTag Motion changed: ${location.isMoving}');
     
-  } catch (e) {
-    log('$_logTag Error getting location: $e');
-    
-    // Handle timeout specifically
-    if (e is TimeoutException) {
-      // await _handleLocationTimeout();
+    if (location.isMoving) {
+      trackingStatus.value = 'Moving - Active tracking';
     } else {
-      failedAttempts.value++;
-      trackingStatus.value = 'Location error: $e';
-      
-      if (failedAttempts.value >= _maxRetryAttempts) {
-        log('$_logTag Too many failed attempts, stopping tracking');
-        stopTracking();
-        _showTrackingNotification('Tracking stopped due to repeated errors', Colors.red);
-      }
+      trackingStatus.value = 'Stationary - Reduced tracking';
     }
   }
-}
 
-  
-  Future<void> _sendLocationToServer(Position position) async {
-    final userModel = _profileController.userModel.value;
-    if (userModel == null) {
-      log('$_logTag User model is null, cannot send location');
-      return;
+  // Activity change event handler
+  void _onActivityChange(bg.ActivityChangeEvent event) {
+    log('$_logTag Activity changed: ${event.activity}');
+  }
+
+  // Provider change event handler
+  void _onProviderChange(bg.ProviderChangeEvent event) {
+    log('$_logTag Provider changed: GPS: ${event.gps}, Network: ${event.network}');
+    
+    if (!event.gps) {
+      trackingStatus.value = 'GPS disabled';
+      _showLocationServiceDisabledDialog();
     }
+  }
+
+  // Connectivity change event handler
+  void _onConnectivityChange(bg.ConnectivityChangeEvent event) {
+    log('$_logTag Connectivity changed: ${event.connected}');
+    
+    if (event.connected) {
+      trackingStatus.value = 'Online - Syncing';
+      _processPendingLocations();
+    } else {
+      trackingStatus.value = 'Offline - Queuing';
+    }
+  }
+
+  // HTTP response event handler
+  void _onHttp(bg.HttpEvent event) {
+    log('$_logTag HTTP Response: ${event.status}');
+    
+    if (event.status >= 200 && event.status < 300) {
+      successfulSends.value++;
+      failedAttempts.value = 0;
+      trackingStatus.value = 'Active - Last sent: ${_formatTime(DateTime.now())}';
+    } else {
+      failedAttempts.value++;
+      log('$_logTag HTTP Error: ${event.status} - ${event.responseText}');
+    }
+  }
+
+  Future<void> _sendLocationToServer(bg.Location location) async {
+    final userModel = _profileController.userModel.value;
+    if (userModel == null) return;
     
     final locationData = {
       'userId': userModel.userId,
-      'latitude': position.latitude,
-      'longitude': position.longitude,
+      'latitude': location.coords.latitude,
+      'longitude': location.coords.longitude,
       'isClockedIn': userModel.clockStatus == true,
       'isClockedOut': userModel.clockStatus == false,
       'companyID': userModel.companyId,
       'siteId': userModel.siteId,
+      'timestamp': location.timestamp,
+      'accuracy': location.coords.accuracy,
+      'speed': location.coords.speed,
+      'heading': location.coords.heading,
+      'altitude': location.coords.altitude,
     };
     
     // If offline, queue the location
     if (_connectivityController.isOffline.value) {
       _queueLocationData(locationData);
-      trackingStatus.value = 'Offline - queued';
       return;
     }
     
     try {
-      isSubmittingLocation.value = true;
-      trackingStatus.value = 'Sending location...';
-      
       final response = await _apiService.sendLiveLocation(locationData);
       
       if (response.statusCode == 200) {
@@ -452,13 +292,9 @@ Future<void> _showAlwaysPermissionDialog() async {
         if (responseData['status'] == true) {
           successfulSends.value++;
           failedAttempts.value = 0;
-          trackingStatus.value = backgroundServiceRunning.value ? 
-            'Active (Background enabled) - Last sent: ${_formatTime(DateTime.now())}' :
-            'Active - Last sent: ${_formatTime(DateTime.now())}';
-          
-          log('$_logTag Location sent successfully. ID: ${responseData['id']}');
+          log('$_logTag Location sent successfully');
         } else {
-          throw Exception('Server returned false status: ${responseData['message'] ?? 'Unknown error'}');
+          throw Exception('Server returned false status: ${responseData['message']}');
         }
       } else {
         throw Exception('HTTP ${response.statusCode}: ${response.body}');
@@ -467,33 +303,20 @@ Future<void> _showAlwaysPermissionDialog() async {
     } catch (e) {
       log('$_logTag Error sending location: $e');
       failedAttempts.value++;
-      trackingStatus.value = 'Send failed: ${e.toString().substring(0, 30)}...';
-      
-      // Queue the location for retry
       _queueLocationData(locationData);
-      
-      // Show error notification only for critical failures
-      // if (failedAttempts.value == 1) {
-      //   _showTrackingNotification('Location send failed, will retry', Colors.orange);
-      // }
-      
-    } finally {
-      isSubmittingLocation.value = false;
     }
   }
-  
+
   void _queueLocationData(Map<String, dynamic> locationData) {
     _pendingLocations.add(locationData);
     
-    // Limit queue size to prevent memory issues
     if (_pendingLocations.length > _maxPendingLocations) {
       _pendingLocations.removeAt(0);
-      log('$_logTag Location queue full, removed oldest entry');
     }
     
     log('$_logTag Location queued. Queue size: ${_pendingLocations.length}');
   }
-  
+
   Future<void> _processPendingLocations() async {
     if (_pendingLocations.isEmpty || _connectivityController.isOffline.value) {
       return;
@@ -504,305 +327,46 @@ Future<void> _showAlwaysPermissionDialog() async {
     final locationsToSend = List<Map<String, dynamic>>.from(_pendingLocations);
     _pendingLocations.clear();
     
-    int successCount = 0;
-    int failCount = 0;
-    
     for (final locationData in locationsToSend) {
       try {
         final response = await _apiService.sendLiveLocation(locationData);
         
-        if (response.statusCode == 200) {
-          final responseData = json.decode(response.body);
-          if (responseData['status'] == true) {
-            successCount++;
-          } else {
-            failCount++;
-            _pendingLocations.add(locationData);
-          }
-        } else {
-          failCount++;
+        if (response.statusCode != 200) {
           _pendingLocations.add(locationData);
         }
         
         await Future.delayed(const Duration(milliseconds: 100));
         
       } catch (e) {
-        failCount++;
         _pendingLocations.add(locationData);
         log('$_logTag Error processing pending location: $e');
       }
     }
-    
-    // if (successCount > 0 || failCount > 0) {
-    //   _showTrackingNotification(
-    //     'Synced $successCount locations${failCount > 0 ? ', $failCount failed' : ''}',
-    //     failCount == 0 ? Colors.green : Colors.orange,
-    //   );
-    // }
-    
-    log('$_logTag Processed pending locations: $successCount success, $failCount failed');
   }
-  Future<bool> _checkPermissions() async {
-  // Prevent multiple simultaneous checks
-  if (_isCheckingPermissions) {
-    log('$_logTag Permission check already in progress');
-    return _hasValidPermissions;
-  }
-  
-  _isCheckingPermissions = true;
-  
-  try {
-    log('$_logTag Starting permission check...');
-    
-    // 1. Check if location services are enabled
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      _showLocationServiceDisabledDialog();
-      _hasValidPermissions = false;
-      return false;
-    }
 
-    // 2. Show pre-permission dialog only if needed
-    LocationPermission currentPermission = await Geolocator.checkPermission();
-    if (currentPermission == LocationPermission.denied || 
-        currentPermission == LocationPermission.deniedForever) {
-      if (!_hasPermissionsBeenChecked) {
-        // bool userAccepted = await _showPrePermissionDialog();
-        // if (!userAccepted) {
-          _hasValidPermissions = false;
-          return false;
-        // }
-      }
-    }
-
-    // 3. Check and request basic location permission
-    LocationPermission permission = await Geolocator.checkPermission();
-    
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-
-    // 4. Handle permanent denial - tracking impossible
-    if (permission == LocationPermission.deniedForever) {
-      if (!_hasPermissionsBeenChecked) {
-        _showTrackingPermissionNotification(
-          'Location permission permanently denied. Enable in settings.',
-          backgroundColor: Colors.red,
-          icon: Icons.block,
-          actionLabel: 'Settings',
-          onTap: () => openAppSettings(),
-          duration: const Duration(seconds: 5),
-        );
-      }
-      _hasValidPermissions = false;
-      return false;
-    }
-
-    // 5. Handle basic denial - tracking impossible
-    if (permission == LocationPermission.denied) {
-      _showTrackingPermissionNotification(
-        'Location permission is required for tracking',
-        backgroundColor: Colors.red,
-        icon: Icons.gps_off,
-      );
-      _hasValidPermissions = false;
-      return false;
-    }
-
-    // 6. WhileInUse permission - ALLOW tracking but inform about background limitation
-    if (permission == LocationPermission.whileInUse) {
-      isBackgroundTrackingEnabled.value = false;
-      
-      // Only show settings dialog if user hasn't been informed yet
-      // if (!_hasPermissionsBeenChecked) {
-      //   _showTrackingPermissionNotification(
-      //     'Tracking active! For background tracking, enable "Always" permission.',
-      //     backgroundColor: Colors.orange,
-      //     icon: Icons.info,
-      //     actionLabel: 'Settings',
-      //     onTap: () => openAppSettings(),
-      //     duration: const Duration(seconds: 4),
-      //   );
-      // }
-      
-      _hasValidPermissions = true;
-      log('$_logTag WhileInUse permission granted - foreground tracking enabled');
-      return true; // ✅ Allow tracking to start
-    }
-
-    // 7. Always permission - Full tracking capability
-    if (permission == LocationPermission.always) {
-      isBackgroundTrackingEnabled.value = true;
-      _hasValidPermissions = true;
-      log('$_logTag Always permission granted - background tracking enabled');
-      return true;
-    }
-
-    _hasValidPermissions = false;
-    return false;
-    
-  } catch (e) {
-    log('$_logTag Error checking permissions: $e');
-    _hasValidPermissions = false;
-    return false;
-  } finally {
-    _isCheckingPermissions = false;
-    _hasPermissionsBeenChecked = true;
-  }
-}
-// Success messages
-
-
-void _showTrackingPermissionNotification(String message, {
-  Color? backgroundColor,
-  IconData? icon,
-  Duration? duration,
-  VoidCallback? onTap,
-  String? actionLabel,
-}) {
-  Get.snackbar(
-    'Live Tracking',
-    message,
-    backgroundColor: backgroundColor ?? Colors.blue,
-    colorText: Colors.white,
-    duration: duration ?? const Duration(seconds: 3),
-    icon: Icon(
-      icon ?? Icons.info,
-      color: Colors.white,
-    ),
-    onTap: onTap != null ? (_) => onTap() : null,
-    mainButton: actionLabel != null && onTap != null
-        ? TextButton(
-            onPressed: onTap,
-            child: Text(
-              actionLabel,
-              style: const TextStyle(color: Colors.white),
-            ),
-          )
-        : null,
-    snackPosition: SnackPosition.BOTTOM,
-    margin: const EdgeInsets.all(16),
-    borderRadius: 8,
-  );
-}
-
-
-Future<void> _showPrePermissionDialog() async {
-  await showDialog(
-    context: Get.context!,
-    barrierDismissible: false,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text("Enable Background Location"),
-        content: const Text(
-          "To keep tracking active even when the app is closed, "
-          "we need 'Allow all the time' location permission.\n\n"
-          "Without it, background tracking won’t work properly."
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Not Now"),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: const Text("Continue"),
-          ),
-        ],
-      );
-    },
-  );
-}
-
-Future<void> _showSettingsRedirectDialog() async {
-  await showDialog(
-    context: Get.context!,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text("Enable Full Access"),
-        content: const Text(
-          "For background tracking to work reliably, please enable "
-          "'Allow all the time' in your phone’s settings."
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              openAppSettings();
-            },
-            child: const Text("Go to Settings"),
-          ),
-        ],
-      );
-    },
-  );
-}
-
-  void _showBackgroundPermissionDialog() {
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Background Location Permission'),
-        content: const Text(
-          'To continue tracking your location when the app is closed or minimized, '
-          'please allow "All the time" location access in the next screen.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Get.back();
-              isBackgroundTrackingEnabled.value = false;
-            },
-            child: const Text('Skip'),
-          ),
-          ElevatedButton(
-            onPressed: () => Get.back(),
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
-      barrierDismissible: false,
+  // UI Helper methods
+  void _showTrackingNotification(String message, {
+    Color? backgroundColor,
+    IconData? icon,
+  }) {
+    Get.snackbar(
+      'Live Tracking',
+      message,
+      backgroundColor: backgroundColor ?? Colors.blue,
+      colorText: Colors.white,
+      duration: const Duration(seconds: 3),
+      icon: Icon(icon ?? Icons.info, color: Colors.white),
+      snackPosition: SnackPosition.BOTTOM,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 8,
     );
   }
-  
-  void _showBackgroundPermissionDeniedDialog() {
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Background Tracking Unavailable'),
-        content: const Text(
-          'Background location permission was denied. The app will only track your location '
-          'when it\'s open. You can enable background tracking later in app settings.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('OK'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Get.back();
-              openAppSettings();
-            },
-            child: const Text('Open Settings'),
-          ),
-        ],
-      ),
-      barrierDismissible: false,
-    );
-  }
-  
+
   void _showLocationServiceDisabledDialog() {
     Get.dialog(
       AlertDialog(
         title: const Text('GPS Disabled'),
-        content: const Text(
-          'Location services are disabled. Please enable GPS to start live tracking.',
-        ),
+        content: const Text('Location services are disabled. Please enable GPS to continue tracking.'),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
@@ -811,69 +375,22 @@ Future<void> _showSettingsRedirectDialog() async {
           ElevatedButton(
             onPressed: () {
               Get.back();
-              Geolocator.openLocationSettings();
+              openAppSettings();
             },
             child: const Text('Enable GPS'),
           ),
         ],
       ),
-      barrierDismissible: false,
     );
   }
-  
 
-
-
-  void _showTrackingNotification(String message, Color color) {
-    Get.snackbar(
-      'Live Tracking',
-      message,
-      backgroundColor: color,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 2),
-      icon: Icon(
-        color == Colors.green ? Icons.gps_fixed : 
-        color == Colors.red ? Icons.gps_off : Icons.gps_not_fixed,
-        color: Colors.white,
-      ),
-    );
-  }
-  
   String _formatTime(DateTime dateTime) {
     return '${dateTime.hour.toString().padLeft(2, '0')}:'
            '${dateTime.minute.toString().padLeft(2, '0')}:'
            '${dateTime.second.toString().padLeft(2, '0')}';
   }
-  
-  // Public methods for manual control
-  void manualLocationUpdate() {
-    if (isTrackingActive.value) {
-      _getCurrentLocationAndSend();
-    }
-  }
-  
-  Future<void> toggleBackgroundTracking(bool enable) async {
-    if (enable && !isBackgroundTrackingEnabled.value) {
-      // Check background permission first
-      if (await Permission.locationAlways.request().isGranted) {
-        isBackgroundTrackingEnabled.value = true;
-        if (isTrackingActive.value) {
-          await _startBackgroundTracking();
-        }
-        _showTrackingNotification('Background tracking enabled', Colors.green);
-      } else {
-        _showBackgroundPermissionDeniedDialog();
-      }
-    } else if (!enable && isBackgroundTrackingEnabled.value) {
-      isBackgroundTrackingEnabled.value = false;
-      await BackgroundLocationService.stopBackgroundTracking();
-      backgroundServiceRunning.value = false;
-      _showTrackingNotification('Background tracking disabled', Colors.orange);
-    }
-  }
-  
-  // Get comprehensive tracking statistics
+
+  // Public methods
   Map<String, dynamic> getTrackingStats() {
     return {
       'isActive': isTrackingActive.value,
@@ -883,177 +400,17 @@ Future<void> _showSettingsRedirectDialog() async {
       'pendingLocations': _pendingLocations.length,
       'lastUpdate': lastUpdateTime.value,
       'intervalSeconds': trackingIntervalSeconds,
-      'backgroundEnabled': isBackgroundTrackingEnabled.value,
-      'backgroundRunning': backgroundServiceRunning.value,
       'currentLocation': currentLocation.value != null ? {
-        'latitude': currentLocation.value!.latitude,
-        'longitude': currentLocation.value!.longitude,
-        'accuracy': currentLocation.value!.accuracy,
+        'latitude': currentLocation.value!.coords.latitude,
+        'longitude': currentLocation.value!.coords.longitude,
+        'accuracy': currentLocation.value!.coords.accuracy,
       } : null,
     };
   }
-  
-  // Force sync pending locations
+
   Future<void> forceSyncPendingLocations() async {
     if (_pendingLocations.isNotEmpty) {
       await _processPendingLocations();
     }
-  }
-  
-  // Check and request all required permissions at once
-  Future<bool> requestAllPermissions() async {
-    return await _checkPermissions();
-  }
-  
-  // Method to handle app lifecycle changes
-  void handleAppLifecycleState(AppLifecycleState state) {
-    log('$_logTag App lifecycle state changed to: $state');
-    
-    switch (state) {
-      case AppLifecycleState.resumed:
-        // App came to foreground
-        if (isTrackingActive.value) {
-          // Check if background service is still running
-          BackgroundLocationService.isBackgroundTrackingRunning().then((isRunning) {
-            backgroundServiceRunning.value = isRunning;
-            if (isRunning && !isBackgroundTrackingEnabled.value) {
-              // Background service is running but we lost the state, restore it
-              isBackgroundTrackingEnabled.value = true;
-            }
-          });
-        }
-        break;
-      case AppLifecycleState.paused:
-        // App went to background
-        if (isTrackingActive.value && !isBackgroundTrackingEnabled.value) {
-          log('$_logTag App paused but background tracking not enabled');
-        }
-        break;
-      case AppLifecycleState.detached:
-        // App is being terminated
-        log('$_logTag App is being terminated');
-        break;
-      default:
-        break;
-    }
-  }
-  
-  // Method to check system battery optimization settings
-  Future<bool> isBatteryOptimizationDisabled() async {
-    try {
-      // This would require a native plugin or custom implementation
-      // For now, we'll return true and advise users manually
-      return true;
-    } catch (e) {
-      log('$_logTag Error checking battery optimization: $e');
-      return false;
-    }
-  }
-  
-  // Method to show battery optimization warning
-  void showBatteryOptimizationWarning() {
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Battery Optimization'),
-        content: const Text(
-          'For reliable background location tracking, please disable battery optimization for this app in your device settings.\n\n'
-          'Go to Settings > Apps > [Your App Name] > Battery > Battery Optimization > Don\'t optimize',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Later'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Get.back();
-              // On Android, you could try to open battery optimization settings
-              // This would require additional platform-specific code
-            },
-            child: const Text('Open Settings'),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  // Method to validate tracking configuration
-  bool validateTrackingConfiguration() {
-    final userModel = _profileController.userModel.value;
-    
-    if (userModel == null) {
-      log('$_logTag Validation failed: User model is null');
-      return false;
-    }
-    
-    if (userModel.userId == null || userModel.userId!.isEmpty) {
-      log('$_logTag Validation failed: User ID is missing');
-      return false;
-    }
-    
-    if (trackingIntervalSeconds < 30) {
-      log('$_logTag Validation failed: Tracking interval too short (${trackingIntervalSeconds}s)');
-      return false;
-    }
-    
-    if (trackingIntervalSeconds > 3600) {
-      log('$_logTag Validation failed: Tracking interval too long (${trackingIntervalSeconds}s)');
-      return false;
-    }
-    
-    return true;
-  }
-  
-  // Method to get detailed location info
-  Future<Map<String, dynamic>?> getDetailedLocationInfo() async {
-    try {
-      if (!await Geolocator.isLocationServiceEnabled()) {
-        return null;
-      }
-      
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 10),
-      );
-      
-      return {
-        'latitude': position.latitude,
-        'longitude': position.longitude,
-        'accuracy': position.accuracy,
-        'altitude': position.altitude,
-        'heading': position.heading,
-        'speed': position.speed,
-        'timestamp': position.timestamp.toIso8601String(),
-        'isMocked': position.isMocked,
-      };
-      
-    } catch (e) {
-      log('$_logTag Error getting detailed location info: $e');
-      return null;
-    }
-  }
-  
-  // Method to export tracking logs for debugging
-  Map<String, dynamic> exportTrackingLogs() {
-    return {
-      'trackingStats': getTrackingStats(),
-      'configuration': {
-        'liveTrackingEnabled': liveTrackingEnabled,
-        'trackingIntervalSeconds': trackingIntervalSeconds,
-        'maxPendingLocations': _maxPendingLocations,
-        'maxRetryAttempts': _maxRetryAttempts,
-      },
-      'userInfo': {
-        'userId': _profileController.userModel.value?.userId,
-        'companyId': _profileController.userModel.value?.companyId,
-        'siteId': _profileController.userModel.value?.siteId,
-        'clockStatus': _profileController.userModel.value?.clockStatus,
-      },
-      'systemInfo': {
-        'isConnected': !_connectivityController.isOffline.value,
-        'pendingLocationsCount': _pendingLocations.length,
-      },
-      'exportTime': DateTime.now().toIso8601String(),
-    };
   }
 }

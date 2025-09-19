@@ -7,6 +7,8 @@ val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
+val backgroundGeolocation = project(":flutter_background_geolocation")
+apply { from("${backgroundGeolocation.projectDir}/background_geolocation.gradle") }
 
 plugins {
     id("com.android.application")
@@ -52,6 +54,7 @@ android {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             isShrinkResources = false
+            
         }
     }
 }
