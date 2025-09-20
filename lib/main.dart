@@ -6,6 +6,7 @@ import 'package:security_guard/core/api/api_service.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
+import 'package:security_guard/data/services/notification_services.dart';
 import 'package:security_guard/data/services/session_service.dart';
 import 'package:security_guard/data/services/sos_checkin_service.dart';
 import 'package:security_guard/firebase_options.dart';
@@ -19,7 +20,17 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
     as bg;
 
+// Updated background handler to use the static method with fixed IDs
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  print('Background message received: ${message.data}');
+  
+  // Initialize Firebase if not already initialized
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  
+  // Use the static method from NotificationServices to show notification with fixed ID
+  await NotificationServices.showBackgroundNotification(message);
+  
+  // Store notification data for when app opens (optional backup)
   final prefs = await SharedPreferences.getInstance();
   if (message.data.isNotEmpty) {
     await prefs.setString('pending_notification', jsonEncode(message.data));
@@ -31,15 +42,24 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  
+  // Set the background message handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
- await Get.putAsync(() => LocalStorageService().init());
+  
+  await Get.putAsync(() => LocalStorageService().init());
   await initServices();
   Get.put(SessionService());
   Get.put(ApiGetServices());
   Get.put(ConnectivityController());
   Get.put(ProfileController());
   Get.put(AuthController());
-Get.put(SosCheckInService());
+  Get.put(SosCheckInService());
+  
+  // Initialize notification services
+  final notificationService = NotificationServices();
+  await notificationService.initialize();
+  Get.put(notificationService); 
+  
   _setupNotificationHandlers();
   runApp(MyApp());
 }
@@ -57,8 +77,6 @@ Future<void> initServices() async {
 
 Future<void> _setupNotificationHandlers() async {
   try {
-    // ... existing permission request code ...
-
     // Set up message handlers
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       print('App opened from background notification');
@@ -74,16 +92,16 @@ Future<void> _setupNotificationHandlers() async {
       // Check if we have stored notification data
       final prefs = await SharedPreferences.getInstance();
       final storedData = prefs.getString('pending_notification');
+      
+      if (storedData != null) {
+        final data = jsonDecode(storedData);
+        await prefs.remove('pending_notification');
 
-      // if (storedData != null) {
-      //   final data = jsonDecode(storedData);
-      //   await prefs.remove('pending_notification');
-
-      //   // Schedule navigation after app is initialized
-      //   Future.delayed(Duration(seconds: 1), () {
-      //     _handleNotificationNavigation(data);
-      //   });
-      // }
+        // Schedule navigation after app is initialized
+        Future.delayed(Duration(seconds: 1), () {
+          _handleNotificationNavigation(data);
+        });
+      }
     }
   } catch (e) {
     print('Error setting up notification handlers: $e');
@@ -92,10 +110,10 @@ Future<void> _setupNotificationHandlers() async {
 
 void _handleNotificationNavigation(Map<String, dynamic>? data) {
   if (data != null && data['Type'] == 'safety_checkin') {
-    // Navigate to home and show safety check-in dialog
-    // Get.offAllNamed('/bottom-nav');
-
-     Future.delayed(const Duration(seconds: 4), () {
+    // Cancel the safety notification when user opens the app
+    NotificationServices.cancelSafetyNotification();
+    
+    Future.delayed(const Duration(seconds: 4), () {
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }
