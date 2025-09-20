@@ -43,6 +43,21 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
     ).animate(CurvedAnimation(parent: _timerController, curve: Curves.linear));
 
     _pulseController.repeat(reverse: true);
+
+    // Add status listener to timer controller for auto-close
+    _timerController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        // Timer has ended, auto-close dialog and handle timeout
+        if (mounted) {
+          Navigator.of(context).pop();
+          sosService.handleCheckInResponse(
+            CheckInStatus.ignore, // or CheckInStatus.timeout if you have it
+            checkInId: widget.checkInId,
+          );
+        }
+      }
+    });
+
     _timerController.forward();
 
     // Log whether this is notification-triggered or timer-triggered
@@ -80,26 +95,61 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Timer indicator
+              // Timer indicator with enhanced visual warnings
               AnimatedBuilder(
                 animation: _timerAnimation,
                 builder: (context, child) {
+                  final remainingMinutes = (_timerAnimation.value * sosService.responseWindowMinutes.value).ceil();
+                  final isWarning = remainingMinutes <= 1; // Warning in last minute
+                  final isCritical = remainingMinutes == 0; // Critical when time is up
+                  
                   return Column(
                     children: [
                       LinearProgressIndicator(
                         value: _timerAnimation.value,
                         backgroundColor: Colors.grey[200],
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          _timerAnimation.value > 0.5
-                              ? Colors.green
-                              : Colors.red,
+                          isCritical 
+                              ? Colors.red[700]!
+                              : isWarning 
+                                  ? Colors.red
+                                  : _timerAnimation.value > 0.5
+                                      ? Colors.green
+                                      : Colors.orange,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Time remaining: ${(_timerAnimation.value * sosService.responseWindowMinutes.value).ceil()} min',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        'Time remaining: $remainingMinutes min',
+                        style: TextStyle(
+                          fontSize: 12, 
+                          color: isWarning ? Colors.red : Colors.grey[600],
+                          fontWeight: isWarning ? FontWeight.bold : FontWeight.normal,
+                        ),
                       ),
+                      // Show warning text in last minute
+                      if (isWarning && !isCritical) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Dialog will close automatically!',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.red,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                      if (isCritical) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Time expired - Closing...',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.red[700],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ],
                   );
                 },

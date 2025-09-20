@@ -7,6 +7,7 @@ import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/data/services/session_service.dart';
+import 'package:security_guard/data/services/sos_checkin_service.dart';
 import 'package:security_guard/firebase_options.dart';
 import 'package:security_guard/modules/auth/controllers/auth_controller.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
@@ -15,11 +16,10 @@ import 'package:security_guard/routes/app_pages.dart';
 import 'package:security_guard/shared/widgets/sos_checkIn_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
-
+import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
+    as bg;
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-   
   final prefs = await SharedPreferences.getInstance();
   if (message.data.isNotEmpty) {
     await prefs.setString('pending_notification', jsonEncode(message.data));
@@ -27,19 +27,19 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     await prefs.setBool('received_notification', true);
   }
 }
-  
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  await Get.putAsync(() => LocalStorageService().init());
+ await Get.putAsync(() => LocalStorageService().init());
   await initServices();
   Get.put(SessionService());
   Get.put(ApiGetServices());
-
   Get.put(ConnectivityController());
   Get.put(ProfileController());
   Get.put(AuthController());
+Get.put(SosCheckInService());
   _setupNotificationHandlers();
   runApp(MyApp());
 }
@@ -54,6 +54,7 @@ Future<void> initServices() async {
     print('Error initializing services: $e');
   }
 }
+
 Future<void> _setupNotificationHandlers() async {
   try {
     // ... existing permission request code ...
@@ -73,28 +74,28 @@ Future<void> _setupNotificationHandlers() async {
       // Check if we have stored notification data
       final prefs = await SharedPreferences.getInstance();
       final storedData = prefs.getString('pending_notification');
-      
-      if (storedData != null) {
-        final data = jsonDecode(storedData);
-        await prefs.remove('pending_notification');
-        
-        // Schedule navigation after app is initialized
-        Future.delayed(Duration(seconds: 1), () {
-          _handleNotificationNavigation(data);
-        });
-      }
+
+      // if (storedData != null) {
+      //   final data = jsonDecode(storedData);
+      //   await prefs.remove('pending_notification');
+
+      //   // Schedule navigation after app is initialized
+      //   Future.delayed(Duration(seconds: 1), () {
+      //     _handleNotificationNavigation(data);
+      //   });
+      // }
     }
   } catch (e) {
     print('Error setting up notification handlers: $e');
   }
 }
 
-  void _handleNotificationNavigation(Map<String, dynamic>? data) {
+void _handleNotificationNavigation(Map<String, dynamic>? data) {
   if (data != null && data['Type'] == 'safety_checkin') {
     // Navigate to home and show safety check-in dialog
     // Get.offAllNamed('/bottom-nav');
-    
-    Future.delayed(const Duration(seconds: 4), () {
+
+     Future.delayed(const Duration(seconds: 4), () {
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }
@@ -110,10 +111,8 @@ Future<void> _setupNotificationHandlers() async {
   }
 }
 
-
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
-
 
   @override
   Widget build(BuildContext context) {
