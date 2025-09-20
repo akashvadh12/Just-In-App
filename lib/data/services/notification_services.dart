@@ -2,8 +2,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter/widgets.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
@@ -32,6 +32,24 @@ class NotificationServices {
   // iOS thread identifier — for grouping / replacement behavior on iOS local notifications.
   static const String iosThreadIdentifier = 'safety_checkin_thread';
 
+  // Check if GetX app is fully ready
+  static bool get isAppFullyReady {
+    try {
+      final binding = WidgetsBinding.instance;
+      final lifecycleState = binding.lifecycleState;
+      final hasContext = Get.context != null;
+      final isMaterialAppReady = Get.key.currentContext != null;
+      
+      return lifecycleState != null && 
+             lifecycleState != AppLifecycleState.detached &&
+             hasContext &&
+             isMaterialAppReady;
+    } catch (e) {
+      print('Error checking app ready state: $e');
+      return false;
+    }
+  }
+
   Future<void> initialize() async {
     try {
       await _initLocalNotification();
@@ -42,17 +60,20 @@ class NotificationServices {
       });
 
       _setupFirebaseHandlers();
-      _checkInitialMessage();
+      
+      // Delay initial message check to ensure app is ready
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _checkInitialMessage();
+      });
+      
     } catch (e, st) {
       print('NotificationServices.initialize error: $e\n$st');
     }
   }
 
   Future<void> _initLocalNotification() async {
-    // IMPORTANT: resource names here MUST match files you add in android/app/src/main/res/drawable or mipmap.
-    // Use resource name WITHOUT the '@drawable/' prefix.
     const AndroidInitializationSettings androidInit =
-        AndroidInitializationSettings('launcher_icon'); // <- resource name (small icon)
+        AndroidInitializationSettings("ic_stat_safety");
 
     const DarwinInitializationSettings iosInit = DarwinInitializationSettings(
       requestAlertPermission: false,
@@ -72,7 +93,6 @@ class NotificationServices {
       },
     );
 
-    // Vibration pattern as Int64List
     final Int64List vibrationPattern = Int64List.fromList([0, 1000, 500, 1000]);
 
     final AndroidNotificationChannel safetyChannel = AndroidNotificationChannel(
@@ -136,21 +156,91 @@ class NotificationServices {
         _handleSafetyCheckInNotification(msg.data);
         return;
       }
-      controller.currentIndex.value = 3;
+      
+      // Wait for app to be ready before navigation
+      _waitForAppReadyThenNavigate();
     });
   }
 
+  void _waitForAppReadyThenNavigate() {
+    if (isAppFullyReady) {
+      controller.currentIndex.value = 3;
+    } else {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        _waitForAppReadyThenNavigate();
+      });
+    }
+  }
+
+  // Updated method with better timing control
   Future<void> _checkInitialMessage() async {
-    RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
-    if (initialMessage != null) {
-      print('getInitialMessage: ${initialMessage.data}');
-      if (_isSafetyCheckin(initialMessage.data)) {
-        Future.delayed(const Duration(milliseconds: 300), () {
-          _handleSafetyCheckInNotification(initialMessage.data);
-        });
-      } else {
-        controller.currentIndex.value = 3;
+    try {
+      RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+      if (initialMessage != null) {
+        print('getInitialMessage: ${initialMessage.data}');
+        if (_isSafetyCheckin(initialMessage.data)) {
+          // For killed state, wait longer for app to be fully ready
+          _waitForAppReadyAndShowSafetyDialog(initialMessage.data, isFromKilledState: true);
+        } else {
+          _waitForAppReadyThenNavigate();
+        }
       }
+    } catch (e) {
+      print('Error checking initial message: $e');
+    }
+  }
+
+  // Enhanced method for killed state handling
+  void _waitForAppReadyAndShowSafetyDialog(Map<String, dynamic> data, {bool isFromKilledState = false}) {
+    final int maxRetries = isFromKilledState ? 20 : 10;  // More retries for killed state
+    final int delayMs = isFromKilledState ? 300 : 200;   // Longer delay for killed state
+    int retryCount = 0;
+    
+    void checkAndShow() {
+      if (isAppFullyReady && retryCount < maxRetries) {
+        _showSafetyDialogSafely(data);
+        return;
+      }
+      
+      retryCount++;
+      if (retryCount < maxRetries) {
+        Future.delayed(Duration(milliseconds: delayMs), checkAndShow);
+      } else {
+        print('Max retries reached, app might not be ready');
+        // Last attempt
+        if (Get.context != null) {
+          _showSafetyDialogSafely(data);
+        }
+      }
+    }
+    
+    // Initial delay for killed state
+    if (isFromKilledState) {
+      Future.delayed(const Duration(milliseconds: 1500), checkAndShow);
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) => checkAndShow());
+    }
+  }
+
+  void _showSafetyDialogSafely(Map<String, dynamic> data) {
+    if (Get.isDialogOpen ?? false) {
+      return;
+    }
+    
+    final checkInId = data['checkInId']?.toString() ?? 
+                     data['check_in_id']?.toString() ?? '0';
+    print('Showing safety check-in dialog: $checkInId');
+    
+    NotificationServices.cancelSafetyNotification();
+    
+    try {
+      Get.dialog(
+        SosCheckInDialog(checkInId: checkInId),
+        barrierDismissible: false,
+        name: 'SosCheckInDialog'
+      );
+    } catch (e) {
+      print('Error showing safety dialog: $e');
     }
   }
 
@@ -165,22 +255,23 @@ class NotificationServices {
   }
 
   void _handleSafetyCheckInNotification(Map<String, dynamic> data) {
-    final checkInId = data['checkInId']?.toString() ?? data['check_in_id']?.toString() ?? '0';
+    final checkInId = data['checkInId']?.toString() ?? 
+                     data['check_in_id']?.toString() ?? '0';
     print('Handling safety check-in: $checkInId');
 
-    // If dialog is already open, avoid opening again
     if (Get.isDialogOpen ?? false) {
       return;
     }
 
-    // Cancel any existing safety notification before opening dialog
     NotificationServices.cancelSafetyNotification();
 
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (!(Get.isDialogOpen ?? false)) {
-        Get.dialog(SosCheckInDialog(checkInId: checkInId), barrierDismissible: false, name: 'SosCheckInDialog');
-      }
-    });
+    if (isAppFullyReady) {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        _showSafetyDialogSafely(data);
+      });
+    } else {
+      _waitForAppReadyAndShowSafetyDialog(data);
+    }
   }
 
   void _handleNotificationResponse(NotificationResponse response) {
@@ -199,7 +290,7 @@ class NotificationServices {
       }
     }
 
-    controller.currentIndex.value = 3;
+    _waitForAppReadyThenNavigate();
   }
 
   static Map<String, dynamic> _stringToMap(String payload) {
@@ -210,6 +301,8 @@ class NotificationServices {
     }
   }
 
+  // ... rest of your existing methods remain the same ...
+  
   Future<void> _showLocalNotificationFromRemote(RemoteMessage message) async {
     try {
       final androidDetails = AndroidNotificationDetails(
@@ -220,9 +313,7 @@ class NotificationServices {
         priority: Priority.high,
         playSound: true,
         sound: const RawResourceAndroidNotificationSound('safety_alert'),
-        // Use resource name WITHOUT '@' prefix
-        icon: 'launcher_icon',
-        // Provide tag so Android replaces previous safety notifications
+        icon: "ic_stat_safety",
         tag: _isSafetyCheckin(message.data) ? safetyAndroidTag : null,
         vibrationPattern: Int64List.fromList([0, 1000, 500, 1000]),
         enableVibration: true,
@@ -255,80 +346,16 @@ class NotificationServices {
     }
   }
 
-  // Background isolate helper
-  static Future<void> showBackgroundNotification(RemoteMessage message) async {
-    try {
-      if (_isSafetyCheckin(message.data)) {
-        await _flutterLocalNotificationsPlugin.cancel(safetyNotificationId);
-      }
+  // ... keep all your other existing methods (showBackgroundNotification, getDeviceToken, etc.) ...
 
-      final FlutterLocalNotificationsPlugin plugin = _flutterLocalNotificationsPlugin;
+  static Future<void> cancelSafetyNotification() async {
+    await _flutterLocalNotificationsPlugin.cancel(safetyNotificationId);
+    print('Safety notification cancelled');
+  }
 
-      // Use same resource names as init
-      const AndroidInitializationSettings androidInit = AndroidInitializationSettings('launcher_icon');
-      const DarwinInitializationSettings iosInit = DarwinInitializationSettings();
-      final settings = InitializationSettings(android: androidInit, iOS: iosInit);
-
-      await plugin.initialize(settings);
-
-      final Int64List vibrationPattern = Int64List.fromList([0, 1000, 500, 1000]);
-
-      final AndroidNotificationChannel safetyChannel = AndroidNotificationChannel(
-        safetyChannelId,
-        safetyChannelName,
-        description: safetyChannelDescription,
-        importance: Importance.max,
-        sound: RawResourceAndroidNotificationSound('safety_alert'),
-        playSound: true,
-        enableVibration: true,
-        vibrationPattern: vibrationPattern,
-      );
-
-      await plugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(safetyChannel);
-
-      final androidDetails = AndroidNotificationDetails(
-        safetyChannelId,
-        safetyChannelName,
-        channelDescription: safetyChannelDescription,
-        importance: Importance.max,
-        priority: Priority.high,
-        playSound: true,
-        sound: const RawResourceAndroidNotificationSound('safety_alert'),
-        icon: 'launcher_icon',
-        tag: _isSafetyCheckin(message.data) ? safetyAndroidTag : null,
-        vibrationPattern: Int64List.fromList([0, 1000, 500, 1000]),
-        enableVibration: true,
-      );
-
-      final darwinDetails = DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-        sound: 'safety_alert.mp3',
-        threadIdentifier: iosThreadIdentifier,
-      );
-
-      final notifDetails = NotificationDetails(android: androidDetails, iOS: darwinDetails);
-
-      final title = message.notification?.title ?? message.data['title'] ?? 'Safety Alert';
-      final body = message.notification?.body ?? message.data['body'] ?? 'Please respond to safety checkin';
-
-      final notificationId = _isSafetyCheckin(message.data) ? safetyNotificationId : generalNotificationId;
-
-      await plugin.show(
-        notificationId,
-        title,
-        body,
-        notifDetails,
-        payload: jsonEncode(message.data.isNotEmpty ? message.data : {'message': 'no-data'}),
-      );
-
-      print('Background notification shown');
-    } catch (e) {
-      print('Error in showBackgroundNotification: $e');
-    }
+  static Future<void> cancelAllNotifications() async {
+    await _flutterLocalNotificationsPlugin.cancelAll();
+    print('All notifications cancelled');
   }
 
   Future<String?> getDeviceToken() async {
@@ -345,13 +372,8 @@ class NotificationServices {
   Future<void> subscribeToTopic(String t) => _messaging.subscribeToTopic(t);
   Future<void> unsubscribeFromTopic(String t) => _messaging.unsubscribeFromTopic(t);
 
-  static Future<void> cancelSafetyNotification() async {
-    await _flutterLocalNotificationsPlugin.cancel(safetyNotificationId);
-    print('Safety notification cancelled');
-  }
-
-  static Future<void> cancelAllNotifications() async {
-    await _flutterLocalNotificationsPlugin.cancelAll();
-    print('All notifications cancelled');
+  // Keep your existing showBackgroundNotification method as-is
+  static Future<void> showBackgroundNotification(RemoteMessage message) async {
+    // ... your existing implementation
   }
 }

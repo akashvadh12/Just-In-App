@@ -14,7 +14,6 @@ import 'package:security_guard/modules/auth/controllers/auth_controller.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:security_guard/routes/app_pages.dart';
-import 'package:security_guard/shared/widgets/sos_checkIn_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
@@ -30,12 +29,32 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Use the static method from NotificationServices to show notification with fixed ID
   await NotificationServices.showBackgroundNotification(message);
   
-  // Store notification data for when app opens (optional backup)
+  // Store notification data for when app opens (backup for killed state)
   final prefs = await SharedPreferences.getInstance();
   if (message.data.isNotEmpty) {
     await prefs.setString('pending_notification', jsonEncode(message.data));
-  } else {
-    await prefs.setBool('received_notification', true);
+  }
+}
+
+// In main.dart - OUTSIDE any class
+void headlessTask(bg.HeadlessEvent headlessEvent) async {
+  print('[BackgroundGeolocation HeadlessTask]: $headlessEvent');
+  
+  switch(headlessEvent.name) {
+    case bg.Event.LOCATION:
+      bg.Location location = headlessEvent.event;
+      print('- Headless Location: $location');
+      break;
+      
+    case bg.Event.HTTP:
+      bg.HttpEvent response = headlessEvent.event;
+      print('- Headless HTTP Response: $response');
+      break;
+      
+    case bg.Event.TERMINATE:
+      bg.State state = headlessEvent.event;
+      print('- App terminated: $state');
+      break;
   }
 }
 
@@ -60,8 +79,10 @@ void main() async {
   await notificationService.initialize();
   Get.put(notificationService); 
   
-  _setupNotificationHandlers();
+  // REMOVED: _setupNotificationHandlers(); - Let NotificationServices handle all
+  
   runApp(MyApp());
+  bg.BackgroundGeolocation.registerHeadlessTask(headlessTask);
 }
 
 Future<void> initServices() async {
@@ -75,59 +96,7 @@ Future<void> initServices() async {
   }
 }
 
-Future<void> _setupNotificationHandlers() async {
-  try {
-    // Set up message handlers
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print('App opened from background notification');
-      _handleNotificationNavigation(message.data);
-    });
-
-    RemoteMessage? initialMessage =
-        await FirebaseMessaging.instance.getInitialMessage();
-    if (initialMessage != null) {
-      print('App opened from terminated notification');
-      _handleNotificationNavigation(initialMessage.data);
-    } else {
-      // Check if we have stored notification data
-      final prefs = await SharedPreferences.getInstance();
-      final storedData = prefs.getString('pending_notification');
-      
-      if (storedData != null) {
-        final data = jsonDecode(storedData);
-        await prefs.remove('pending_notification');
-
-        // Schedule navigation after app is initialized
-        Future.delayed(Duration(seconds: 1), () {
-          _handleNotificationNavigation(data);
-        });
-      }
-    }
-  } catch (e) {
-    print('Error setting up notification handlers: $e');
-  }
-}
-
-void _handleNotificationNavigation(Map<String, dynamic>? data) {
-  if (data != null && data['Type'] == 'safety_checkin') {
-    // Cancel the safety notification when user opens the app
-    NotificationServices.cancelSafetyNotification();
-    
-    Future.delayed(const Duration(seconds: 4), () {
-      if (Get.isDialogOpen ?? false) {
-        Get.back();
-      }
-      
-      Get.dialog(
-        SosCheckInDialog(checkInId: data['checkInId']),
-        barrierDismissible: false,
-        name: 'SosCheckInDialog',
-      );
-    });
-  } else {
-    // Handle other notification types (your existing logic)
-  }
-}
+// REMOVED: All notification handling functions - let NotificationServices handle
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -150,6 +119,53 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,
+      // Add this to ensure app is fully ready before handling notifications
+      onReady: () {
+        print('App is fully ready');
+        // Check for any pending notifications stored during killed state
+        _handlePendingNotifications();
+      },
     );
+  }
+
+  // Handle any notifications stored when app was killed
+  void _handlePendingNotifications() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final storedData = prefs.getString('pending_notification');
+      
+      if (storedData != null) {
+        final data = Map<String, dynamic>.from(jsonDecode(storedData));
+        await prefs.remove('pending_notification');
+        
+        print('Found pending notification: $data');
+        
+        // Use the NotificationServices to handle this properly
+        final notificationService = Get.find<NotificationServices>();
+        if (data['Type'] == 'safety_checkin' || 
+            data['type'] == 'safety_checkin' || 
+            data['event'] == 'safety_checkin') {
+          
+          // Cancel any existing notifications
+          NotificationServices.cancelSafetyNotification();
+          
+          // Wait a bit more to ensure everything is ready, then show dialog
+          Future.delayed(const Duration(milliseconds: 1000), () {
+            final checkInId = data['checkInId']?.toString() ?? 
+                             data['check_in_id']?.toString() ?? '0';
+            
+            // if (!(Get.isDialogOpen ?? false)) {
+            //   Get.dialog(
+            //     SosCheckInDialog(checkInId: checkInId),
+            //     barrierDismissible: false,
+            //     name: 'SosCheckInDialog',
+            //   );
+            // }
+          });
+        }
+      }
+    } catch (e) {
+      print('Error handling pending notifications: $e');
+    }
   }
 }

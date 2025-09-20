@@ -93,33 +93,33 @@ class SosCheckInService extends GetxController {
   }
 
   /// Handle check-in triggered by notification
-  Future<void> handleNotificationCheckIn(String checkInId) async {
-    dev.log('$_logTag Handling notification-triggered check-in: $checkInId');
+  // Future<void> handleNotificationCheckIn(String checkInId) async {
+  //   dev.log('$_logTag Handling notification-triggered check-in: $checkInId');
     
-    // Close any existing dialog first
-    if (Get.isDialogOpen ?? false) {
-      Get.back();
-    }
+  //   // Close any existing dialog first
+  //   if (Get.isDialogOpen ?? false) {
+  //     Get.back();
+  //   }
 
-    isCheckInPending.value = true;
-    _currentPromptTime = DateTime.now();
-    _currentCheckInId = checkInId;
+  //   isCheckInPending.value = true;
+  //   _currentPromptTime = DateTime.now();
+  //   _currentCheckInId = checkInId;
 
-    dev.log('$_logTag Showing SOS check-in dialog (ID: $checkInId)');
+  //   dev.log('$_logTag Showing SOS check-in dialog (ID: $checkInId)');
 
-    // Start response timer
-    _responseTimer?.cancel();
-    _responseTimer = Timer(
-      Duration(minutes: responseWindowMinutes.value),
-      _handleNoResponse,
-    );
+  //   // Start response timer
+  //   _responseTimer?.cancel();
+  //   _responseTimer = Timer(
+  //     Duration(minutes: responseWindowMinutes.value),
+  //     _handleNoResponse,
+  //   );
 
-    Get.dialog(
-      SosCheckInDialog(checkInId: checkInId),
-      barrierDismissible: false,
-      name: 'SosCheckInDialog',
-    );
-  }
+  //   Get.dialog(
+  //     SosCheckInDialog(checkInId: checkInId),
+  //     barrierDismissible: false,
+  //     name: 'SosCheckInDialog',
+  //   );
+  // }
 
   /// Handle user response to check-in
   Future<void> handleCheckInResponse(CheckInStatus status, {String? checkInId}) async {

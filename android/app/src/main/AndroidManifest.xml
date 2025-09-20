@@ -23,6 +23,7 @@
         android:icon="@mipmap/launcher_icon"
         tools:replace="android:label">
 
+        <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_safety" />.
         <!-- flutter_background_geolocation licence -->
         <meta-data android:name="com.transistorsoft.locationmanager.license" android:value="ea584db1ad950797bbdfbba8661f8d647c9e240ea7bad9c3f04caab79c2dc179" />
         
