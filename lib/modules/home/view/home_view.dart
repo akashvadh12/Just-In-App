@@ -1,6 +1,7 @@
 // File: lib/modules/home/views/home_view.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shimmer/shimmer.dart'; // Add this to pubspec.yaml: shimmer: ^3.0.0
 import 'package:security_guard/data/services/sos_checkin_service.dart';
 import 'package:security_guard/modules/Compony/compony_location_list.dart';
 import 'package:security_guard/modules/addLoacation/location_list_screen.dart';
@@ -26,9 +27,236 @@ class HomeView extends GetView<HomeController> {
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
       appBar: _buildAppBar(bottomNavController),
-      body: _buildBody(bottomNavController),
-      // Add floating SOS button for guards
-      // floatingActionButton: _buildSosFloatingButton(),
+      body: Obx(() => controller.isLoading.value 
+          ? _buildShimmerBody() 
+          : _buildBody(bottomNavController)),
+    );
+  }
+
+  // Shimmer loading body
+  Widget _buildShimmerBody() {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildAttendanceCardShimmer(),
+          SizedBox(height: 16),
+          _buildSectionTitleShimmer(),
+          SizedBox(height: 12),
+          _buildQuickActionsShimmer(),
+          SizedBox(height: 24),
+          _buildSectionTitleShimmer(),
+          SizedBox(height: 12),
+          _buildOverviewCardsShimmer(),
+          SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  // Shimmer for attendance card
+  Widget _buildAttendanceCardShimmer() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  height: 16,
+                  width: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                Container(
+                  height: 24,
+                  width: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 12,
+                      width: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Container(
+                      height: 18,
+                      width: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 12,
+                      width: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Container(
+                      height: 18,
+                      width: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Shimmer for section titles
+  Widget _buildSectionTitleShimmer() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Container(
+        height: 18,
+        width: 150,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(9),
+        ),
+      ),
+    );
+  }
+
+  // Shimmer for quick actions
+  Widget _buildQuickActionsShimmer() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: List.generate(3, (index) => 
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4),
+            child: Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Container(
+                height: 100,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Shimmer for overview cards
+  Widget _buildOverviewCardsShimmer() {
+    return Column(
+      children: List.generate(2, (index) => 
+        Padding(
+          padding: EdgeInsets.only(bottom: index == 0 ? 12 : 0),
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        height: 15,
+                        width: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                      ),
+                      Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Container(
+                    height: 24,
+                    width: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -81,90 +309,146 @@ class HomeView extends GetView<HomeController> {
       toolbarHeight: 70,
       backgroundColor: Color(0xFF1E3A8A),
       automaticallyImplyLeading: false,
-      title: Row(
-        children: [
-          Obx(
-            () => GestureDetector(
-              onTap: () {
-                bottomNavController.changeTab(4); // Navigate to Profile tab
-              },
-              child: Container(
-                width: 42,
-                height: 42,
-                padding: EdgeInsets.all(0),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                  image: DecorationImage(
-                    image: NetworkImage(
-                      controller
-                                  .profileController
-                                  .userModel
-                                  .value
-                                  ?.photoPath
-                                  .isNotEmpty ==
-                              true
-                          ? controller
-                              .profileController
-                              .userModel
-                              .value!
-                              .photoPath
-                          : 'https://cdn-icons-png.flaticon.com/512/1053/1053244.png',
-                    ),
-                    fit: BoxFit.cover,
+      title: Obx(() => controller.isLoading.value 
+          ? _buildAppBarShimmer() 
+          : _buildAppBarContent(bottomNavController, greeting, dateString)),
+    );
+  }
+
+  // Shimmer for app bar
+  Widget _buildAppBarShimmer() {
+    return Row(
+      children: [
+        Shimmer.fromColors(
+          baseColor: Colors.white.withOpacity(0.3),
+          highlightColor: Colors.white.withOpacity(0.1),
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          child: Shimmer.fromColors(
+            baseColor: Colors.white.withOpacity(0.3),
+            highlightColor: Colors.white.withOpacity(0.1),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 18,
+                  width: 150,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(9),
                   ),
+                ),
+                SizedBox(height: 4),
+                Container(
+                  height: 14,
+                  width: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        IconButton(
+          icon: Icon(Icons.notifications, color: Colors.white),
+          onPressed: () {
+            Get.to(() => NotificationsScreen());
+          },
+        ),
+      ],
+    );
+  }
+
+  // Original app bar content
+  Widget _buildAppBarContent(bottomNavController, String greeting, String dateString) {
+    return Row(
+      children: [
+        Obx(
+          () => GestureDetector(
+            onTap: () {
+              bottomNavController.changeTab(4); // Navigate to Profile tab
+            },
+            child: Container(
+              width: 42,
+              height: 42,
+              padding: EdgeInsets.all(0),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+                image: DecorationImage(
+                  image: NetworkImage(
+                    controller
+                                .profileController
+                                .userModel
+                                .value
+                                ?.photoPath
+                                .isNotEmpty ==
+                            true
+                        ? controller
+                            .profileController
+                            .userModel
+                            .value!
+                            .photoPath
+                        : 'https://cdn-icons-png.flaticon.com/512/1053/1053244.png',
+                  ),
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
           ),
-          SizedBox(width: 12),
-          Obx(
-            () => Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                   "$greeting, ${controller.profileController.userModel.value?.name.toString().split(" ").first}" 
-                     ,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+        ),
+        SizedBox(width: 12),
+        Obx(
+          () => Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                 "$greeting, ${controller.profileController.userModel.value?.name.toString().split(" ").first}" 
+                   ,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
-                  Text(
-                    dateString,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 14,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  dateString,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 14,
                   ),
-                ],
-              ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
-
-          // SOS Status Indicator
-          // _buildSosStatusIndicator(),
-
-          Stack(
-            children: [
-              IconButton(
-                icon: Icon(Icons.notifications, color: Colors.white),
-                onPressed: () {
-                  Get.to(() => NotificationsScreen());
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
+        ),
+        Stack(
+          children: [
+            IconButton(
+              icon: Icon(Icons.notifications, color: Colors.white),
+              onPressed: () {
+                Get.to(() => NotificationsScreen());
+              },
+            ),
+          ],
+        ),
+      ],
     );
   }
-
-
 
   Widget _buildBody(bottomNavController) {
     return SingleChildScrollView(
@@ -187,8 +471,6 @@ class HomeView extends GetView<HomeController> {
       ),
     );
   }
-
-  
 
   Widget _buildAttendanceCard() {
     return Obx(
@@ -588,5 +870,4 @@ class HomeView extends GetView<HomeController> {
       ),
     );
   }
-
 }

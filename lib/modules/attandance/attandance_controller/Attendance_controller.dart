@@ -97,7 +97,7 @@ Future<void> getCurrentLocation() async {
   final connectivityController = Get.find<ConnectivityController>();
 
   if (connectivityController.isOffline.value) {
-    connectivityController.showNoInternetSnackbar();
+    // connectivityController.showNoInternetSnackbar();
     return;
   }
 
@@ -348,7 +348,7 @@ Future<void> getCurrentLocation() async {
     final connectivityController = Get.find<ConnectivityController>();
 
     if (connectivityController.isOffline.value) {
-      connectivityController.showNoInternetSnackbar();
+      // connectivityController.showNoInternetSnackbar();
       return false;
     }
     if (isProcessingAttendance.value) {

@@ -24,11 +24,14 @@ class GuardAttendanceScreen extends StatelessWidget {
               physics: AlwaysScrollableScrollPhysics(),
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight * 0.9, // Ensure 90% height usage
+                  minHeight:
+                      constraints.maxHeight * 0.9, // Ensure 90% height usage
                 ),
                 child: IntrinsicHeight(
                   child: Padding(
-                    padding: const EdgeInsets.all(20.0), // Increased horizontal padding
+                    padding: const EdgeInsets.all(
+                      20.0,
+                    ), // Increased horizontal padding
                     child: Column(
                       children: [
                         _buildGreetingSection(),
@@ -191,16 +194,18 @@ class GuardAttendanceScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           // Highlighted border and shadow
           border: Border.all(
-            color: controller.isLocationVerified.value
-                ? Colors.green.withOpacity(0.3)
-                : AppColors.primary.withOpacity(0.2),
+            color:
+                controller.isLocationVerified.value
+                    ? Colors.green.withOpacity(0.3)
+                    : AppColors.primary.withOpacity(0.2),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: controller.isLocationVerified.value
-                  ? Colors.green.withOpacity(0.15)
-                  : AppColors.primary.withOpacity(0.1),
+              color:
+                  controller.isLocationVerified.value
+                      ? Colors.green.withOpacity(0.15)
+                      : AppColors.primary.withOpacity(0.1),
               spreadRadius: 0,
               blurRadius: 10,
               offset: const Offset(0, 4),
@@ -216,18 +221,20 @@ class GuardAttendanceScreen extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: controller.isLocationVerified.value
-                        ? Colors.green.withOpacity(0.1)
-                        : Colors.grey.withOpacity(0.1),
+                    color:
+                        controller.isLocationVerified.value
+                            ? Colors.green.withOpacity(0.1)
+                            : Colors.grey.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     controller.isLocationVerified.value
                         ? Icons.location_on
                         : Icons.location_off,
-                    color: controller.isLocationVerified.value
-                        ? Colors.green
-                        : Colors.grey,
+                    color:
+                        controller.isLocationVerified.value
+                            ? Colors.green
+                            : Colors.grey,
                     size: 18,
                   ),
                 ),
@@ -254,39 +261,43 @@ class GuardAttendanceScreen extends StatelessWidget {
             const SizedBox(height: 12),
 
             Text(
-              controller.isLocationVerified.value ? 'GPS Verified' : 'GPS Location',
+              controller.isLocationVerified.value
+                  ? 'GPS Verified'
+                  : 'GPS Location',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: controller.isLocationVerified.value
-                    ? Colors.green
-                    : Colors.grey[700],
+                color:
+                    controller.isLocationVerified.value
+                        ? Colors.green
+                        : Colors.grey[700],
               ),
             ),
             Container(
               height: 28, // Increased height
               alignment: Alignment.centerLeft,
-              child: controller.currentPosition.value != null
-                  ? Text(
-                      controller.formatCoordinates(
-                        controller.currentPosition.value!,
+              child:
+                  controller.currentPosition.value != null
+                      ? Text(
+                        controller.formatCoordinates(
+                          controller.currentPosition.value!,
+                        ),
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      )
+                      : Text(
+                        'Location not available',
+                        style: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    )
-                  : Text(
-                      'Location not available',
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
             ),
 
             const SizedBox(height: 8),
@@ -294,14 +305,16 @@ class GuardAttendanceScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: controller.isLoadingLocation.value ||
-                        controller.isLocationVerified.value
-                    ? null
-                    : controller.getCurrentLocation,
+                onPressed:
+                    controller.isLoadingLocation.value ||
+                            controller.isLocationVerified.value
+                        ? null
+                        : controller.getCurrentLocation,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: controller.isLocationVerified.value
-                      ? Colors.green
-                      : AppColors.primary,
+                  backgroundColor:
+                      controller.isLocationVerified.value
+                          ? Colors.green
+                          : AppColors.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(
@@ -309,41 +322,42 @@ class GuardAttendanceScreen extends StatelessWidget {
                   ),
                   elevation: 2,
                 ),
-                child: controller.isLoadingLocation.value
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 12,
-                            height: 12,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                child:
+                    controller.isLoadingLocation.value
+                        ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Verifying...',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
+                            const SizedBox(width: 8),
+                            Text(
+                              'Verifying...',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
+                          ],
+                        )
+                        : Text(
+                          // Updated text based on verification status
+                          controller.isLocationVerified.value
+                              ? 'Location Verified'
+                              : 'Verify Location',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
                           ),
-                        ],
-                      )
-                    : Text(
-                        // Updated text based on verification status
-                        controller.isLocationVerified.value
-                            ? 'Location Verified'
-                            : 'Verify Location',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
                         ),
-                      ),
               ),
             ),
           ],
@@ -361,16 +375,18 @@ class GuardAttendanceScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           // Highlighted border and shadow
           border: Border.all(
-            color: controller.capturedImage.value != null
-                ? Colors.green.withOpacity(0.3)
-                : AppColors.primary.withOpacity(0.2),
+            color:
+                controller.capturedImage.value != null
+                    ? Colors.green.withOpacity(0.3)
+                    : AppColors.primary.withOpacity(0.2),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: controller.capturedImage.value != null
-                  ? Colors.green.withOpacity(0.15)
-                  : AppColors.primary.withOpacity(0.1),
+              color:
+                  controller.capturedImage.value != null
+                      ? Colors.green.withOpacity(0.15)
+                      : AppColors.primary.withOpacity(0.1),
               spreadRadius: 0,
               blurRadius: 10,
               offset: const Offset(0, 4),
@@ -386,9 +402,11 @@ class GuardAttendanceScreen extends StatelessWidget {
                 // Photo status indicator - green when captured
                 Icon(
                   Icons.camera_alt,
-                  color: controller.capturedImage.value != null
-                      ? Colors.green // Green when photo is captured
-                      : AppColors.primary,
+                  color:
+                      controller.capturedImage.value != null
+                          ? Colors
+                              .green // Green when photo is captured
+                          : AppColors.primary,
                   size: 18,
                 ),
                 const SizedBox(width: 8),
@@ -430,78 +448,80 @@ class GuardAttendanceScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: controller.capturedImage.value != null
-                        ? Colors.green
-                        : Colors.grey.shade300,
+                    color:
+                        controller.capturedImage.value != null
+                            ? Colors.green
+                            : Colors.grey.shade300,
                     width: 2,
                   ),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: controller.capturedImage.value != null
-                      ? Stack(
-                          children: [
-                            Image.file(
-                              controller.capturedImage.value!,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: double.infinity,
-                            ),
-                            Positioned(
-                              top: 6,
-                              right: 6,
-                              child: Container(
-                                padding: EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.green,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                  size: 12,
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
-                      : Container(
-                          color: Colors.grey[50],
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                  child:
+                      controller.capturedImage.value != null
+                          ? Stack(
                             children: [
-                              Container(
-                                padding: EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.camera_alt,
-                                  size: 18,
-                                  color: AppColors.primary,
-                                ),
+                              Image.file(
+                                controller.capturedImage.value!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
                               ),
-                              const SizedBox(height: 6),
-                              Text(
-                                'Tap to capture',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              Text(
-                                'Required',
-                                style: TextStyle(
-                                  color: Colors.grey[400],
-                                  fontSize: 9,
+                              Positioned(
+                                top: 6,
+                                right: 6,
+                                child: Container(
+                                  padding: EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.check,
+                                    color: Colors.white,
+                                    size: 12,
+                                  ),
                                 ),
                               ),
                             ],
+                          )
+                          : Container(
+                            color: Colors.grey[50],
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.camera_alt,
+                                    size: 18,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Tap to capture',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                Text(
+                                  'Required',
+                                  style: TextStyle(
+                                    color: Colors.grey[400],
+                                    fontSize: 9,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
                 ),
               ),
             ),
@@ -515,7 +535,10 @@ class GuardAttendanceScreen extends StatelessWidget {
     return Obx(() {
       final now = DateTime.now();
       return Container(
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20), // Increased padding
+        padding: const EdgeInsets.symmetric(
+          vertical: 20,
+          horizontal: 20,
+        ), // Increased padding
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -577,13 +600,15 @@ class GuardAttendanceScreen extends StatelessWidget {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: (profileController.userModel.value?.clockStatus == true
+                    color: (profileController.userModel.value?.clockStatus ==
+                                true
                             ? Colors.green
                             : Colors.grey)
                         .withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: (profileController.userModel.value?.clockStatus == true
+                      color: (profileController.userModel.value?.clockStatus ==
+                                  true
                               ? Colors.green
                               : Colors.grey)
                           .withOpacity(0.3),
@@ -594,9 +619,10 @@ class GuardAttendanceScreen extends StatelessWidget {
                         ? 'Clock-in'
                         : 'Clock-out',
                     style: TextStyle(
-                      color: profileController.userModel.value?.clockStatus == true
-                          ? Colors.green
-                          : Colors.grey[700],
+                      color:
+                          profileController.userModel.value?.clockStatus == true
+                              ? Colors.green
+                              : Colors.grey[700],
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
@@ -609,19 +635,36 @@ class GuardAttendanceScreen extends StatelessWidget {
 
             SizedBox(
               width: double.infinity,
-              child: profileController.userModel.value?.clockStatus == false
-                  ? _buildCompactClockButton(
-                      label: 'Clock-in', // Updated with hyphen
-                      icon: Icons.login,
-                      onPressed: controller.clockIn,
-                      color: Colors.green,
-                    )
-                  : _buildCompactClockButton(
-                      label: 'Clock-out', // Updated with hyphen
-                      icon: Icons.logout,
-                      onPressed: controller.clockOut,
-                      color: Colors.red,
-                    ),
+              child:
+                  profileController.userModel.value?.clockStatus == false
+                      ? (controller.isProcessingAttendance.value
+                          ? Center(
+                            child: SizedBox(
+                              height: 30,
+                              width: 30,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                          : _buildCompactClockButton(
+                            label: 'Clock-in',
+                            icon: Icons.login,
+                            onPressed: controller.clockIn,
+                            color: Colors.green,
+                          ))
+                      : (controller.isProcessingAttendance.value
+                          ? Center(
+                            child: SizedBox(
+                              height: 30,
+                              width: 30,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                          : _buildCompactClockButton(
+                            label: 'Clock-out',
+                            icon: Icons.logout,
+                            onPressed: controller.clockOut,
+                            color: Colors.red,
+                          )),
             ),
 
             // if (controller.lastAction.value != "No recent activity") ...[

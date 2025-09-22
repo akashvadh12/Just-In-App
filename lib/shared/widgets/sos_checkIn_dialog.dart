@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:security_guard/data/services/notification_services.dart';
 import 'package:security_guard/data/services/sos_checkin_service.dart';
 
 class SosCheckInDialog extends StatefulWidget {
@@ -29,7 +30,7 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
     );
 
     _timerController = AnimationController(
-      duration: Duration(minutes: sosService.responseWindowMinutes.value),
+      duration: Duration(seconds: 30),
       vsync: this,
     );
 
@@ -68,6 +69,7 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
 
   @override
   void dispose() {
+    NotificationServices.cancelAllNotifications();
     _pulseController.dispose();
     _timerController.dispose();
     super.dispose();

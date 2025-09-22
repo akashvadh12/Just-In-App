@@ -131,7 +131,7 @@ class PatrolCheckInController extends GetxController {
     final connectivityController = Get.find<ConnectivityController>();
 
     if (connectivityController.isOffline.value) {
-      connectivityController.showNoInternetSnackbar();
+      // connectivityController.showNoInternetSnackbar();
       return;
     }
 
@@ -782,7 +782,7 @@ class PatrolCheckInController extends GetxController {
     final connectivityController = Get.find<ConnectivityController>();
 
     if (connectivityController.isOffline.value) {
-      connectivityController.showNoInternetSnackbar();
+      // connectivityController.showNoInternetSnackbar();
       return;
     }
     isLoading.value = true;

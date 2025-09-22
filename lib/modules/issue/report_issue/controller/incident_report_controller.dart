@@ -220,7 +220,7 @@ class IncidentReportController extends GetxController {
     final connectivityController = Get.find<ConnectivityController>();
 
     if (connectivityController.isOffline.value) {
-      connectivityController.showNoInternetSnackbar();
+      // connectivityController.showNoInternetSnackbar();
       return;
     }
     final description = descriptionController.text.trim();

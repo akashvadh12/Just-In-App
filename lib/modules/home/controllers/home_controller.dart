@@ -19,6 +19,7 @@ class HomeController extends GetxController {
   final ProfileController profileController = Get.find<ProfileController>();
   final NotificationServices notify = NotificationServices();
 
+  var isLoading = true.obs;
   // SOS Service integration
   late SosCheckInService sosService;
 
@@ -234,10 +235,11 @@ class HomeController extends GetxController {
     final connectivityController = Get.find<ConnectivityController>();
 
     if (connectivityController.isOffline.value) {
-      connectivityController.showNoInternetSnackbar();
+      // connectivityController.showNoInternetSnackbar();
       return;
     }
 
+    isLoading(true);
     dashboardLoading.value = true;
     try {
       // Get userId from LocalStorageService
@@ -260,6 +262,7 @@ class HomeController extends GetxController {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
+        
         final data = json.decode(response.body);
         attendanceStatus.value = data['attendanceStatus']?.toString() ?? '';
         todayPatrolStatus.value = data['todayPatrolStatus']?.toString() ?? '';
@@ -268,7 +271,7 @@ class HomeController extends GetxController {
         issuesResolved.value = data['issuesCount']?['resolved'] ?? 0;
         clockInTime.value = data['clockIn']?.toString() ?? 'Not clocked in';
         clockOutTime.value = data['clockOut']?.toString() ?? '';
-
+        
         print('Dashboard data fetched successfully: $data');
 
         // Initialize services after fetching attendance status
@@ -281,7 +284,7 @@ class HomeController extends GetxController {
             company: data['companyId'].toString(),
             site: data['siteId'].toString(),
           );
-
+           isLoading(false);
           // Update user model with new data
           profileController.userModel.value = UserModel.fromJson(data);
           profileController.fetchUserProfile(userId);

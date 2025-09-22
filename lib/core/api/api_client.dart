@@ -31,7 +31,6 @@ class ApiClient {
       final connectivityController = Get.find<ConnectivityController>();
 
       if (connectivityController.isOffline.value) {
-        connectivityController.showNoInternetSnackbar();
         return http.Response('No internet connection', 503);
       }
 
@@ -72,7 +71,6 @@ class ApiClient {
       final connectivityController = Get.find<ConnectivityController>();
 
       if (connectivityController.isOffline.value) {
-        connectivityController.showNoInternetSnackbar();
         return http.Response('No internet connection', 503);
       }
       // Add company and site IDs to params if available and not already present
@@ -113,7 +111,6 @@ class ApiClient {
       final connectivityController = Get.find<ConnectivityController>();
 
       if (connectivityController.isOffline.value) {
-        connectivityController.showNoInternetSnackbar();
         return http.Response('No internet connection', 503);
       }
       // Build query parameters with company and site IDs
@@ -155,7 +152,6 @@ class ApiClient {
       final connectivityController = Get.find<ConnectivityController>();
 
       if (connectivityController.isOffline.value) {
-        connectivityController.showNoInternetSnackbar();
         return http.Response('No internet connection', 503);
       }
       log('$_logTag PUT => $baseUrl$endpoint');
@@ -196,7 +192,6 @@ class ApiClient {
       final connectivityController = Get.find<ConnectivityController>();
 
       if (connectivityController.isOffline.value) {
-        connectivityController.showNoInternetSnackbar();
         return http.Response('No internet connection', 503);
       }
       log('$_logTag POST Multipart => $baseUrl$endpoint');
@@ -251,7 +246,6 @@ class ApiClient {
       final connectivityController = Get.find<ConnectivityController>();
 
       if (connectivityController.isOffline.value) {
-        connectivityController.showNoInternetSnackbar();
         return http.Response('No internet connection', 503);
       }
       log('$_logTag POST (no body) => $baseUrl$endpoint');
@@ -278,7 +272,6 @@ class ApiClient {
       final connectivityController = Get.find<ConnectivityController>();
 
       if (connectivityController.isOffline.value) {
-        connectivityController.showNoInternetSnackbar();
         return http.Response('No internet connection', 503);
       }
       log('$_logTag PUT => $baseUrl$endpoint');
@@ -321,7 +314,6 @@ class ApiClient {
          final connectivityController = Get.find<ConnectivityController>();
 
       if (connectivityController.isOffline.value) {
-        connectivityController.showNoInternetSnackbar();
         return http.Response('No internet connection', 503);
       }
       log('$_logTag PUT Multipart => $baseUrl$endpoint');
