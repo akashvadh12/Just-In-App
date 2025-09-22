@@ -217,7 +217,7 @@ class NotificationServices {
     
     // Initial delay for killed state
     if (isFromKilledState) {
-      Future.delayed(const Duration(milliseconds: 1500), checkAndShow);
+      Future.delayed(const Duration(milliseconds: 2000), checkAndShow);
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) => checkAndShow());
     }
@@ -354,7 +354,7 @@ Future<void> _showLocalNotificationFromRemote(RemoteMessage message, {bool autoD
 
     // iOS (and a fallback for Android): explicitly cancel shortly after showing
     if (autoDismiss) {
-      Future.delayed(const Duration(seconds: 3), () {
+      Future.delayed(const Duration(seconds: 2), () {
         _flutterLocalNotificationsPlugin.cancel(notificationId);
       });
     }

@@ -37,7 +37,7 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
     );
 
     _timerController = AnimationController(
-      duration: Duration(seconds: timerDuration),
+      duration: Duration(seconds: timerDuration-5),
       vsync: this,
     );
 
