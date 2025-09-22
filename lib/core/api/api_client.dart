@@ -142,6 +142,40 @@ class ApiClient {
     });
   }
 
+  
+/// GET request with retry logic
+Future<http.Response> getSafetyStatus(
+  String endpoint, {
+  Map<String, String>? headers,
+  Map<String, String>? queryParameters,
+}) async {
+  return _executeWithRetry(() async {
+    final connectivityController = Get.find<ConnectivityController>();
+
+    if (connectivityController.isOffline.value) {
+      return http.Response('No internet connection', 503);
+    }
+
+    log('$_logTag GET => $baseUrl$endpoint');
+
+    var url = Uri.parse('$baseUrl$endpoint');
+    
+    // Add query parameters if provided
+    if (queryParameters != null && queryParameters.isNotEmpty) {
+      url = url.replace(queryParameters: queryParameters);
+    }
+
+    final mergedHeaders = _buildHeaders(headers);
+
+    final response = await http
+        .get(url, headers: mergedHeaders)
+        .timeout(Duration(seconds: timeoutSeconds));
+
+    _logResponse(endpoint, response);
+    return response;
+  });
+}
+
   /// PUT request (updated to include session data)
   Future<http.Response> put(
     String endpoint,

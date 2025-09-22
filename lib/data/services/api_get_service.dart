@@ -85,6 +85,20 @@ Future<http.Response> sendSafetyCheckIn(Map<String, dynamic> checkInData) async 
   }
 }
 
+Future<http.Response> checkSafetyCheckInStatus(String userId, String companyId, String siteId) async {
+  final String endpoint = 'Dashboard/check-status/$userId/$companyId/$siteId';
+  
+  try {
+    log('[ApiService] Checking safety check-in status for user: $userId');
+    final response = await _client.getSafetyStatus(endpoint);
+    log('[ApiService] Check status response: ${response.statusCode} - ${response.body}');
+    return response;
+  } catch (e) {
+    log('[ApiService] Error checking safety status: $e');
+    rethrow;
+  }
+}
+
   Future<http.Response> getOfficeLocRaw() async {
     const endpoint = 'CompanyConfig/GetOfficeLoc';
     final headers = await _getAuthenticatedHeaders();

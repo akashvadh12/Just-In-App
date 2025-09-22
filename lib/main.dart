@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:security_guard/core/api/api_service.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/data/services/api_get_service.dart';
+import 'package:security_guard/data/services/app_lifecycle_service.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/data/services/notification_services.dart';
 import 'package:security_guard/data/services/session_service.dart';
@@ -65,7 +66,6 @@ void main() async {
   // Set the background message handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   
-  await Get.putAsync(() => LocalStorageService().init());
   await initServices();
   Get.put(SessionService());
   Get.put(ApiGetServices());
@@ -73,13 +73,13 @@ void main() async {
   Get.put(ProfileController());
   Get.put(AuthController());
   Get.put(SosCheckInService());
+  Get.put(AppLifecycleService());
   
   // Initialize notification services
   final notificationService = NotificationServices();
   await notificationService.initialize();
   Get.put(notificationService); 
   
-  // REMOVED: _setupNotificationHandlers(); - Let NotificationServices handle all
   
   runApp(MyApp());
   bg.BackgroundGeolocation.registerHeadlessTask(headlessTask);
@@ -123,7 +123,7 @@ class MyApp extends StatelessWidget {
       onReady: () {
         print('App is fully ready');
         // Check for any pending notifications stored during killed state
-        _handlePendingNotifications();
+        // _handlePendingNotifications();
       },
     );
   }

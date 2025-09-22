@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:security_guard/data/services/api_get_service.dart';
+import 'package:security_guard/data/services/session_service.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
@@ -91,37 +92,6 @@ class SosCheckInService extends GetxController {
       );
     }
   }
-
-  /// Handle check-in triggered by notification
-  // Future<void> handleNotificationCheckIn(String checkInId) async {
-  //   dev.log('$_logTag Handling notification-triggered check-in: $checkInId');
-    
-  //   // Close any existing dialog first
-  //   if (Get.isDialogOpen ?? false) {
-  //     Get.back();
-  //   }
-
-  //   isCheckInPending.value = true;
-  //   _currentPromptTime = DateTime.now();
-  //   _currentCheckInId = checkInId;
-
-  //   dev.log('$_logTag Showing SOS check-in dialog (ID: $checkInId)');
-
-  //   // Start response timer
-  //   _responseTimer?.cancel();
-  //   _responseTimer = Timer(
-  //     Duration(minutes: responseWindowMinutes.value),
-  //     _handleNoResponse,
-  //   );
-
-  //   Get.dialog(
-  //     SosCheckInDialog(checkInId: checkInId),
-  //     barrierDismissible: false,
-  //     name: 'SosCheckInDialog',
-  //   );
-  // }
-
-  /// Handle user response to check-in
   Future<void> handleCheckInResponse(CheckInStatus status, {String? checkInId}) async {
     dev.log('$_logTag SOS Check-in response: ${status.toString()}, ID: $checkInId');
 
@@ -338,6 +308,132 @@ class SosCheckInService extends GetxController {
       dev.log('$_logTag Error sending missed check-in: $e');
     }
   }
+
+
+// Add these methods to your SosCheckInService class
+
+
+/// Check if there's a pending safety check-in when app resumes
+Future<void> checkPendingSafetyCheckIn() async {
+  if (isCheckInPending.value) {
+    dev.log('$_logTag Check-in already pending, skipping status check');
+    return;
+  }
+
+  final userModel = profileController.userModel.value;
+  if (userModel == null) {
+    dev.log('$_logTag User model is null, cannot check pending status');
+    return;
+  }
+
+  final companyId = _getCompanyId();
+  final siteId = _getSiteId();
+  
+  if (companyId.isEmpty || siteId.isEmpty) {
+    dev.log('$_logTag Company or Site ID missing, cannot check status');
+    return;
+  }
+
+  try {
+    dev.log('$_logTag Checking pending safety check-in status...');
+    
+    final response = await _apiService.checkSafetyCheckInStatus(
+      userModel.userId ?? '', 
+      companyId, 
+      siteId
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      
+      if (responseData['status'] == 'safety_checkin' && 
+          responseData['checkInDetails'] != null) {
+        
+        final checkInDetails = responseData['checkInDetails'];
+        final responseTimeLeft = checkInDetails['responseTimeLeftSeconds'] ?? 0;
+        final checkInId = checkInDetails['id']?.toString() ?? '';
+        final hasResponse = checkInDetails['response'] != null;
+        
+        dev.log('$_logTag Found pending check-in: ID=$checkInId, TimeLeft=${responseTimeLeft}s, HasResponse=$hasResponse');
+        
+        // Only show dialog if no response yet and time remaining
+        if (!hasResponse && responseTimeLeft > 0) {
+          _showPendingCheckInDialog(checkInId, responseTimeLeft);
+        } else {
+          dev.log('$_logTag Check-in already responded or expired');
+        }
+      } else {
+        dev.log('$_logTag No pending safety check-in found');
+      }
+    } else {
+      dev.log('$_logTag Failed to check status: ${response.statusCode}');
+    }
+  } catch (e) {
+    dev.log('$_logTag Error checking pending safety check-in: $e');
+  }
+}
+
+/// Show pending check-in dialog with remaining time from API
+void _showPendingCheckInDialog(String checkInId, int remainingSeconds) {
+  if (Get.isDialogOpen ?? false) {
+    dev.log('$_logTag Dialog already open, not showing pending check-in');
+    return;
+  }
+
+  // Set up the state
+  isCheckInPending.value = true;
+  _currentCheckInId = checkInId;
+  
+  // Set up timer for remaining time (this is for internal tracking)
+  _responseTimer?.cancel();
+  _responseTimer = Timer(Duration(seconds: remainingSeconds), _handleNoResponse);
+  
+  dev.log('$_logTag Showing pending check-in dialog: ID=$checkInId, Time=${remainingSeconds}s');
+  
+  // Show dialog with the actual remaining time from API
+  Get.dialog(
+    SosCheckInDialog(
+      checkInId: checkInId,
+      remainingSeconds: remainingSeconds, // Pass API time
+    ),
+    barrierDismissible: false,
+    name: 'PendingSosCheckInDialog'
+  );
+}
+
+/// Show check-in dialog from notification (no remaining time provided)
+/// Show check-in dialog from notification
+Future<void> showCheckInDialogFromNotification(String checkInId) async {
+  if (Get.isDialogOpen ?? false) {
+    dev.log('$_logTag Dialog already open, not showing notification check-in');
+    return;
+  }
+
+  // Just reuse the existing method that checks pending status
+  await checkPendingSafetyCheckIn();
+}
+
+
+/// Helper methods to get company and site IDs
+String _getCompanyId() {
+  // Try to get from session service first, then from user model
+  try {
+    final sessionService = Get.find<SessionService>(); // Adjust based on your session service name
+    return sessionService.companyId ?? profileController.userModel.value?.companyId ?? '';
+  } catch (e) {
+    return profileController.userModel.value?.companyId ?? '';
+  }
+}
+
+String _getSiteId() {
+  // Try to get from session service first, then from user model  
+  try {
+    final sessionService = Get.find<SessionService>(); // Adjust based on your session service name
+    return sessionService.siteId ?? profileController.userModel.value?.siteId ?? '';
+  } catch (e) {
+    return profileController.userModel.value?.siteId ?? '';
+  }
+}
 
   /// Send check-in data to API
   Future<void> _sendCheckInToApi(Map<String, dynamic> checkInData) async {

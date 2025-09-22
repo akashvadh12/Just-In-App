@@ -3,9 +3,10 @@ import 'package:security_guard/data/services/notification_services.dart';
 import 'package:security_guard/data/services/sos_checkin_service.dart';
 
 class SosCheckInDialog extends StatefulWidget {
-  final String? checkInId; // Add this parameter
+  final String? checkInId;
+  final int? remainingSeconds; // Optional - from API when available
 
-  const SosCheckInDialog({Key? key, this.checkInId}) : super(key: key);
+  const SosCheckInDialog({Key? key, this.checkInId, this.remainingSeconds}) : super(key: key);
 
   @override
   State<SosCheckInDialog> createState() => _SosCheckInDialogState();
@@ -24,13 +25,19 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
   void initState() {
     super.initState();
 
+    // Use API remaining time if available, otherwise use default
+    final timerDuration = widget.remainingSeconds ?? (sosService.responseWindowMinutes.value * 60);
+    print('🔔 SOS Check-in dialog starting with ${timerDuration}s remaining');
+    print('widget.remainingSeconds: ${widget.remainingSeconds}');
+      print('sosService.responseWindowMinutes: ${sosService.responseWindowMinutes.value}');
+
     _pulseController = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
     );
 
     _timerController = AnimationController(
-      duration: Duration(seconds: 30),
+      duration: Duration(seconds: timerDuration),
       vsync: this,
     );
 
@@ -48,23 +55,19 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
     // Add status listener to timer controller for auto-close
     _timerController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        // Timer has ended, auto-close dialog and handle timeout
         if (mounted) {
           Navigator.of(context).pop();
-          sosService.handleCheckInResponse(
-            CheckInStatus.ignore, // or CheckInStatus.timeout if you have it
-            checkInId: widget.checkInId,
-          );
+          // sosService.handleCheckInResponse(
+          //   CheckInStatus.miss,
+          //   checkInId: widget.checkInId,
+          // );
         }
       }
     });
 
     _timerController.forward();
 
-    // Log whether this is notification-triggered or timer-triggered
-    print(
-      '🔔 SOS Check-in dialog initialized ${widget.checkInId != null ? "(Notification ID: ${widget.checkInId})" : "(Timer-based)"}',
-    );
+    print('🔔 SOS Check-in dialog initialized with ${timerDuration}s remaining');
   }
 
   @override
@@ -97,13 +100,16 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Timer indicator with enhanced visual warnings
+              // Timer indicator showing remaining time
               AnimatedBuilder(
                 animation: _timerAnimation,
                 builder: (context, child) {
-                  final remainingMinutes = (_timerAnimation.value * sosService.responseWindowMinutes.value).ceil();
-                  final isWarning = remainingMinutes <= 1; // Warning in last minute
-                  final isCritical = remainingMinutes == 0; // Critical when time is up
+                  final totalSeconds = widget.remainingSeconds ?? (sosService.responseWindowMinutes.value * 60);
+                  final remainingSeconds = (_timerAnimation.value * totalSeconds).ceil();
+                  final remainingMinutes = (remainingSeconds / 60).ceil();
+                  
+                  final isWarning = remainingSeconds <= 60; // Warning in last minute
+                  final isCritical = remainingSeconds <= 10; // Critical when 10 seconds or less
                   
                   return Column(
                     children: [
@@ -122,7 +128,9 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Time remaining: $remainingMinutes min',
+                        remainingSeconds > 60 
+                            ? 'Time remaining: ${remainingMinutes}m'
+                            : 'Time remaining: ${remainingSeconds}s',
                         style: TextStyle(
                           fontSize: 12, 
                           color: isWarning ? Colors.red : Colors.grey[600],
@@ -159,7 +167,7 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
 
               const SizedBox(height: 20),
 
-              // Pulsing security icon - different color for notification vs timer
+              // Pulsing security icon
               AnimatedBuilder(
                 animation: _pulseAnimation,
                 builder: (context, child) {
@@ -169,23 +177,19 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        color:
-                            widget.checkInId != null
-                                ? Colors
-                                    .orange[100] // Orange for notification-triggered
-                                : Colors.blue[100], // Blue for timer-based
+                        color: widget.checkInId != null
+                            ? Colors.orange[100] 
+                            : Colors.blue[100],
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         widget.checkInId != null
-                            ? Icons
-                                .notifications_active // Different icon for notifications
+                            ? Icons.notifications_active
                             : Icons.security,
                         size: 40,
-                        color:
-                            widget.checkInId != null
-                                ? Colors.orange
-                                : Colors.blue,
+                        color: widget.checkInId != null
+                            ? Colors.orange
+                            : Colors.blue,
                       ),
                     ),
                   );
@@ -196,7 +200,7 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
 
               Text(
                 widget.checkInId != null
-                    ? 'Safety Check-In Required' // Different title for notifications
+                    ? 'Safety Check-In Required'
                     : 'Safety Check-In',
                 style: const TextStyle(
                   fontSize: 24,
@@ -216,7 +220,6 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
                 textAlign: TextAlign.center,
               ),
 
-              // Show check-in ID for notification-triggered dialogs (optional)
               if (widget.checkInId != null) ...[
                 const SizedBox(height: 8),
                 Text(
@@ -240,7 +243,7 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
                         Navigator.of(context).pop();
                         sosService.handleCheckInResponse(
                           CheckInStatus.allOk,
-                          checkInId: widget.checkInId, // Pass the checkInId
+                          checkInId: widget.checkInId,
                         );
                       },
                     ),
@@ -255,7 +258,7 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
                         Navigator.of(context).pop();
                         sosService.handleCheckInResponse(
                           CheckInStatus.sos,
-                          checkInId: widget.checkInId, // Pass the checkInId
+                          checkInId: widget.checkInId,
                         );
                       },
                     ),
@@ -272,7 +275,7 @@ class _SosCheckInDialogState extends State<SosCheckInDialog>
                     Navigator.of(context).pop();
                     sosService.handleCheckInResponse(
                       CheckInStatus.ignore,
-                      checkInId: widget.checkInId, // Pass the checkInId
+                      checkInId: widget.checkInId,
                     );
                   },
                   style: TextButton.styleFrom(

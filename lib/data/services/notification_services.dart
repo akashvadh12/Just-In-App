@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:flutter/widgets.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:security_guard/data/services/sos_checkin_service.dart';
 import 'package:security_guard/shared/widgets/bottomnavigation/navigation_controller.dart';
 import 'package:security_guard/shared/widgets/sos_checkIn_dialog.dart';
 
@@ -141,7 +142,7 @@ class NotificationServices {
       print('onMessage: ${msg}');
 
       // Show local notification (prevents duplicate system auto-notifications when you use data messages).
-      _showLocalNotificationFromRemote(msg);
+    _showLocalNotificationFromRemote(msg, autoDismiss: true);
 
       if (_isSafetyCheckin(msg.data)) {
         // Show dialog for foreground safety check-in
@@ -222,27 +223,27 @@ class NotificationServices {
     }
   }
 
-  void _showSafetyDialogSafely(Map<String, dynamic> data) {
-    if (Get.isDialogOpen ?? false) {
-      return;
-    }
-    
-    final checkInId = data['checkInId']?.toString() ?? 
-                     data['check_in_id']?.toString() ?? '0';
-    print('Showing safety check-in dialog: $checkInId');
-    
-    NotificationServices.cancelSafetyNotification();
-    
-    try {
-      Get.dialog(
-        SosCheckInDialog(checkInId: checkInId),
-        barrierDismissible: false,
-        name: 'SosCheckInDialog'
-      );
-    } catch (e) {
-      print('Error showing safety dialog: $e');
-    }
+void _showSafetyDialogSafely(Map<String, dynamic> data) {
+  if (Get.isDialogOpen ?? false) {
+    return;
   }
+  
+  final checkInId = data['checkInId']?.toString() ?? 
+                   data['check_in_id']?.toString() ?? '0';
+  
+  print('Showing safety check-in dialog from notification: $checkInId');
+  
+  NotificationServices.cancelSafetyNotification();
+  
+  try {
+    // Use the SOS service method for notification-triggered dialogs
+    final sosService = Get.find<SosCheckInService>();
+    sosService.showCheckInDialogFromNotification(checkInId);
+  } catch (e) {
+    print('Error showing safety dialog: $e');
+  }
+}
+
 
   static bool _isSafetyCheckin(Map<String, dynamic> data) {
     try {
@@ -301,50 +302,67 @@ class NotificationServices {
     }
   }
 
+
+
+
+
+
+
+
   // ... rest of your existing methods remain the same ...
-  
-  Future<void> _showLocalNotificationFromRemote(RemoteMessage message) async {
-    try {
-      final androidDetails = AndroidNotificationDetails(
-        safetyChannelId,
-        safetyChannelName,
-        channelDescription: safetyChannelDescription,
-        importance: Importance.max,
-        priority: Priority.high,
-        playSound: true,
-        sound: const RawResourceAndroidNotificationSound('safety_alert'),
-        icon: "ic_stat_safety",
-        tag: _isSafetyCheckin(message.data) ? safetyAndroidTag : null,
-        vibrationPattern: Int64List.fromList([0, 1000, 500, 1000]),
-        enableVibration: true,
-      );
+  // 2) Add an autoDismiss flag and use Android timeoutAfter + a short delayed cancel for all platforms
+Future<void> _showLocalNotificationFromRemote(RemoteMessage message, {bool autoDismiss = false}) async {
+  try {
+    final isSafety = _isSafetyCheckin(message.data);
+    final notificationId = isSafety ? safetyNotificationId : generalNotificationId;
 
-      final darwinDetails = DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-        sound: 'safety_alert.mp3',
-        threadIdentifier: iosThreadIdentifier,
-      );
+    final androidDetails = AndroidNotificationDetails(
+      safetyChannelId,
+      safetyChannelName,
+      channelDescription: safetyChannelDescription,
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      sound: const RawResourceAndroidNotificationSound('safety_alert'),
+      icon: "ic_stat_safety",
+      tag: isSafety ? safetyAndroidTag : null,
+      vibrationPattern: Int64List.fromList([0, 1000, 500, 1000]),
+      enableVibration: true,
+      timeoutAfter: autoDismiss ? 1500 : null, // auto-cancel after ~1.5s on Android
+    );
 
-      final platformDetails = NotificationDetails(android: androidDetails, iOS: darwinDetails);
+    final darwinDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      sound: 'safety_alert.mp3',
+      threadIdentifier: iosThreadIdentifier,
+    );
 
-      final title = message.notification?.title ?? message.data['title'] ?? 'Alert';
-      final body = message.notification?.body ?? message.data['body'] ?? 'Please responce to sefety checkin';
+    final platformDetails = NotificationDetails(android: androidDetails, iOS: darwinDetails);
 
-      final notificationId = _isSafetyCheckin(message.data) ? safetyNotificationId : generalNotificationId;
+    final title = message.notification?.title ?? message.data['title'] ?? 'Alert';
+    final body  = message.notification?.body  ?? message.data['body']  ?? 'Please responce to sefety checkin';
 
-      await _flutterLocalNotificationsPlugin.show(
-        notificationId,
-        title,
-        body,
-        platformDetails,
-        payload: jsonEncode(message.data.isNotEmpty ? message.data : {'message': 'no-data'}),
-      );
-    } catch (e) {
-      print('Error showing local notification from remote: $e');
+    await _flutterLocalNotificationsPlugin.show(
+      notificationId,
+      title,
+      body,
+      platformDetails,
+      payload: jsonEncode(message.data.isNotEmpty ? message.data : {'message': 'no-data'}),
+    );
+
+    // iOS (and a fallback for Android): explicitly cancel shortly after showing
+    if (autoDismiss) {
+      Future.delayed(const Duration(seconds: 3), () {
+        _flutterLocalNotificationsPlugin.cancel(notificationId);
+      });
     }
+  } catch (e) {
+    print('Error showing local notification from remote: $e');
   }
+}
+
 
   // ... keep all your other existing methods (showBackgroundNotification, getDeviceToken, etc.) ...
 
