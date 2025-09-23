@@ -17,86 +17,148 @@ import 'package:security_guard/modules/profile/controller/profileController/prof
 import 'package:security_guard/routes/app_pages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
-    as bg;
+import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
 
-// Updated background handler to use the static method with fixed IDs
+// Global flag to prevent multiple Firebase initializations
+bool _firebaseInitialized = false;
+
+// Updated background handler with proper Firebase check
+@pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print('Background message received: ${message.data}');
   
-  // Initialize Firebase if not already initialized
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Only initialize Firebase if not already initialized
+  if (!_firebaseInitialized) {
+    try {
+      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+      _firebaseInitialized = true;
+    } catch (e) {
+      print('Firebase already initialized in background handler: $e');
+    }
+  }
   
-  // Use the static method from NotificationServices to show notification with fixed ID
+  // Use the static method from NotificationServices
   await NotificationServices.showBackgroundNotification(message);
   
-  // Store notification data for when app opens (backup for killed state)
-  final prefs = await SharedPreferences.getInstance();
-  if (message.data.isNotEmpty) {
-    await prefs.setString('pending_notification', jsonEncode(message.data));
+  // Store notification data for when app opens
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    if (message.data.isNotEmpty) {
+      await prefs.setString('pending_notification', jsonEncode(message.data));
+    }
+  } catch (e) {
+    print('Error storing pending notification: $e');
   }
 }
 
-// In main.dart - OUTSIDE any class
+// Headless task - moved outside with better error handling
+@pragma('vm:entry-point')
 void headlessTask(bg.HeadlessEvent headlessEvent) async {
   print('[BackgroundGeolocation HeadlessTask]: $headlessEvent');
   
-  switch(headlessEvent.name) {
-    case bg.Event.LOCATION:
-      bg.Location location = headlessEvent.event;
-      print('- Headless Location: $location');
-      break;
-      
-    case bg.Event.HTTP:
-      bg.HttpEvent response = headlessEvent.event;
-      print('- Headless HTTP Response: $response');
-      break;
-      
-    case bg.Event.TERMINATE:
-      bg.State state = headlessEvent.event;
-      print('- App terminated: $state');
-      break;
+  try {
+    switch(headlessEvent.name) {
+      case bg.Event.LOCATION:
+        bg.Location location = headlessEvent.event;
+        print('- Headless Location: $location');
+        break;
+        
+      case bg.Event.HTTP:
+        bg.HttpEvent response = headlessEvent.event;
+        print('- Headless HTTP Response: $response');
+        break;
+        
+      case bg.Event.TERMINATE:
+        bg.State state = headlessEvent.event;
+        print('- App terminated: $state');
+        break;
+    }
+  } catch (e) {
+    print('Error in headless task: $e');
   }
 }
 
 void main() async {
+  // Ensure widgets binding is initialized first
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   
-  // Set the background message handler
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  try {
+    // Initialize Firebase once and only once
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    _firebaseInitialized = true;
+    print('Firebase initialized successfully');
+    
+    // Set the background message handler AFTER Firebase initialization
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    
+    // Initialize services in proper order with error handling
+    await initServices();
+    print('All services initialized successfully');
+    
+  } catch (e) {
+    print('Critical error during app initialization: $e');
+    // You might want to show an error screen here instead of crashing
+  }
   
-  await initServices();
-  Get.put(SessionService());
-  Get.put(ApiGetServices());
-  Get.put(ConnectivityController());
-  Get.put(ProfileController());
-  Get.put(AuthController());
-  Get.put(SosCheckInService());
-  Get.put(AppLifecycleService());
-  
-  // Initialize notification services
-  final notificationService = NotificationServices();
-  await notificationService.initialize();
-  Get.put(notificationService); 
-  
-  
+  // Run the app
   runApp(MyApp());
-  bg.BackgroundGeolocation.registerHeadlessTask(headlessTask);
+  
+  // Register headless task AFTER app is running
+  try {
+    bg.BackgroundGeolocation.registerHeadlessTask(headlessTask);
+    print('Background geolocation headless task registered');
+  } catch (e) {
+    print('Error registering headless task: $e');
+  }
 }
 
+// Improved service initialization with proper order and error handling
 Future<void> initServices() async {
   print('Starting services initialization...');
 
   try {
+    // 1. Initialize core storage service first (other services depend on this)
     await Get.putAsync(() => LocalStorageService().init(), permanent: true);
+    print('✓ LocalStorageService initialized');
+    
+    // 2. Initialize notification service early (needed for background handlers)
+    final notificationService = NotificationServices();
+    await notificationService.initialize();
+    Get.put(notificationService, permanent: true);
+    print('✓ NotificationServices initialized');
+    
+    // 3. Initialize connectivity controller
+    Get.put(ConnectivityController(), permanent: true);
+    print('✓ ConnectivityController initialized');
+    
+
+       // 5. Initialize session service
+    Get.put(SessionService(), permanent: true);
+    print('✓ SessionService initialized');
+    
+    // 4. Initialize API services
+    Get.put(ApiGetServices(), permanent: true);
+    Get.put(ApiService(), permanent: true);
+    print('✓ API Services initialized');
+    
+ 
+    
+    // 6. Initialize controllers that depend on other services
+    Get.put(ProfileController(), permanent: true);
+    Get.put(AuthController(), permanent: true);
+    print('✓ Controllers initialized');
+    
+    // 7. Initialize specialized services last
+    Get.put(SosCheckInService(), permanent: true);
+    Get.put(AppLifecycleService(), permanent: true);
+    print('✓ Specialized services initialized');
+    
     print('All services initialized successfully');
   } catch (e) {
     print('Error initializing services: $e');
+    // Don't rethrow - let app continue with partial initialization
   }
 }
-
-// REMOVED: All notification handling functions - let NotificationServices handle
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -104,9 +166,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      initialBinding: BindingsBuilder(() {
-        Get.put(ApiService());
-      }),
       title: 'Just IN',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -119,16 +178,16 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,
-      // Add this to ensure app is fully ready before handling notifications
-      onReady: () {
+      onReady: () async {
         print('App is fully ready');
-        // Check for any pending notifications stored during killed state
-        // _handlePendingNotifications();
+        // Handle any pending notifications with delay to ensure everything is ready
+        await Future.delayed(const Duration(milliseconds: 500));
+        _handlePendingNotifications();
       },
     );
   }
 
-  // Handle any notifications stored when app was killed
+  // Improved pending notifications handler
   void _handlePendingNotifications() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -140,8 +199,7 @@ class MyApp extends StatelessWidget {
         
         print('Found pending notification: $data');
         
-        // Use the NotificationServices to handle this properly
-        final notificationService = Get.find<NotificationServices>();
+        // Handle safety checkin notifications
         if (data['Type'] == 'safety_checkin' || 
             data['type'] == 'safety_checkin' || 
             data['event'] == 'safety_checkin') {
@@ -149,19 +207,21 @@ class MyApp extends StatelessWidget {
           // Cancel any existing notifications
           NotificationServices.cancelSafetyNotification();
           
-          // Wait a bit more to ensure everything is ready, then show dialog
-          Future.delayed(const Duration(milliseconds: 1000), () {
-            final checkInId = data['checkInId']?.toString() ?? 
-                             data['check_in_id']?.toString() ?? '0';
-            
-            // if (!(Get.isDialogOpen ?? false)) {
-            //   Get.dialog(
-            //     SosCheckInDialog(checkInId: checkInId),
-            //     barrierDismissible: false,
-            //     name: 'SosCheckInDialog',
-            //   );
-            // }
-          });
+          // Wait for UI to be fully ready
+          await Future.delayed(const Duration(milliseconds: 1000));
+          
+          final checkInId = data['checkInId']?.toString() ?? 
+                           data['check_in_id']?.toString() ?? '0';
+          
+          // Only show dialog if no dialog is currently open
+          if (!(Get.isDialogOpen ?? false)) {
+            // Uncomment when SosCheckInDialog is ready
+            // Get.dialog(
+            //   SosCheckInDialog(checkInId: checkInId),
+            //   barrierDismissible: false,
+            //   name: 'SosCheckInDialog',
+            // );
+          }
         }
       }
     } catch (e) {

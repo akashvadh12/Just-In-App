@@ -385,8 +385,8 @@ void _showPendingCheckInDialog(String checkInId, int remainingSeconds) {
   _currentCheckInId = checkInId;
   
   // Set up timer for remaining time (this is for internal tracking)
-  _responseTimer?.cancel();
-  _responseTimer = Timer(Duration(seconds: remainingSeconds), _handleNoResponse);
+  // _responseTimer?.cancel();
+  // _responseTimer = Timer(Duration(seconds: remainingSeconds), _handleNoResponse);
   
   dev.log('$_logTag Showing pending check-in dialog: ID=$checkInId, Time=${remainingSeconds}s');
   

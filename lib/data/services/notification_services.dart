@@ -222,28 +222,28 @@ class NotificationServices {
       WidgetsBinding.instance.addPostFrameCallback((_) => checkAndShow());
     }
   }
-
-void _showSafetyDialogSafely(Map<String, dynamic> data) {
-  if (Get.isDialogOpen ?? false) {
-    return;
+  void _showSafetyDialogSafely(Map<String, dynamic> data) {
+    if (Get.isDialogOpen ?? false) {
+      return;
+    }
+    
+    final checkInId = data['checkInId']?.toString() ?? 
+                     data['check_in_id']?.toString() ?? '0';
+    final remainingSeconds = int.tryParse(data['responseTimeLeftSeconds']?.toString() ?? '') ?? 60;
+    print('Showing safety check-in dialog: $checkInId');
+    
+    NotificationServices.cancelSafetyNotification();
+    
+    try {
+      Get.dialog(
+        SosCheckInDialog(checkInId: checkInId, remainingSeconds: remainingSeconds),
+        barrierDismissible: false,
+        name: 'SosCheckInDialog'
+      );
+    } catch (e) {
+      print('Error showing safety dialog: $e');
+    }
   }
-  
-  final checkInId = data['checkInId']?.toString() ?? 
-                   data['check_in_id']?.toString() ?? '0';
-  
-  print('Showing safety check-in dialog from notification: $checkInId');
-  
-  NotificationServices.cancelSafetyNotification();
-  
-  try {
-    // Use the SOS service method for notification-triggered dialogs
-    final sosService = Get.find<SosCheckInService>();
-    sosService.showCheckInDialogFromNotification(checkInId);
-  } catch (e) {
-    print('Error showing safety dialog: $e');
-  }
-}
-
 
   static bool _isSafetyCheckin(Map<String, dynamic> data) {
     try {

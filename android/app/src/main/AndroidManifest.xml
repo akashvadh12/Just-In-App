@@ -11,6 +11,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <uses-permission
+        android:name="android.permission.ACTIVITY_RECOGNITION"
+        tools:node="remove" />
+
     <!-- Camera (if your app uses it) -->
     <uses-permission android:name="android.permission.CAMERA" />
 
@@ -23,13 +27,19 @@
         android:icon="@mipmap/launcher_icon"
         tools:replace="android:label">
 
-        <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_safety" />.
-        <!-- flutter_background_geolocation licence -->
-        <meta-data android:name="com.transistorsoft.locationmanager.license" android:value="ea584db1ad950797bbdfbba8661f8d647c9e240ea7bad9c3f04caab79c2dc179" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_safety" />. <!-- flutter_background_geolocation licence -->
+        <meta-data
+            android:name="com.transistorsoft.locationmanager.license"
+            android:value="ea584db1ad950797bbdfbba8661f8d647c9e240ea7bad9c3f04caab79c2dc179" />
         
+         <meta-data
+            android:name="com.google.android.gms.location.background.usage"
+            android:value="Security patrol tracking and employee safety monitoring" />
         <!-- Local notifications (keep if you use flutter_local_notifications) -->
-        <receiver android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />
-        
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />
+
         <!-- Background Geolocation core service -->
         <service
             android:name="com.transistorsoft.flutter_background_geolocation.FLTBackgroundGeolocationService"

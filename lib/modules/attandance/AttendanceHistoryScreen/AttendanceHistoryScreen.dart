@@ -209,7 +209,7 @@ Widget _buildTodayStatusCard(TodayAttendance todayData) {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              'Chock-in',
+              'Clock-in',
               style: AppTextStyles.body.copyWith(
                 color: Colors.white,
                 fontSize: 12,
@@ -362,7 +362,7 @@ Widget _buildSessionCard(AttendanceRecordTwo record, int sessionNumber) {
         if (record.outTime != null && record.outTime!.isNotEmpty) ...[
           const SizedBox(height: 12),
           _buildTimeSection(
-            'Chock-out',
+            'Clock-out',
             record.outTime!,
             record.outPhoto,
             record.exitLocation,

@@ -12,6 +12,7 @@ import 'package:security_guard/modules/auth/models/user_model.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
 import 'package:security_guard/modules/profile/controller/profileController/profilecontroller.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
+import 'package:geolocator/geolocator.dart';
 
 class LiveTrackingService extends GetxController {
   static const String _logTag = '[LiveTrackingService]';
@@ -112,7 +113,8 @@ class LiveTrackingService extends GetxController {
 
         // Battery optimization
         disableStopDetection: false,
-        disableMotionActivityUpdates: false,
+
+        disableMotionActivityUpdates: true,
       ),
     );
   }
@@ -382,14 +384,16 @@ class LiveTrackingService extends GetxController {
       AlertDialog(
         title: const Text('GPS Disabled'),
         content: const Text(
-          'Location services are disabled. Please enable GPS to continue tracking.',
+          'Location services are disabled. This app tracks your location in the background to ensure you are within your assigned patrol area.',
         ),
         actions: [
           TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Get.back();
-              openAppSettings();
+              // openAppSettings();
+
+              Geolocator.openLocationSettings();
             },
             child: const Text('Enable GPS'),
           ),
