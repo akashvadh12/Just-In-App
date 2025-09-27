@@ -7,6 +7,7 @@ import 'package:security_guard/core/theme/app_colors.dart';
 import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/data/services/app_lifecycle_service.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
+import 'package:security_guard/data/services/live_tracking_service.dart';
 import 'package:security_guard/data/services/notification_services.dart';
 import 'package:security_guard/data/services/session_service.dart';
 import 'package:security_guard/data/services/sos_checkin_service.dart';
@@ -60,6 +61,7 @@ void headlessTask(bg.HeadlessEvent headlessEvent) async {
     switch(headlessEvent.name) {
       case bg.Event.LOCATION:
         bg.Location location = headlessEvent.event;
+  
         print('- Headless Location: $location');
         break;
         
@@ -120,6 +122,8 @@ Future<void> initServices() async {
     // 1. Initialize core storage service first (other services depend on this)
     await Get.putAsync(() => LocalStorageService().init(), permanent: true);
     print('✓ LocalStorageService initialized');
+
+
     
     // 2. Initialize notification service early (needed for background handlers)
     final notificationService = NotificationServices();
@@ -147,6 +151,9 @@ Future<void> initServices() async {
     Get.put(ProfileController(), permanent: true);
     Get.put(AuthController(), permanent: true);
     print('✓ Controllers initialized');
+
+    Get.put(LiveTrackingService(), permanent: true);
+    print('✓ LiveTrackingService initialized');
     
     // 7. Initialize specialized services last
     Get.put(SosCheckInService(), permanent: true);

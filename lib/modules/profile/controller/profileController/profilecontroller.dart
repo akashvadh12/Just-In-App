@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:security_guard/data/services/api_get_service.dart';
+import 'package:security_guard/data/services/live_tracking_service.dart';
 import 'package:security_guard/modules/auth/models/user_model.dart';
 import 'package:security_guard/data/services/api_post_service.dart';
 import 'package:security_guard/modules/profile/controller/localStorageService/localStorageService.dart';
@@ -144,6 +145,8 @@ class ProfileController extends GetxController {
   Future<void> logout() async {
     userModel.value = null;
     await _storage.removeDeviceToken();
+    Get.find<LiveTrackingService>().stopTracking();
+    Get.find<LiveTrackingService>().reset();
     Get.find<BottomNavController>().changeTab(0);
     Get.offAllNamed('/login');
   }

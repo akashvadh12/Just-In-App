@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- Foreground service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -28,7 +30,8 @@
         tools:replace="android:label">
 
         <meta-data android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@drawable/ic_stat_safety" />. <!-- flutter_background_geolocation licence -->
+            android:resource="@drawable/ic_stat_safety" />. <!-- flutter_background_geolocation
+        licence -->
         <meta-data
             android:name="com.transistorsoft.locationmanager.license"
             android:value="ea584db1ad950797bbdfbba8661f8d647c9e240ea7bad9c3f04caab79c2dc179" />
@@ -37,6 +40,15 @@
             android:name="com.google.android.gms.location.background.usage"
             android:value="Security patrol tracking and employee safety monitoring" />
         <!-- Local notifications (keep if you use flutter_local_notifications) -->
+         <!-- <receiver
+            android:name=".BootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver> -->
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />
 

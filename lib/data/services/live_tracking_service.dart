@@ -1,6 +1,8 @@
+// (same imports as you had)
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:math' show atan2, cos, pi, sin, sqrt;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
@@ -31,15 +33,46 @@ class LiveTrackingService extends GetxController {
   final RxString lastUpdateTime = ''.obs;
   final Rx<bg.Location?> currentLocation = Rx<bg.Location?>(null);
 
-  // Configuration
+  // Configuration getters
   bool get liveTrackingEnabled =>
       _profileController.userModel.value?.liveTrackingEnabled ?? false;
   int get trackingIntervalSeconds =>
       _profileController.userModel.value?.liveTrackingIntervalSeconds ?? 300;
 
-  // Private variables
-  List<Map<String, dynamic>> _pendingLocations = [];
-  static const int _maxPendingLocations = 50;
+  Timer? _watchdog;
+  int _restartAttempts = 0;
+
+  void _startWatchdog() {
+    _watchdog?.cancel();
+    _watchdog = Timer.periodic(Duration(minutes: 1), (t) async {
+      try {
+        final state = await bg.BackgroundGeolocation.state;
+        if (!liveTrackingEnabled) {
+          return; // Don't restart if tracking is disabled
+        }
+        if (liveTrackingEnabled && !state.enabled) {
+          if (_restartAttempts < 6) {
+            _restartAttempts++;
+            log(
+              'Watchdog: plugin not enabled -> attempting restart (#$_restartAttempts)',
+            );
+            await startTracking();
+          } else {
+            log('Watchdog: reached restart cap, notifying user');
+            _showTrackingNotification(
+              'Unable to auto-restart tracking — please open app and allow permissions.',
+              backgroundColor: Colors.orange,
+              icon: Icons.warning,
+            );
+          }
+        } else if (state.enabled) {
+          _restartAttempts = 0;
+        }
+      } catch (e) {
+        log('Watchdog error: $e');
+      }
+    });
+  }
 
   @override
   void onInit() {
@@ -49,76 +82,142 @@ class LiveTrackingService extends GetxController {
 
   @override
   void onClose() {
-    bg.BackgroundGeolocation.stop();
+    _watchdog?.cancel();
     bg.BackgroundGeolocation.removeListeners();
     super.onClose();
   }
 
+  /// --------------------
+  /// Initialize plugin (AWAIT ready and apply HTTP config)
+  /// --------------------
   void _initializeBackgroundGeolocation() async {
-    log('$_logTag Initializing Background Geolocation');
+    log('$_logTag Initializing Background Geolocation (plugin-http flow)');
 
-    // Configure the plugin
+    // Register event handlers
     bg.BackgroundGeolocation.onLocation(_onLocation);
     bg.BackgroundGeolocation.onMotionChange(_onMotionChange);
     bg.BackgroundGeolocation.onActivityChange(_onActivityChange);
     bg.BackgroundGeolocation.onProviderChange(_onProviderChange);
     bg.BackgroundGeolocation.onConnectivityChange(_onConnectivityChange);
     bg.BackgroundGeolocation.onHttp(_onHttp);
+    bg.BackgroundGeolocation.onHeartbeat(_onHeartbeat);
 
-    // Configure the plugin
-    bg.BackgroundGeolocation.ready(
-      bg.Config(
-        // Geolocation Config
-        desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
-        distanceFilter: 10.0,
+    bg.BackgroundGeolocation.onHttp((bg.HttpEvent event) {
+      log(
+        "📡 HTTP response code: ${event.status} success: ${event.success} response: ${event.responseText}",
+      );
+    });
 
-        // Activity Recognition
-        stopTimeout: 1,
+    bg.BackgroundGeolocation.onProviderChange((bg.ProviderChangeEvent event) {
+      log("📡 Provider change: enabled=${event.enabled} gps=${event.gps}");
+    });
 
-        // Application config
-        debug: false, // Set to false for production
-        logLevel: bg.Config.LOG_LEVEL_OFF,
+    bg.BackgroundGeolocation.onConnectivityChange((
+      bg.ConnectivityChangeEvent event,
+    ) {
+      log("🌐 Connectivity change: connected=${event.connected}");
+    });
 
-        // HTTP / Persistence config
-        url: '$BASE_URL/Tracking/live-tracking',
-        httpRootProperty: '.',
-        httpTimeout: 30000,
-
-        stopOnTerminate: false, // <-- ADD THIS
-        startOnBoot: true, // <-- ADD THIS TOO
-        // Background Task config
-        enableHeadless: true,
-        heartbeatInterval: trackingIntervalSeconds,
-
-        // Geofencing (if needed)
-        // geofenceProximityRadius: 1000,
-
-        // iOS specific
-        preventSuspend: true,
-        disableElasticity: false,
-
-        // Android specific
-        notification: bg.Notification(
-          title: "Live Tracking Active",
-          text: "Tracking location for security purposes",
-          color: "#2196F3",
-          smallIcon: "drawable/ic_stat_safety",
-          largeIcon: "drawable/launcher_icon",
-        ),
-        foregroundService: true,
-
-        // Auto sync
-        autoSync: true,
-        autoSyncThreshold: 5,
-
-        // Battery optimization
-        disableStopDetection: false,
-
-        disableMotionActivityUpdates: true,
+    final initialCfg = bg.Config(
+      desiredAccuracy:
+          bg.Config.DESIRED_ACCURACY_HIGH, // navigation is fine — high accuracy
+      allowIdenticalLocations: true,
+      distanceFilter: 0.0, // send even if distance == 0
+      disableStopDetection:
+          true, // prevent SDK from auto-stopping when stationary
+      stopTimeout: 999999, // effectively disable stop-timeouts
+      isMoving: true, // hint plugin to stay 'moving' state
+      locationUpdateInterval: 30000, // 30s updates; tune for battery vs freshness
+      fastestLocationUpdateInterval: 5000,
+      heartbeatInterval: 60, // keep heartbeat to persist positions periodically
+      preventSuspend: true, // ask system to avoid suspension (best-effort)
+      enableHeadless: true,
+      stopOnTerminate: false, // keep running after app killed
+      startOnBoot: true, // start after reboot
+      foregroundService: true,
+      notification: bg.Notification(
+        title: "Live Tracking Active",
+        text: "Location tracking is running",
+        priority:
+            bg.Config.NOTIFICATION_PRIORITY_MIN, // or NOTIFICATION_PRIORITY_LOW
+        channelName: "Background Location (Silent)",
+        color: "#2196F3",
       ),
+      debug: false, // 👈 CHANGE THIS FROM true TO false
+      logLevel: bg.Config.LOG_LEVEL_OFF, // 👈 ALSO DISABLE VERBOSE LOGGING
+      url: '${BASE_URL}Tracking/live-tracking',
+      autoSync: true,
+      autoSyncThreshold: 1,
+      batchSync: false,
+      maxBatchSize: 1,
+      // ensure plugin requests always authorization when needed
+      locationAuthorizationRequest:
+          'Always', // plugin-specific string; keep 'Always' behavior
     );
+
+    try {
+      final bg.State state = await bg.BackgroundGeolocation.ready(initialCfg);
+      log(
+        '$_logTag BackgroundGeolocation.ready -> enabled=${state.enabled} url=${state.url}',
+      );
+
+      // Apply HTTP headers & params (token + user info)
+      final deviceToken = LocalStorageService.instance.getDeviceToken();
+      final userModel = _profileController.userModel.value;
+      await _applyPluginHttpConfig(
+        deviceToken: deviceToken,
+        userModel: userModel,
+      );
+    } catch (e) {
+      log('$_logTag ready() failed: $e');
+    }
   }
 
+  /// Apply headers and params (user + token) to plugin's HTTP layer.
+  /// These `params` will be merged into every HTTP POST payload by the SDK.
+  Future<void> _applyPluginHttpConfig({
+    String? deviceToken,
+    UserModel? userModel,
+  }) async {
+    try {
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (deviceToken != null && deviceToken.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $deviceToken';
+      }
+
+      final params = <String, dynamic>{};
+      if (userModel != null) {
+        params['userId'] = userModel.userId;
+        params['companyID'] = userModel.companyId;
+        params['siteId'] = userModel.siteId;
+
+        params['isClockedIn'] = userModel.clockStatus == true;
+        params['isClockedOut'] = !userModel.clockStatus;
+      }
+
+      // Important: await setConfig so plugin will use these headers/params immediately
+      await bg.BackgroundGeolocation.setConfig(
+        bg.Config(
+          url: '${BASE_URL}Tracking/live-tracking',
+          headers: headers,
+          params: params,
+          autoSync: true,
+          autoSyncThreshold: 1, // keep low for testing
+          batchSync: false,
+          maxBatchSize: 1,
+          // httpRootProperty: '',
+        ),
+      );
+
+      log(
+        '$_logTag Applied HTTP config -> url=${BASE_URL}Tracking/live-tracking headers=${headers.keys.toList()} params=${params.keys.toList()}',
+      );
+    } catch (e) {
+      log('$_logTag Error applying HTTP config: $e');
+    }
+  }
+
+  /// Public start: ensures HTTP config is set, then starts the plugin
   Future<bool> startTracking() async {
     if (isTrackingActive.value) {
       log('$_logTag Tracking already active');
@@ -126,30 +225,31 @@ class LiveTrackingService extends GetxController {
     }
 
     if (!liveTrackingEnabled) {
-      log('$_logTag Live tracking disabled');
+      log('$_logTag Live tracking disabled by configuration');
       trackingStatus.value = 'Disabled by configuration';
+      return false;
+    }
+
+    if (!await _checkLocationPermissions()) {
+      trackingStatus.value = 'Location permission denied';
       return false;
     }
 
     try {
       trackingStatus.value = 'Starting...';
 
-      // Update HTTP headers with auth token
+      // Apply fresh headers/params before start
       final deviceToken = LocalStorageService.instance.getDeviceToken();
-      if (deviceToken != null) {
-        bg.BackgroundGeolocation.setConfig(
-          bg.Config(
-            headers: {
-              'Authorization': 'Bearer $deviceToken',
-              'Content-Type': 'application/json',
-            },
-          ),
-        );
-      }
+      final userModel = _profileController.userModel.value;
+      await _applyPluginHttpConfig(
+        deviceToken: deviceToken,
+        userModel: userModel,
+      );
 
+      await Future.delayed(Duration(milliseconds: 100));
       // Start the plugin
-      bg.State state = await bg.BackgroundGeolocation.start();
-
+      final state = await bg.BackgroundGeolocation.start();
+      _startWatchdog();
       if (state.enabled) {
         isTrackingActive.value = true;
         trackingStatus.value = 'Active';
@@ -171,13 +271,25 @@ class LiveTrackingService extends GetxController {
     } catch (e) {
       log('$_logTag Error starting tracking: $e');
       trackingStatus.value = 'Error: $e';
-
       _showTrackingNotification(
         'Failed to start tracking: ${e.toString()}',
         backgroundColor: Colors.red,
         icon: Icons.error,
       );
+      return false;
+    }
+  }
 
+  Future<bool> _checkLocationPermissions() async {
+    try {
+      final permission = await Permission.locationAlways.status;
+      if (permission != PermissionStatus.granted) {
+        final result = await Permission.locationAlways.request();
+        return result == PermissionStatus.granted;
+      }
+      return true;
+    } catch (e) {
+      log('Permission check error: $e');
       return false;
     }
   }
@@ -193,76 +305,133 @@ class LiveTrackingService extends GetxController {
       isTrackingActive.value = false;
       trackingStatus.value = 'Stopped';
 
-      // Process any pending locations
-      if (_pendingLocations.isNotEmpty &&
-          !_connectivityController.isOffline.value) {
-        _processPendingLocations();
-      }
-
       log('$_logTag Live tracking stopped successfully');
     } catch (e) {
       log('$_logTag Error stopping tracking: $e');
     }
   }
 
-  // Location event handler
-  void _onLocation(bg.Location location) {
-    log(
-      '$_logTag Location received: ${location.coords.latitude}, ${location.coords.longitude}',
-    );
-
-    currentLocation.value = location;
-    lastUpdateTime.value = DateTime.now().toIso8601String();
-
-    // The HTTP request is handled automatically by the plugin
-    // but we can also manually send if needed
-    _sendLocationToServer(location);
-  }
-
-  // Motion change event handler
-  void _onMotionChange(bg.Location location) {
-    log('$_logTag Motion changed: ${location.isMoving}');
-
-    if (location.isMoving) {
-      trackingStatus.value = 'Moving - Active tracking';
-    } else {
-      trackingStatus.value = 'Stationary - Reduced tracking';
+  void _onHeartbeat(bg.HeartbeatEvent event) async {
+    try {
+      // Persist a heartbeat location so autoSync can pick it up (optional)
+      final loc = await bg.BackgroundGeolocation.getCurrentPosition(
+        samples: 2,
+        timeout: 10,
+        persist: true,
+        extras: {'event': 'heartbeat', 'source': 'service'},
+      );
+      log(
+        '$_logTag [heartbeat] persisted ${loc.coords.latitude}, ${loc.coords.longitude}',
+      );
+    } catch (e) {
+      log('$_logTag [heartbeat] error: $e');
     }
   }
 
-  // Activity change event handler
+  // Location event handler — DO NOT manually send HTTP here when using plugin HTTP.
+  void _onLocation(bg.Location location) {
+    // Filter out inaccurate locations (relaxed threshold for reliability)
+    if (location.coords.accuracy != null && location.coords.accuracy! > 200) {
+      log(
+        '$_logTag Location rejected due to poor accuracy: ${location.coords.accuracy}m',
+      );
+      return;
+    }
+
+    // Additional validation for stationary detection
+    if (currentLocation.value != null) {
+      double distance = _calculateDistance(
+        currentLocation.value!.coords.latitude,
+        currentLocation.value!.coords.longitude,
+        location.coords.latitude,
+        location.coords.longitude,
+      );
+
+      // Log questionable jumps but do not silently drop everything
+      if (distance > 1000 && !location.isMoving) {
+        log(
+          '$_logTag Large jump detected (${distance}m) while stationary; keeping location but logging.',
+        );
+      }
+    }
+
+    log(
+      '$_logTag Location accepted (persisted by plugin): ${location.coords.latitude}, ${location.coords.longitude}, accuracy: ${location.coords.accuracy}m',
+    );
+
+    // Update local state for UI
+    currentLocation.value = location;
+    lastUpdateTime.value = DateTime.now().toIso8601String();
+
+    // IMPORTANT: Do NOT call your HTTP client here. The SDK will persist and auto-sync.
+    // If you still need to send extra per-location fields that change rapidly, update
+    // bg.Config.params via setConfig elsewhere (e.g., when user status flips).
+  }
+
+  double _calculateDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
+    const double earthRadius = 6371000; // meters
+    double dLat = _degreesToRadians(lat2 - lat1);
+    double dLon = _degreesToRadians(lon2 - lon1);
+    double a =
+        sin(dLat / 2) * sin(dLat / 2) +
+        cos(_degreesToRadians(lat1)) *
+            cos(_degreesToRadians(lat2)) *
+            sin(dLon / 2) *
+            sin(dLon / 2);
+    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return earthRadius * c;
+  }
+
+  double _degreesToRadians(double degrees) {
+    return degrees * pi / 180;
+  }
+
+  void _onMotionChange(bg.Location location) {
+    log('$_logTag Motion changed: ${location.isMoving}');
+    trackingStatus.value =
+        location.isMoving
+            ? 'Moving - Active tracking'
+            : 'Stationary - Reduced tracking';
+  }
+
   void _onActivityChange(bg.ActivityChangeEvent event) {
     log('$_logTag Activity changed: ${event.activity}');
   }
 
-  // Provider change event handler
   void _onProviderChange(bg.ProviderChangeEvent event) {
     log(
       '$_logTag Provider changed: GPS: ${event.gps}, Network: ${event.network}',
     );
-
     if (!event.gps) {
       trackingStatus.value = 'GPS disabled';
       _showLocationServiceDisabledDialog();
     }
   }
 
-  // Connectivity change event handler
   void _onConnectivityChange(bg.ConnectivityChangeEvent event) {
     log('$_logTag Connectivity changed: ${event.connected}');
-
     if (event.connected) {
       trackingStatus.value = 'Online - Syncing';
-      _processPendingLocations();
+      // SDK will automatically sync when connectivity is restored.
     } else {
-      trackingStatus.value = 'Offline - Queuing';
+      trackingStatus.value = 'Offline - Queuing (plugin DB)';
     }
   }
 
-  // HTTP response event handler
+  // HTTP response from plugin's HTTP layer
   void _onHttp(bg.HttpEvent event) {
-    log('$_logTag HTTP Response: ${event.status}');
-
+    // log('$_logTag HTTP Request URL: ${event.url}');
+    // log('$_logTag HTTP Request Method: ${event.method}');
+    // log('$_logTag HTTP Request Body: ${event.requestData}'); // This shows what was sent
+    log(
+      '$_logTag HTTP Response: status=${event.status} response=${event.responseText}',
+    );
+    log('$_logTag HTTP Response Text: ${event.responseText}');
     if (event.status >= 200 && event.status < 300) {
       successfulSends.value++;
       failedAttempts.value = 0;
@@ -274,93 +443,17 @@ class LiveTrackingService extends GetxController {
     }
   }
 
-  Future<void> _sendLocationToServer(bg.Location location) async {
-    final userModel = _profileController.userModel.value;
-    if (userModel == null) return;
-
-    final locationData = {
-      'userId': userModel.userId,
-      'latitude': location.coords.latitude,
-      'longitude': location.coords.longitude,
-      'isClockedIn': userModel.clockStatus == true,
-      'isClockedOut': userModel.clockStatus == false,
-      'companyID': userModel.companyId,
-      'siteId': userModel.siteId,
-      'timestamp': location.timestamp,
-      'accuracy': location.coords.accuracy,
-      'speed': location.coords.speed,
-      'heading': location.coords.heading,
-      'altitude': location.coords.altitude,
-    };
-
-    // If offline, queue the location
-    if (_connectivityController.isOffline.value) {
-      _queueLocationData(locationData);
-      return;
-    }
-
+  /// Force the plugin to upload all stored locations right now.
+  Future<void> forceSyncPendingLocations() async {
     try {
-      final response = await _apiService.sendLiveLocation(locationData);
-
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-
-        if (responseData['status'] == true) {
-          successfulSends.value++;
-          failedAttempts.value = 0;
-          log('$_logTag Location sent successfully');
-        } else {
-          throw Exception(
-            'Server returned false status: ${responseData['message']}',
-          );
-        }
-      } else {
-        throw Exception('HTTP ${response.statusCode}: ${response.body}');
-      }
+      final result = await bg.BackgroundGeolocation.sync();
+      log('$_logTag forceSync result length=${result?.length ?? 0}');
     } catch (e) {
-      log('$_logTag Error sending location: $e');
-      failedAttempts.value++;
-      _queueLocationData(locationData);
+      log('$_logTag forceSync error: $e');
     }
   }
 
-  void _queueLocationData(Map<String, dynamic> locationData) {
-    _pendingLocations.add(locationData);
-
-    if (_pendingLocations.length > _maxPendingLocations) {
-      _pendingLocations.removeAt(0);
-    }
-
-    log('$_logTag Location queued. Queue size: ${_pendingLocations.length}');
-  }
-
-  Future<void> _processPendingLocations() async {
-    if (_pendingLocations.isEmpty || _connectivityController.isOffline.value) {
-      return;
-    }
-
-    log('$_logTag Processing ${_pendingLocations.length} pending locations');
-
-    final locationsToSend = List<Map<String, dynamic>>.from(_pendingLocations);
-    _pendingLocations.clear();
-
-    for (final locationData in locationsToSend) {
-      try {
-        final response = await _apiService.sendLiveLocation(locationData);
-
-        if (response.statusCode != 200) {
-          _pendingLocations.add(locationData);
-        }
-
-        await Future.delayed(const Duration(milliseconds: 100));
-      } catch (e) {
-        _pendingLocations.add(locationData);
-        log('$_logTag Error processing pending location: $e');
-      }
-    }
-  }
-
-  // UI Helper methods
+  // UI Helper methods (unchanged)
   void _showTrackingNotification(
     String message, {
     Color? backgroundColor,
@@ -391,8 +484,6 @@ class LiveTrackingService extends GetxController {
           ElevatedButton(
             onPressed: () async {
               Get.back();
-              // openAppSettings();
-
               Geolocator.openLocationSettings();
             },
             child: const Text('Enable GPS'),
@@ -402,20 +493,26 @@ class LiveTrackingService extends GetxController {
     );
   }
 
+  Future<void> reset() async {
+    print('[LiveTrackingService] Resetting tracking service');
+    await bg.BackgroundGeolocation.stop();
+    await bg.BackgroundGeolocation.removeListeners();
+    isTrackingActive.value = false;
+  }
+
   String _formatTime(DateTime dateTime) {
     return '${dateTime.hour.toString().padLeft(2, '0')}:'
         '${dateTime.minute.toString().padLeft(2, '0')}:'
         '${dateTime.second.toString().padLeft(2, '0')}';
   }
 
-  // Public methods
+  // Public method returning current stats
   Map<String, dynamic> getTrackingStats() {
     return {
       'isActive': isTrackingActive.value,
       'status': trackingStatus.value,
       'successfulSends': successfulSends.value,
       'failedAttempts': failedAttempts.value,
-      'pendingLocations': _pendingLocations.length,
       'lastUpdate': lastUpdateTime.value,
       'intervalSeconds': trackingIntervalSeconds,
       'currentLocation':
@@ -427,11 +524,5 @@ class LiveTrackingService extends GetxController {
               }
               : null,
     };
-  }
-
-  Future<void> forceSyncPendingLocations() async {
-    if (_pendingLocations.isNotEmpty) {
-      await _processPendingLocations();
-    }
   }
 }

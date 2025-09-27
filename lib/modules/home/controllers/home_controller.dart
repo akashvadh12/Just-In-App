@@ -33,18 +33,18 @@ class HomeController extends GetxController {
   final notificationCount = 1.obs;
   final currentDate = DateTime.now().obs;
 
-  @override
-  void onReady() {
-    super.onReady();
+  // @override
+  // void onReady() {
+  //   super.onReady();
 
-    // called after widget is built and mounted
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      VersionChecker.checkForUpdate(Get.context!);
+  //   // called after widget is built and mounted
+  //   // WidgetsBinding.instance.addPostFrameCallback((_) {
+  //   //   VersionChecker.checkForUpdate(Get.context!);
 
-      // Initialize services for guards (not admins)
-      _initializeLiveTracking();
-    });
-  }
+  //   //   // Initialize services for guards (not admins)
+  //   //   _initializeLiveTracking();
+  //   // });
+  // }
 
   @override
   void onInit() {
@@ -62,12 +62,7 @@ class HomeController extends GetxController {
       Get.put(LiveTrackingService());
     }
     liveTrackingService = Get.find<LiveTrackingService>();
-  }
-
-  @override
-  void onClose() {
-    liveTrackingService.stopTracking();
-    super.onClose();
+  _setupTrackingListeners();
   }
 
   // Attendance data
@@ -145,9 +140,13 @@ class HomeController extends GetxController {
     return 'Monday, $month $day';
   }
 
-  void _initializeLiveTracking() {
-    _setupTrackingListeners();
-  }
+// void _initializeLiveTracking() {
+//   if (liveTrackingService.isTrackingActive.value) {
+//     // Already tracking, don’t re-setup
+//     return;
+//   }
+//   _setupTrackingListeners();
+// }
 
   // Replace the existing _setupTrackingListeners() method:
   void _setupTrackingListeners() {
@@ -172,6 +171,7 @@ class HomeController extends GetxController {
     if (shouldTrack && !isCurrentlyTracking) {
       _startTracking();
     } else if (!shouldTrack && isCurrentlyTracking) {
+      print('===========================>>🔴🔴🔴🔴🔴🔴Stopping live tracking as conditions not met 🔴🔴🔴🔴');
       _stopTracking();
     }
   }
@@ -230,109 +230,90 @@ class HomeController extends GetxController {
       ),
     );
   }
+Future<void> fetchDashboardData() async {
+  final connectivityController = Get.find<ConnectivityController>();
 
-  Future<void> fetchDashboardData() async {
-    final connectivityController = Get.find<ConnectivityController>();
+  if (connectivityController.isOffline.value) {
+    return;
+  }
 
-    if (connectivityController.isOffline.value) {
-      // connectivityController.showNoInternetSnackbar();
+  isLoading(true);
+  dashboardLoading.value = true;
+  try {
+    // Get userId from LocalStorageService
+    String? userId = await _storage.getUserId();
+    print('User ID from storage🔴🔴: $userId');
+
+    if (userId == null || userId.isEmpty) {
+      userId = profileController.userModel.value?.userId ?? '';
+    }
+
+    if (userId.isEmpty) {
+      dashboardLoading.value = false;
       return;
     }
 
-    isLoading(true);
-    dashboardLoading.value = true;
-    try {
-      // Get userId from LocalStorageService
-      String? userId = await _storage.getUserId();
-      print('User ID from storage🔴🔴: $userId');
+    final url = Uri.parse(
+      'https://justin.solarvision-cairo.com/api/Dashboard/dashboard?userId=$userId',
+    );
 
-      if (userId == null || userId.isEmpty) {
-        userId = profileController.userModel.value?.userId ?? '';
-      }
+    final response = await http.get(url);
 
-      if (userId.isEmpty) {
-        dashboardLoading.value = false;
-        return;
-      }
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
 
-      final url = Uri.parse(
-        'https://justin.solarvision-cairo.com/api/Dashboard/dashboard?userId=$userId',
-      );
+      // Update dashboard observables
+      attendanceStatus.value = data['attendanceStatus']?.toString() ?? '';
+      todayPatrolStatus.value = data['todayPatrolStatus']?.toString() ?? '';
+      issuesNew.value = data['issuesCount']?['new'] ?? 0;
+      issuesPending.value = data['issuesCount']?['pending'] ?? 0;
+      issuesResolved.value = data['issuesCount']?['resolved'] ?? 0;
+      clockInTime.value = data['clockIn']?.toString() ?? 'Not clocked in';
+      clockOutTime.value = data['clockOut']?.toString() ?? '';
 
-      final response = await http.get(url);
+      print('Dashboard data fetched successfully: $data');
 
-      if (response.statusCode == 200) {
-        
-        final data = json.decode(response.body);
-        attendanceStatus.value = data['attendanceStatus']?.toString() ?? '';
-        todayPatrolStatus.value = data['todayPatrolStatus']?.toString() ?? '';
-        issuesNew.value = data['issuesCount']?['new'] ?? 0;
-        issuesPending.value = data['issuesCount']?['pending'] ?? 0;
-        issuesResolved.value = data['issuesCount']?['resolved'] ?? 0;
-        clockInTime.value = data['clockIn']?.toString() ?? 'Not clocked in';
-        clockOutTime.value = data['clockOut']?.toString() ?? '';
-        
-        print('Dashboard data fetched successfully: $data');
+      // Setup listeners for future changes
+      _setupTrackingListeners();
 
-        // Initialize services after fetching attendance status
-        _initializeLiveTracking();
-
-        // Update user info/photo if present in dashboard response
-        if (data['userID'] != null) {
-          final session = Get.find<SessionService>();
-          session.setSession(
-            company: data['companyId'].toString(),
-            site: data['siteId'].toString(),
-          );
-           isLoading(false);
-          // Update user model with new data
-          profileController.userModel.value = UserModel.fromJson(data);
-          profileController.fetchUserProfile(userId);
-        }
-      } else if (response.statusCode == 404) {
-        Get.snackbar(
-          "Not Found",
-          "Dashboard data not found for user ID: $userId",
-          backgroundColor: Colors.orange,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-          icon: const Icon(Icons.error, color: Colors.white),
-          duration: const Duration(seconds: 2),
+      // Update user info & session
+      if (data['userID'] != null) {
+        final session = Get.find<SessionService>();
+        session.setSession(
+          company: data['companyId'].toString(),
+          site: data['siteId'].toString(),
         );
-      } else if (response.statusCode == 500) {
-        Get.snackbar(
-          "Server Error",
-          "Internal server error. Please try again later.",
-          backgroundColor: Colors.red,
-          snackPosition: SnackPosition.BOTTOM,
-          colorText: Colors.white,
-          icon: const Icon(Icons.error, color: Colors.white),
-          duration: const Duration(seconds: 2),
-        );
-      } else {
-        Get.snackbar(
-          "Oops!",
-          "Dashboard not loading. Check your internet and try again.",
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-          icon: const Icon(Icons.wifi_off, color: Colors.white),
-          duration: const Duration(seconds: 2),
-        );
+
+        profileController.userModel.value = UserModel.fromJson(data);
+        profileController.fetchUserProfile(userId);
+
+        // ✅ Immediately check tracking state for this user
+        _updateTrackingState();
       }
-    } catch (e) {
+    } else {
+      // Handle errors
       Get.snackbar(
-        'Error',
-        'Error fetching dashboard data',
-        snackPosition: SnackPosition.BOTTOM,
+        "Error",
+        "Failed to load dashboard: ${response.statusCode}",
         backgroundColor: Colors.red,
         colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
       );
-      print('Error fetching dashboard data:🔴🔴🔴🐞🐞 $e');
-    } finally {
-      dashboardLoading.value = false;
     }
+  } catch (e) {
+    Get.snackbar(
+      'Error',
+      'Error fetching dashboard data',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+    );
+    print('Error fetching dashboard data:🔴🔴🔴🐞🐞 $e');
+  } finally {
+    dashboardLoading.value = false;
+    isLoading(false);
   }
+}
 
   // Force refresh user model and reinitialize services
   // void refreshUserModelAndServices() {
@@ -345,12 +326,12 @@ class HomeController extends GetxController {
   // }
 
   // Stop all services (useful when logging out or switching users)
-  void stopAllServices() {
-    if (liveTrackingService.isTrackingActive.value) {
-      liveTrackingService.stopTracking();
-      liveTrackingActive.value = false;
-    }
-  }
+  // void stopAllServices() {
+  //   if (liveTrackingService.isTrackingActive.value) {
+  //     liveTrackingService.stopTracking();
+  //     liveTrackingActive.value = false;
+  //   }
+  // }
 
   // Start all services (useful when logging in or switching to guard role)
   // void startAllServices() {
