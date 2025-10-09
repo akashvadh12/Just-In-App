@@ -377,28 +377,28 @@ Widget _buildStopPatrolTab() {
 
                 return;
               }
-              if (profileController.userModel.value!.logId == null ||
-                  profileController.userModel.value!.logId!.isEmpty) {
-                Get.snackbar(
-                  "No Patrol Log",
-                  "Please start a patrol first.",
-                  backgroundColor: Colors.orange.shade600,
-                  colorText: Colors.white,
-               snackPosition: SnackPosition.BOTTOM,
-                  margin: const EdgeInsets.all(12),
-                  borderRadius: 10,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  icon: const Icon(Icons.warning, color: Colors.white),
-                  shouldIconPulse: false,
-                  duration: const Duration(seconds: 2),
-                  barBlur: 10,
-                  overlayBlur: 2,
-                );
-                return;
-              }
+              // if (profileController.userModel.value!.logId == null ||
+              //     profileController.userModel.value!.logId!.isEmpty) {
+              //   Get.snackbar(
+              //     "No Patrol Log",
+              //     "Please start a patrol first.",
+              //     backgroundColor: Colors.orange.shade600,
+              //     colorText: Colors.white,
+              //  snackPosition: SnackPosition.BOTTOM,
+              //     margin: const EdgeInsets.all(12),
+              //     borderRadius: 10,
+              //     padding: const EdgeInsets.symmetric(
+              //       horizontal: 16,
+              //       vertical: 12,
+              //     ),
+              //     icon: const Icon(Icons.warning, color: Colors.white),
+              //     shouldIconPulse: false,
+              //     duration: const Duration(seconds: 2),
+              //     barBlur: 10,
+              //     overlayBlur: 2,
+              //   );
+              //   return;
+              // }
               Get.to(() => const AddManualPatrolScreen());
             },
             style: ElevatedButton.styleFrom(

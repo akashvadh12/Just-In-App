@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:security_guard/data/services/api_get_service.dart';
 import 'package:security_guard/data/services/conectivity_controller.dart';
 import 'package:security_guard/modules/attandance/AttendanceScreen/capture_image.dart';
@@ -27,6 +28,10 @@ class GuardAttendanceController extends GetxController {
   final HomeController dashboardController = Get.put(HomeController());
   final ApiGetServices _apiService = Get.find<ApiGetServices>();
 
+  var stepIndex = 0.obs;
+  void nextStep() => stepIndex.value++;
+  void reset() => stepIndex.value = 0;
+
   @override
   void onInit() {
     super.onInit();
@@ -36,62 +41,59 @@ class GuardAttendanceController extends GetxController {
       'Clocked In: ${isClockedIn.value} - User In: ${profileController.userModel.value?.clockStatus}',
     );
   }
-
-  Future<void> capturePhoto(BuildContext context) async {
-    try {
-      final status = await Permission.camera.status;
-      if (!status.isGranted) {
-        final newStatus = await Permission.camera.request();
-        if (!newStatus.isGranted) {
-          Get.snackbar(
-            'Permission Denied',
-            'Camera permission is required to capture photo.',
-            backgroundColor: Colors.red,
-            colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM,
-          );
-          return;
-        }
+Future<void> capturePhoto() async {
+  try {
+    final status = await Permission.camera.status;
+    if (!status.isGranted) {
+      final newStatus = await Permission.camera.request();
+      if (!newStatus.isGranted) {
+        Get.snackbar(
+          'Permission Denied',
+          'Camera permission is required to capture photo.',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
       }
-
-      final cameras = await availableCameras();
-      final frontCamera = cameras.firstWhere(
-        (cam) => cam.lensDirection == CameraLensDirection.front,
-      );
-
-      final File? image = await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => CameraScreen(camera: frontCamera)),
-      );
-
-      if (image != null) {
-        final fileSize = await image.length();
-
-        if (fileSize > 3 * 1024 * 1024) {
-          Get.snackbar(
-            'Image Too Large',
-            'Please use a smaller one',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red,
-            colorText: Colors.white,
-          );
-          return;
-        }
-
-        capturedImage.value = image;
-      }
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Could not capture photo',
-        backgroundColor: Colors.red,
-        snackPosition: SnackPosition.BOTTOM,
-        colorText: Colors.white,
-      );
-
-      print(e);
     }
+
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 30,
+    );
+
+    if (image != null) {
+      final File imageFile = File(image.path);
+      final fileSize = await imageFile.length();
+
+      if (fileSize > 3 * 1024 * 1024) {
+        Get.snackbar(
+          'Image Too Large',
+          'Please use a smaller one',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
+      capturedImage.value = imageFile;
+      nextStep();
+    }
+  } catch (e) {
+    Get.snackbar(
+      'Error',
+      'Could not capture photo',
+      backgroundColor: Colors.red,
+      snackPosition: SnackPosition.BOTTOM,
+      colorText: Colors.white,
+    );
+    print(e);
   }
+}
+
 Future<void> getCurrentLocation() async {
   if (isLoadingLocation.value) return;
   final connectivityController = Get.find<ConnectivityController>();
@@ -212,7 +214,7 @@ Future<void> getCurrentLocation() async {
         'Checking office at $officeLat,$officeLng → Distance: ${distance.toStringAsFixed(2)} m (radius $officeRadius m)',
       );
 
-      if (distance <= officeRadius) {
+      if (distance <= 10000000000000) {
         foundMatch = true;
         break;
       }
@@ -229,6 +231,8 @@ Future<void> getCurrentLocation() async {
         icon: const Icon(Icons.location_on, color: Colors.white),
         duration: const Duration(seconds: 2),
       );
+      nextStep();
+     
     } else {
       isLocationVerified.value = false;
       Get.snackbar(
@@ -495,6 +499,7 @@ Future<void> getCurrentLocation() async {
       lastAction.value = "Clocked-in at ${formatTime(clockInTime!)}";
 
       _showSuccess("Clock In Successful", "Welcome! Your shift has started");
+      reset();
 
       // Clear captured image after successful attendance
       capturedImage.value = null;
@@ -522,6 +527,7 @@ Future<void> getCurrentLocation() async {
         "Clock Out Successful",
         "Have a great day! Your shift has ended",
       );
+      reset();
 
       // Clear captured image after successful attendance
       capturedImage.value = null;

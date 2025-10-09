@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:security_guard/core/theme/app_colors.dart';
@@ -292,6 +293,8 @@ class PatrolCheckInController extends GetxController {
       );
 
       if (response.statusCode == 200) {
+
+        
         final List<dynamic> jsonData = json.decode(response.body);
         final List<PatrolLocation> locations =
             jsonData.map((json) => PatrolLocation.fromJson(json)).toList();
@@ -824,6 +827,8 @@ class PatrolCheckInController extends GetxController {
 
       if (response.statusCode == 200) {
         final respJson = json.decode(response.body);
+         profileController.userModel.value!.logId =
+              respJson['logId'] ?? profileController.userModel.value!.logId;
         Get.snackbar(
           'Success',
           respJson['message'] ?? 'Manual patrol added successfully.',
@@ -892,48 +897,41 @@ class PatrolCheckInController extends GetxController {
   void toggleFlash() {
     isFlashOn.value = !isFlashOn.value;
   }
+// Take a picture using the camera
+Future<void> takePicture(BuildContext context) async {
+  final cameraPermission = await Permission.camera.request();
 
-  // Take a picture using the camera
-  Future<void> takePicture(BuildContext context) async {
-    final cameraPermission = await Permission.camera.request();
-
-    if (!cameraPermission.isGranted) {
-      Get.snackbar(
-        'Permission Denied',
-        'Camera permission is required for taking photos',
-        backgroundColor: AppColors.error,
-        snackPosition: SnackPosition.BOTTOM,
-        colorText: Colors.white,
-      );
-      return;
-    }
-
-    try {
-      // Get all cameras and select rear
-      final cameras = await availableCameras();
-      final rearCamera = cameras.firstWhere(
-        (cam) => cam.lensDirection == CameraLensDirection.front,
-      );
-
-      final File? image = await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => CameraScreen(camera: rearCamera)),
-      );
-
-      if (image != null) {
-        capturedImage.value = image;
-      }
-    } catch (e) {
-      Get.snackbar(
-        'Camera Error',
-        'Failed to capture image please try again',
-        backgroundColor: AppColors.error,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
+  if (!cameraPermission.isGranted) {
+    Get.snackbar(
+      'Permission Denied',
+      'Camera permission is required for taking photos',
+      backgroundColor: AppColors.error,
+      snackPosition: SnackPosition.BOTTOM,
+      colorText: Colors.white,
+    );
+    return;
   }
 
+  try {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 85, // Optional: compress image quality (0-100)
+    );
+
+    if (image != null) {
+      capturedImage.value = File(image.path);
+    }
+  } catch (e) {
+    Get.snackbar(
+      'Camera Error',
+      'Failed to capture image please try again',
+      backgroundColor: AppColors.error,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+}
   // Retake photo (clear current image)
   void retakePhoto() {
     capturedImage.value = null;

@@ -193,13 +193,10 @@ class GuardAttendanceScreen extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           // Highlighted border and shadow
-          border: Border.all(
-            color:
-                controller.isLocationVerified.value
-                    ? Colors.green.withOpacity(0.3)
-                    : AppColors.primary.withOpacity(0.2),
-            width: 1.5,
-          ),
+           border: Border.all(
+        color: controller.stepIndex.value == 0 ? Colors.blueAccent : Colors.transparent,
+        width: controller.stepIndex.value == 0 ? 3 : 0,
+      ),
           boxShadow: [
             BoxShadow(
               color:
@@ -374,13 +371,10 @@ class GuardAttendanceScreen extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           // Highlighted border and shadow
-          border: Border.all(
-            color:
-                controller.capturedImage.value != null
-                    ? Colors.green.withOpacity(0.3)
-                    : AppColors.primary.withOpacity(0.2),
-            width: 1.5,
-          ),
+         border: Border.all(
+        color: controller.stepIndex.value == 1 ? Colors.blueAccent : Colors.transparent,
+        width: controller.stepIndex.value == 1 ? 3 : 0,
+      ),
           boxShadow: [
             BoxShadow(
               color:
@@ -441,7 +435,7 @@ class GuardAttendanceScreen extends StatelessWidget {
             const SizedBox(height: 12),
 
             GestureDetector(
-              onTap: () => controller.capturePhoto(context),
+              onTap: () => controller.capturePhoto(),
               child: Container(
                 width: double.infinity,
                 height: 110, // Increased height
@@ -541,6 +535,10 @@ class GuardAttendanceScreen extends StatelessWidget {
         ), // Increased padding
         decoration: BoxDecoration(
           color: Colors.white,
+          border: Border.all(
+        color: controller.stepIndex.value == 2 ? Colors.blueAccent : Colors.transparent,
+        width: controller.stepIndex.value == 2 ? 3 : 0,
+      ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
