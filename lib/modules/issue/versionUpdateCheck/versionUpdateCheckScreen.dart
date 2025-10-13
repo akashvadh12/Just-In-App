@@ -6,6 +6,7 @@ class VersionChecker {
     final newVersion = NewVersionPlus(
       iOSId: 'com.cairovision.justin', // replace with your iOS bundle id
       androidId: 'com.cairovision.justin', // replace with your Android package name
+      
     );
 
     final status = await newVersion.getVersionStatus();

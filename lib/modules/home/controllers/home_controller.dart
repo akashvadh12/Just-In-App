@@ -33,18 +33,18 @@ class HomeController extends GetxController {
   final notificationCount = 1.obs;
   final currentDate = DateTime.now().obs;
 
-  // @override
-  // void onReady() {
-  //   super.onReady();
+  @override
+  void onReady() {
+    super.onReady();
 
-  //   // called after widget is built and mounted
-  //   // WidgetsBinding.instance.addPostFrameCallback((_) {
-  //   //   VersionChecker.checkForUpdate(Get.context!);
+    // called after widget is built and mounted
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      VersionChecker.checkForUpdate(Get.context!);
 
-  //   //   // Initialize services for guards (not admins)
-  //   //   _initializeLiveTracking();
-  //   // });
-  // }
+      // Initialize services for guards (not admins)
+      // _initializeLiveTracking();
+    });
+  }
 
   @override
   void onInit() {
