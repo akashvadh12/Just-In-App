@@ -14,6 +14,7 @@ import 'package:http/http.dart' as http;
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+
 class GuardAttendanceController extends GetxController {
   var capturedImage = Rx<File?>(null);
   var currentPosition = Rx<Position?>(null);
@@ -35,12 +36,314 @@ class GuardAttendanceController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    isClockedIn.value = profileController.userModel.value?.clockStatus ?? false;
+    // Initialize from dashboard state
+    refreshUserState();
     print('GuardAttendanceController initialized');
-    print(
-      'Clocked In: ${isClockedIn.value} - User In: ${profileController.userModel.value?.clockStatus}',
+  }
+
+  // UPDATED: Refresh from Dashboard API instead of Profile API
+  Future<void> refreshUserState() async {
+    try {
+      print('🔄 Refreshing state from Dashboard API...');
+      
+      // Fetch fresh data from dashboard
+      await dashboardController.fetchDashboardData();
+      
+      // Update local state based on dashboard response
+      final attendanceStatus = dashboardController.attendanceStatus.value;
+      final userClockStatus = profileController.userModel.value?.clockStatus;
+      
+      // Clock status logic: true = clocked IN, false = clocked OUT
+      isClockedIn.value = (attendanceStatus == 'In' || userClockStatus == true);
+
+      
+      print('✅ State refreshed - AttendanceStatus: $attendanceStatus, ClockStatus: $userClockStatus, isClockedIn: ${isClockedIn.value}');
+    } catch (e) {
+      print('❌ Error refreshing user state: $e');
+    }
+  }
+
+  // UPDATED: Better error handling with Dashboard sync
+  Future<bool> markAttendance(String type) async {
+    final connectivityController = Get.find<ConnectivityController>();
+
+    if (connectivityController.isOffline.value) {
+      return false;
+    }
+
+    if (isProcessingAttendance.value) {
+      print('Already processing attendance request');
+      return false;
+    }
+
+    isProcessingAttendance.value = true;
+
+    try {
+      // Validate required data
+      if (capturedImage.value == null || !await capturedImage.value!.exists()) {
+        _showError(
+          "Photo Required",
+          "Please capture a verification photo first",
+        );
+        return false;
+      }
+
+      if (currentPosition.value == null || !isLocationVerified.value) {
+        _showError("Location Required", "Please verify your location first");
+        return false;
+      }
+
+      final userId = profileController.userModel.value?.userId;
+
+      if (userId == null || userId.isEmpty) {
+        _showError(
+          "Authentication Error",
+          "User ID not found. Please login again",
+        );
+        return false;
+      }
+
+      // Convert image to base64
+      print('Converting image to base64...');
+      final imageBase64 = await convertImageToBase64(capturedImage.value!);
+      if (imageBase64 == null || imageBase64.isEmpty) {
+        _showError("Image Error", "Failed to process verification photo");
+        return false;
+      }
+
+      // Make API call
+      final response = await _apiService.markAttendanceRaw(
+        userId: userId,
+        type: type,
+        latitude: currentPosition.value!.latitude.toString(),
+        longitude: currentPosition.value!.longitude.toString(),
+        selfieBase64: imageBase64,
+        selfieFile: capturedImage.value!,
+        entryTimestamp: type == 'in' ? DateTime.now().toIso8601String() : null,
+        exitTimestamp: type == 'out' ? DateTime.now().toIso8601String() : null,
+      );
+
+      print('=== API Response ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        print('✅ Attendance marked successfully');
+        return true;
+      } else {
+        // Handle error and sync with dashboard
+        await _handleApiError(response, type);
+        return false;
+      }
+    } catch (e) {
+      print('❌ Exception in markAttendance: $e');
+      _showError(
+        "Network Error",
+        "Failed to connect to server: ${e.toString()}",
+      );
+      return false;
+    }
+  }
+
+  // UPDATED: Handle API errors with specific backend message detection
+  Future<void> _handleApiError(http.Response response, String attemptedType) async {
+    String errorMessage = "Attendance failed (Status: ${response.statusCode})";
+
+    if (response.body.isNotEmpty) {
+      try {
+        final errorData = jsonDecode(response.body);
+        if (errorData is Map<String, dynamic>) {
+          errorMessage =
+              errorData['message']?.toString() ??
+              errorData['error']?.toString() ??
+              errorData['Message']?.toString() ??
+              errorData['Error']?.toString() ??
+              errorMessage;
+          
+          // ✅ Detect specific backend error: "No entry record found"
+          if (errorMessage.contains("No entry record found")) {
+            print('🔍 Backend says: No open attendance record - User already clocked out');
+            
+            // Sync with dashboard to get correct state
+            await refreshUserState();
+            
+            _showError(
+              "Already Clocked Out",
+              "You are already clocked out. State has been synchronized.",
+            );
+            return;
+          }
+          
+          // ✅ Handle other potential state mismatch errors
+          if (errorMessage.contains("already clocked in") || 
+              errorMessage.contains("duplicate entry")) {
+            print('🔍 Backend says: User already clocked in');
+            await refreshUserState();
+            
+            _showError(
+              "Already Clocked In",
+              "You are already clocked in. State has been synchronized.",
+            );
+            return;
+          }
+        } else {
+          errorMessage = response.body;
+        }
+      } catch (e) {
+        print('Error parsing API response: $e');
+        errorMessage = "Server error: ${response.body}";
+      }
+    }
+
+    // For any error, refresh dashboard state
+    print('🔄 Refreshing dashboard state after error...');
+    await refreshUserState();
+    
+    print('❌ API Error: $errorMessage');
+    _showError("Attendance Failed", errorMessage);
+  }
+
+  // UPDATED: Clock In with Dashboard state check
+  Future<void> clockIn() async {
+    if (isProcessingAttendance.value) return;
+
+    try {
+      isProcessingAttendance.value = true;
+
+      // ✅ Step 1: Refresh from Dashboard API
+      print('🔍 Checking current state from Dashboard before clock in...');
+      await refreshUserState();
+
+      // ✅ Step 2: Verify we can clock in
+      if (isClockedIn.value == true || 
+          profileController.userModel.value?.clockStatus == true ||
+          dashboardController.attendanceStatus.value == 'In') {
+        _showError(
+          "Already Clocked In",
+          "You are already clocked in. Please clock out first.",
+        );
+        isProcessingAttendance.value = false;
+        return;
+      }
+      isProcessingAttendance.value = false;
+
+      // ✅ Step 3: Proceed with clock in
+      print('📍 Attempting to clock in...');
+      final success = await markAttendance('in');
+
+      if (success) {
+        // Update all related states
+        isClockedIn.value = true;
+        profileController.userModel.value?.clockStatus = true;
+        dashboardController.attendanceStatus.value = 'In';
+        
+        // Refresh dashboard to get updated data
+        await dashboardController.fetchDashboardData();
+        
+        clockInTime = DateTime.now();
+        lastAction.value = "Clocked-in at ${formatTime(clockInTime!)}";
+
+        _showSuccess("Clock In Successful", "Welcome! Your shift has started");
+        reset();
+        resetAttendanceData();
+        
+        print('✅ Clock in completed successfully');
+      }
+    } catch (e) {
+      print('❌ Error in clockIn: $e');
+      _showError("Error", "Failed to clock in: ${e.toString()}");
+      await refreshUserState();
+    } finally {
+      isProcessingAttendance.value = false;
+    }
+  }
+
+  // UPDATED: Clock Out with Dashboard state check
+  Future<void> clockOut() async {
+    if (isProcessingAttendance.value) return;
+
+    try {
+      isProcessingAttendance.value = true;
+
+      // ✅ Step 1: Refresh from Dashboard API
+      print('🔍 Checking current state from Dashboard before clock out...');
+      await refreshUserState();
+
+      // ✅ Step 2: Verify we can clock out
+      if (isClockedIn.value == false || 
+          profileController.userModel.value?.clockStatus == false ||
+          dashboardController.attendanceStatus.value != 'In') {
+        _showError(
+          "Already Clocked Out",
+          "You are already clocked out. Please clock in first.",
+        );
+        isProcessingAttendance.value = false;
+        return;
+      }
+      isProcessingAttendance.value = false;
+
+      // ✅ Step 3: Proceed with clock out
+      print('📍 Attempting to clock out...');
+      final success = await markAttendance('out');
+
+      if (success) {
+        // Update all related states
+        isClockedIn.value = false;
+        profileController.userModel.value?.clockStatus = false;
+        dashboardController.attendanceStatus.value = 'Out';
+        
+        // Refresh dashboard to get updated data
+        await dashboardController.fetchDashboardData();
+        
+        clockOutTime = DateTime.now();
+        lastAction.value = "Clocked-out at ${formatTime(clockOutTime!)}";
+
+        _showSuccess(
+          "Clock Out Successful",
+          "Have a great day! Your shift has ended",
+        );
+        reset();
+        resetAttendanceData();
+        
+        print('✅ Clock out completed successfully');
+      }
+    } catch (e) {
+      print('❌ Error in clockOut: $e');
+      _showError("Error", "Failed to clock out: ${e.toString()}");
+      await refreshUserState();
+    } finally {
+      isProcessingAttendance.value = false;
+    }
+  }
+
+  void _showError(String title, String message) {
+    Get.snackbar(
+      title,
+      message,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+      icon: const Icon(Icons.error, color: Colors.white),
+      duration: const Duration(seconds: 3),
+      margin: const EdgeInsets.all(10),
     );
   }
+
+  void _showSuccess(String title, String message) {
+    Get.snackbar(
+      title,
+      message,
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+      icon: const Icon(Icons.check_circle, color: Colors.white),
+      duration: const Duration(seconds: 2),
+      margin: const EdgeInsets.all(10),
+    );
+  }
+
+  // Keep all your existing helper methods
+  
 Future<void> capturePhoto() async {
   try {
     final status = await Permission.camera.status;
@@ -214,7 +517,7 @@ Future<void> getCurrentLocation() async {
         'Checking office at $officeLat,$officeLng → Distance: ${distance.toStringAsFixed(2)} m (radius $officeRadius m)',
       );
 
-      if (distance <= 10000000000000) {
+      if (distance <= officeRadius) {
         foundMatch = true;
         break;
       }
@@ -348,193 +651,6 @@ Future<void> getCurrentLocation() async {
     }
   }
 
-  Future<bool> markAttendance(String type) async {
-    final connectivityController = Get.find<ConnectivityController>();
-
-    if (connectivityController.isOffline.value) {
-      // connectivityController.showNoInternetSnackbar();
-      return false;
-    }
-    if (isProcessingAttendance.value) {
-      print('Already processing attendance request');
-      return false;
-    }
-
-    try {
-      isProcessingAttendance.value = true;
-
-      // Validate required data
-      if (capturedImage.value == null || !await capturedImage.value!.exists()) {
-        _showError(
-          "Photo Required",
-          "Please capture a verification photo first",
-        );
-        return false;
-      }
-
-      if (currentPosition.value == null || !isLocationVerified.value) {
-        _showError("Location Required", "Please verify your location first");
-        return false;
-      }
-
-      // Get user credentials
-      final userId = profileController.userModel.value?.userId;
-      // final authToken = await getAuthToken();
-
-      if (userId == null || userId.isEmpty) {
-        _showError(
-          "Authentication Error",
-          "User ID not found. Please login again",
-        );
-        return false;
-      }
-
-      // Convert image to base64
-      print('Converting image to base64...');
-      final imageBase64 = await convertImageToBase64(capturedImage.value!);
-      if (imageBase64 == null || imageBase64.isEmpty) {
-        _showError("Image Error", "Failed to process verification photo");
-        return false;
-      }
-
-      // Create multipart request
-      final response = await _apiService.markAttendanceRaw(
-        userId: userId,
-        type: type,
-        latitude: currentPosition.value!.latitude.toString(),
-        longitude: currentPosition.value!.longitude.toString(),
-        selfieBase64: imageBase64,
-        selfieFile: capturedImage.value!,
-        entryTimestamp: type == 'in' ? DateTime.now().toIso8601String() : null,
-        exitTimestamp: type == 'out' ? DateTime.now().toIso8601String() : null,
-      );
-
-      print('=== API Response ===');
-      print('Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        print('Attendance marked successfully');
-        return true;
-      } else {
-        await _handleApiError(response);
-        return false;
-      }
-    } catch (e) {
-      print('Exception in markAttendance: $e');
-      _showError(
-        "Network Error",
-        "Failed to connect to server: ${e.toString()}",
-      );
-      return false;
-    } finally {
-      isProcessingAttendance.value = false;
-    }
-  }
-
-  Future<void> _handleApiError(http.Response response) async {
-    String errorMessage = "Attendance failed (Status: ${response.statusCode})";
-
-    if (response.body.isNotEmpty) {
-      try {
-        final errorData = jsonDecode(response.body);
-        if (errorData is Map<String, dynamic>) {
-          errorMessage =
-              errorData['message']?.toString() ??
-              errorData['error']?.toString() ??
-              errorData['Message']?.toString() ??
-              errorData['Error']?.toString() ??
-              errorMessage;
-        } else {
-          errorMessage = response.body;
-        }
-      } catch (e) {
-        print('Error parsing API response: $e');
-        errorMessage = "Server error: ${response.body}";
-      }
-    }
-
-    print('API Error: $errorMessage');
-    _showError("Attendance Failed", errorMessage);
-  }
-
-  void _showError(String title, String message) {
-    Get.snackbar(
-      title,
-      message,
-      backgroundColor: Colors.red,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
-      icon: const Icon(Icons.error, color: Colors.white),
-      duration: const Duration(seconds: 2),
-      margin: const EdgeInsets.all(10),
-    );
-  }
-
-  void _showSuccess(String title, String message) {
-    Get.snackbar(
-      title,
-      message,
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
-      icon: const Icon(Icons.check_circle, color: Colors.white),
-      duration: const Duration(seconds: 2),
-      margin: const EdgeInsets.all(10),
-    );
-  }
-
-  Future<void> clockIn() async {
-    if (isProcessingAttendance.value) return;
-
-    print('Attempting to clock in...');
-    final success = await markAttendance('in');
-
-    if (success) {
-      isClockedIn.value = true;
-      profileController.userModel.value?.clockStatus = true;
-      dashboardController
-          .fetchDashboardData(); // Update dashboard data after clock in
-      clockInTime = DateTime.now();
-      lastAction.value = "Clocked-in at ${formatTime(clockInTime!)}";
-
-      _showSuccess("Clock In Successful", "Welcome! Your shift has started");
-      reset();
-
-      // Clear captured image after successful attendance
-      capturedImage.value = null;
-      isLocationVerified.value = false;
-      print('Clock in completed successfully');
-    }
-  }
-
-  Future<void> clockOut() async {
-    if (isProcessingAttendance.value) return;
-
-    print('Attempting to clock out...');
-    final success = await markAttendance('out');
-
-    if (success) {
-      isClockedIn.value = false;
-      profileController.userModel.value?.clockStatus = false;
-      clockOutTime = DateTime.now();
-
-      dashboardController.fetchDashboardData();
-
-      lastAction.value = "Clocked-out at ${formatTime(clockOutTime!)}";
-
-      _showSuccess(
-        "Clock Out Successful",
-        "Have a great day! Your shift has ended",
-      );
-      reset();
-
-      // Clear captured image after successful attendance
-      capturedImage.value = null;
-      isLocationVerified.value = false;
-      print('Clock out completed successfully');
-    }
-  }
 
   bool get isReadyForAttendance {
     return capturedImage.value != null &&
